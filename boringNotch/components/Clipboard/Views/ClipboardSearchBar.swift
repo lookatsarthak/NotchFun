@@ -62,7 +62,7 @@ struct ClipboardSearchBar: View {
                     .foregroundStyle(.gray)
                     .lineLimit(1)
             case .unavailable:
-                Text("Allow Accessibility in Settings to search and use ↑ ↓")
+                Text("Allow Accessibility in Settings to search and paste")
                     .font(.system(size: 11))
                     .foregroundStyle(.gray)
                     .lineLimit(1)

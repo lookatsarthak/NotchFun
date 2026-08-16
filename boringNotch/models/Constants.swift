@@ -178,9 +178,12 @@ extension Defaults.Keys {
     static let clipboardHistorySize = Key<Int>("clipboardHistorySize", default: 200)
     static let clipboardCheckInterval = Key<Double>("clipboardCheckInterval", default: 0.5)
     static let clipboardIgnoreUniversalClipboard = Key<Bool>("clipboardIgnoreUniversalClipboard", default: false)
-    /// Paste into the frontmost app on select, rather than only copying. Requires
-    /// the Accessibility permission.
-    static let clipboardPasteOnSelect = Key<Bool>("clipboardPasteOnSelect", default: false)
+    /// Paste into the frontmost app on select, rather than only copying.
+    ///
+    /// On by default: pasting is the point of the feature, and it degrades safely to
+    /// copy-only when Accessibility has not been granted, so there is nothing to
+    /// protect the user from by making them find a second switch.
+    static let clipboardPasteOnSelect = Key<Bool>("clipboardPasteOnSelect", default: true)
     /// Enables the scoped keyboard capture used for search and arrow navigation.
     static let clipboardKeyboardNavigation = Key<Bool>("clipboardKeyboardNavigation", default: true)
     static let clipboardMaxPayloadMB = Key<Int>("clipboardMaxPayloadMB", default: 32)
