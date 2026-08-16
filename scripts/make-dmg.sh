@@ -12,6 +12,11 @@
 set -euo pipefail
 
 SCHEME="boringNotch"
+# A stable signing identity keeps macOS from treating each build as a different app.
+# With ad-hoc signing the designated requirement is a cdhash, so every release resets
+# users' Accessibility permission; a certificate makes it "identifier + cert leaf",
+# which survives rebuilds. Falls back to ad-hoc if the certificate is missing.
+SIGN_IDENTITY="${NOTCHFUN_SIGN_IDENTITY:-NotchFun Developer}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="${1:-$ROOT/dist}"
 
@@ -44,12 +49,18 @@ xcodebuild -scheme "$SCHEME" -configuration Release \
 # process loading it — so the app builds fine and then dies at launch with
 # "Library not loaded ... different Team IDs". Re-signing everything with one identity
 # makes the Team IDs consistent (all absent, for ad-hoc).
-echo "==> Re-signing nested code"
+if security find-identity -p codesigning 2>/dev/null | grep -q "$SIGN_IDENTITY"; then
+  echo "==> Re-signing with \"$SIGN_IDENTITY\""
+else
+  echo "==> \"$SIGN_IDENTITY\" not found in the keychain; falling back to ad-hoc"
+  echo "    (users will have to re-grant Accessibility on every release)"
+  SIGN_IDENTITY="-"
+fi
 ENTITLEMENTS=$(mktemp -t notchfun-entitlements).plist
 codesign -d --entitlements "$ENTITLEMENTS" --xml "$APP_PATH" 2>/dev/null || true
 
 while IFS= read -r nested; do
-  codesign --force --sign - --timestamp=none "$nested"
+  codesign --force --sign "$SIGN_IDENTITY" --timestamp=none "$nested"
 done < <(find "$APP_PATH/Contents" \
            \( -name "*.framework" -o -name "*.xpc" -o -name "*.app" -o -name "*.dylib" \) \
            -not -path "$APP_PATH" | sort -r)
@@ -65,7 +76,7 @@ if [ -s "$ENTITLEMENTS" ]; then
     || /usr/libexec/PlistBuddy -c "Set :com.apple.security.cs.disable-library-validation true" "$ENTITLEMENTS"
   # The app itself is re-signed last, since its nested content just changed.
   # Entitlements are re-applied explicitly or the sandbox would be silently dropped.
-  codesign --force --sign - --options runtime --entitlements "$ENTITLEMENTS" "$APP_PATH"
+  codesign --force --sign "$SIGN_IDENTITY" --options runtime --entitlements "$ENTITLEMENTS" "$APP_PATH"
 else
   echo "error: could not read entitlements from the built app" >&2
   exit 1
