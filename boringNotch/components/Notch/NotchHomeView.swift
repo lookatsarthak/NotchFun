@@ -461,7 +461,9 @@ struct NotchHomeView: View {
                     .animation(.interactiveSpring(response: 0.32, dampingFraction: 0.76, blendDuration: 0), value: shouldShowCamera)
             }
         }
-        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+        // Tab-switch animation now lives on the switch branches in ContentView, so all
+        // tabs behave the same. This view previously carried its own asymmetric
+        // slide-from-top, which made Home the only tab that moved on entry.
         .blur(radius: vm.notchState == .closed ? 30 : 0)
     }
 }

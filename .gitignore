@@ -53,3 +53,7 @@ build/
 *.xcarchive
 *.dSYM
 
+
+# Local release artefacts
+dist/
+.build/

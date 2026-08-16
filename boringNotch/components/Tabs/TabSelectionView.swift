@@ -5,6 +5,7 @@
 //  Created by Hugo Persson on 2024-08-25.
 //
 
+import Defaults
 import SwiftUI
 
 struct TabModel: Identifiable {
@@ -16,15 +17,32 @@ struct TabModel: Identifiable {
 
 let tabs = [
     TabModel(label: "Home", icon: "house.fill", view: .home),
-    TabModel(label: "Shelf", icon: "tray.fill", view: .shelf)
+    TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
+    TabModel(label: "Clipboard", icon: "doc.on.clipboard.fill", view: .clipboard)
 ]
+
+/// Tabs whose feature is currently switched on. Home is always present; the others
+/// disappear entirely when their feature is disabled, so a user who never turns on
+/// clipboard history never sees it.
+@MainActor
+func visibleTabs() -> [TabModel] {
+    tabs.filter { tab in
+        switch tab.view {
+        case .home: return true
+        case .shelf: return Defaults[.boringShelf]
+        case .clipboard: return Defaults[.clipboardHistoryEnabled]
+        }
+    }
+}
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @Default(.boringShelf) var shelfEnabled
+    @Default(.clipboardHistoryEnabled) var clipboardEnabled
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs) { tab in
+            ForEach(visibleTabs()) { tab in
                     TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
                         withAnimation(.smooth) {
                             coordinator.currentView = tab.view

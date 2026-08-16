@@ -171,6 +171,22 @@ extension Defaults.Keys {
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     
+    // MARK: Clipboard
+    /// Master switch. Off by default: with this disabled there is no polling timer,
+    /// no tab, no key capture and nothing written to disk.
+    static let clipboardHistoryEnabled = Key<Bool>("clipboardHistoryEnabled", default: false)
+    static let clipboardHistorySize = Key<Int>("clipboardHistorySize", default: 200)
+    static let clipboardCheckInterval = Key<Double>("clipboardCheckInterval", default: 0.5)
+    static let clipboardIgnoreUniversalClipboard = Key<Bool>("clipboardIgnoreUniversalClipboard", default: false)
+    /// Paste into the frontmost app on select, rather than only copying. Requires
+    /// the Accessibility permission.
+    static let clipboardPasteOnSelect = Key<Bool>("clipboardPasteOnSelect", default: false)
+    /// Enables the scoped keyboard capture used for search and arrow navigation.
+    static let clipboardKeyboardNavigation = Key<Bool>("clipboardKeyboardNavigation", default: true)
+    static let clipboardMaxPayloadMB = Key<Int>("clipboardMaxPayloadMB", default: 32)
+    /// Escape hatch for layouts where the Command key switches to QWERTY. 9 = ANSI "v".
+    static let clipboardPasteKeyCode = Key<Int>("clipboardPasteKeyCode", default: 9)
+
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)
     static let hideAllDayEvents = Key<Bool>("hideAllDayEvents", default: false)

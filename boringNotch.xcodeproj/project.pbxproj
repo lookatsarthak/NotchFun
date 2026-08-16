@@ -7,6 +7,33 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		94B887751F2B6D6BCF74A1FC /* AnyTransition+NotchTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE4F3F442000545A06E622E /* AnyTransition+NotchTab.swift */; };
+		994F2F683A17B37E167B316D /* ClipboardAccessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DB10C2B3FAB04935111EC0 /* ClipboardAccessibility.swift */; };
+		1C644F3D37B608205BF237EE /* ClipboardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */; };
+		167220B43ABF835FDC10BAC2 /* ClipboardPasteboardWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF7E43446C1B271D7C45CA8 /* ClipboardPasteboardWriter.swift */; };
+		98F0D829DBB7C44C9D90F6F8 /* ClipboardKeyInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0D5BDE5D1FFE1D357C5B33 /* ClipboardKeyInterpreter.swift */; };
+		4FF49D37D1C29FEC168E838A /* ClipboardSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 290FC1DC6D75A9FE62DB9535 /* ClipboardSearchBar.swift */; };
+		ADDC2E226F0E59382D906AC0 /* ClipboardSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47201192751CD98BBFE062E /* ClipboardSearchService.swift */; };
+		DF836B4CF072BA53F8A02C12 /* ClipboardKeyCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58D675E8A060C88DD4625F5A /* ClipboardKeyCaptureService.swift */; };
+		AA9A619AED7CA0AD9A017722 /* ClipboardKeyEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 413360B45152BD6B2D304ABB /* ClipboardKeyEvent.swift */; };
+		20A1523788D3946E940AD455 /* ClipboardPasteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC9D502E978342F88FFAA27 /* ClipboardPasteService.swift */; };
+		51B14889C7402CC5E1F62190 /* NotchHoldToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5633B4A88F65A05D8CC138 /* NotchHoldToken.swift */; };
+		FC60D437BB413780FED6D164 /* ClipboardEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD327E734FBD1064F5D117BB /* ClipboardEmptyStateView.swift */; };
+		104A1C65BFA6651156165CB1 /* ClipboardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5ED8C53CD69A4E1E7EB6C7 /* ClipboardRowView.swift */; };
+		5BDF180FDAC66C27F8CF60D3 /* ClipboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 869565E94B57F29F694B46BB /* ClipboardView.swift */; };
+		3E99909F821759743F2299EB /* ClipboardThumbnailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCC30C9DB17FDCA7E3C638D1 /* ClipboardThumbnailService.swift */; };
+		6260115EF6564C694A5013D9 /* ClipboardStateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E77DD0C698061C0A33F46CF /* ClipboardStateViewModel.swift */; };
+		0C479280973DB3D33EE0BD68 /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69DFC47F05C0141C9439C /* ClipboardMonitor.swift */; };
+		C11A56BE3FE5CFFB22853E7D /* ClipboardCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C6EFC8BEE8DD8ACBCC0DBD /* ClipboardCapture.swift */; };
+		A60CBAC77A0D8EF5C6594110 /* ClipboardPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D392FFD656C91D7E5AEE63D8 /* ClipboardPersistenceService.swift */; };
+		D9837EE05BD1EBBD3922B54A /* ClipboardBlobStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17438917841AAA4B948BCF21 /* ClipboardBlobStore.swift */; };
+		5BADD23DD3F47A40B04445F5 /* ClipboardHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8716F661C34C8B8B1B6A50E3 /* ClipboardHistory.swift */; };
+		53A277218675D1553F0A9D60 /* ClipboardCaptureConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4F372C7590B4CA0C20BFD3 /* ClipboardCaptureConfig.swift */; };
+		4E3D8A135C6A86E6A20E82D0 /* ClipboardItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90A11EA2D0DA8F6B237EDCC /* ClipboardItem.swift */; };
+		A2C20874F1D29D27BF3EA87A /* ClipboardContentRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CD0FBDD01DCDC8BF8CD789E /* ClipboardContentRef.swift */; };
+		7D132F28D22845E6E068BB05 /* ClipboardKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B149B15D024C39ADBAF640 /* ClipboardKind.swift */; };
+		3E4E2924BA41EBE997412A3E /* NSPasteboardType+NotchFun.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2DD055DDA4E49C4715407DF /* NSPasteboardType+NotchFun.swift */; };
+		278716479FA416717B031C3B /* Clipboard+Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE5AB8ABA00DEA0EFD324FB6 /* Clipboard+Content.swift */; };
 		1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		110029272E84FD4C00035A57 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
 		1100292A2E8691B400035A57 /* FileShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029292E8691B400035A57 /* FileShareView.swift */; };
@@ -181,6 +208,33 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BBE4F3F442000545A06E622E /* AnyTransition+NotchTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyTransition+NotchTab.swift"; sourceTree = "<group>"; };
+		41DB10C2B3FAB04935111EC0 /* ClipboardAccessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAccessibility.swift; sourceTree = "<group>"; };
+		780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSettings.swift; sourceTree = "<group>"; };
+		2BF7E43446C1B271D7C45CA8 /* ClipboardPasteboardWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPasteboardWriter.swift; sourceTree = "<group>"; };
+		FB0D5BDE5D1FFE1D357C5B33 /* ClipboardKeyInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardKeyInterpreter.swift; sourceTree = "<group>"; };
+		290FC1DC6D75A9FE62DB9535 /* ClipboardSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSearchBar.swift; sourceTree = "<group>"; };
+		B47201192751CD98BBFE062E /* ClipboardSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSearchService.swift; sourceTree = "<group>"; };
+		58D675E8A060C88DD4625F5A /* ClipboardKeyCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardKeyCaptureService.swift; sourceTree = "<group>"; };
+		413360B45152BD6B2D304ABB /* ClipboardKeyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardKeyEvent.swift; sourceTree = "<group>"; };
+		8EC9D502E978342F88FFAA27 /* ClipboardPasteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPasteService.swift; sourceTree = "<group>"; };
+		6F5633B4A88F65A05D8CC138 /* NotchHoldToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchHoldToken.swift; sourceTree = "<group>"; };
+		CD327E734FBD1064F5D117BB /* ClipboardEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardEmptyStateView.swift; sourceTree = "<group>"; };
+		0F5ED8C53CD69A4E1E7EB6C7 /* ClipboardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardRowView.swift; sourceTree = "<group>"; };
+		869565E94B57F29F694B46BB /* ClipboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardView.swift; sourceTree = "<group>"; };
+		DCC30C9DB17FDCA7E3C638D1 /* ClipboardThumbnailService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardThumbnailService.swift; sourceTree = "<group>"; };
+		7E77DD0C698061C0A33F46CF /* ClipboardStateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardStateViewModel.swift; sourceTree = "<group>"; };
+		39B69DFC47F05C0141C9439C /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
+		A9C6EFC8BEE8DD8ACBCC0DBD /* ClipboardCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCapture.swift; sourceTree = "<group>"; };
+		D392FFD656C91D7E5AEE63D8 /* ClipboardPersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPersistenceService.swift; sourceTree = "<group>"; };
+		17438917841AAA4B948BCF21 /* ClipboardBlobStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardBlobStore.swift; sourceTree = "<group>"; };
+		8716F661C34C8B8B1B6A50E3 /* ClipboardHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistory.swift; sourceTree = "<group>"; };
+		7A4F372C7590B4CA0C20BFD3 /* ClipboardCaptureConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureConfig.swift; sourceTree = "<group>"; };
+		B90A11EA2D0DA8F6B237EDCC /* ClipboardItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardItem.swift; sourceTree = "<group>"; };
+		2CD0FBDD01DCDC8BF8CD789E /* ClipboardContentRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentRef.swift; sourceTree = "<group>"; };
+		52B149B15D024C39ADBAF640 /* ClipboardKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardKind.swift; sourceTree = "<group>"; };
+		E2DD055DDA4E49C4715407DF /* NSPasteboardType+NotchFun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSPasteboardType+NotchFun.swift"; sourceTree = "<group>"; };
+		CE5AB8ABA00DEA0EFD324FB6 /* Clipboard+Content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Clipboard+Content.swift"; sourceTree = "<group>"; };
 		1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+LoadHelpers.swift"; sourceTree = "<group>"; };
 		110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryFileStorageService.swift; sourceTree = "<group>"; };
 		110029292E8691B400035A57 /* FileShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareView.swift; sourceTree = "<group>"; };
@@ -357,6 +411,67 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		FEC2272D996F89D8A79160BC /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				290FC1DC6D75A9FE62DB9535 /* ClipboardSearchBar.swift */,
+				CD327E734FBD1064F5D117BB /* ClipboardEmptyStateView.swift */,
+				0F5ED8C53CD69A4E1E7EB6C7 /* ClipboardRowView.swift */,
+				869565E94B57F29F694B46BB /* ClipboardView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		22636DBB6BD5BC546076762F /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				7E77DD0C698061C0A33F46CF /* ClipboardStateViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		6156428630A8264BB2C94886 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				41DB10C2B3FAB04935111EC0 /* ClipboardAccessibility.swift */,
+				2BF7E43446C1B271D7C45CA8 /* ClipboardPasteboardWriter.swift */,
+				B47201192751CD98BBFE062E /* ClipboardSearchService.swift */,
+				58D675E8A060C88DD4625F5A /* ClipboardKeyCaptureService.swift */,
+				8EC9D502E978342F88FFAA27 /* ClipboardPasteService.swift */,
+				DCC30C9DB17FDCA7E3C638D1 /* ClipboardThumbnailService.swift */,
+				39B69DFC47F05C0141C9439C /* ClipboardMonitor.swift */,
+				A9C6EFC8BEE8DD8ACBCC0DBD /* ClipboardCapture.swift */,
+				D392FFD656C91D7E5AEE63D8 /* ClipboardPersistenceService.swift */,
+				17438917841AAA4B948BCF21 /* ClipboardBlobStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		1C08403D353E036B688D6484 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				FB0D5BDE5D1FFE1D357C5B33 /* ClipboardKeyInterpreter.swift */,
+				413360B45152BD6B2D304ABB /* ClipboardKeyEvent.swift */,
+				8716F661C34C8B8B1B6A50E3 /* ClipboardHistory.swift */,
+				7A4F372C7590B4CA0C20BFD3 /* ClipboardCaptureConfig.swift */,
+				B90A11EA2D0DA8F6B237EDCC /* ClipboardItem.swift */,
+				2CD0FBDD01DCDC8BF8CD789E /* ClipboardContentRef.swift */,
+				52B149B15D024C39ADBAF640 /* ClipboardKind.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		51E9F005BF71BBA56067DBE1 /* Clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				FEC2272D996F89D8A79160BC /* Views */,
+				22636DBB6BD5BC546076762F /* ViewModels */,
+				6156428630A8264BB2C94886 /* Services */,
+				1C08403D353E036B688D6484 /* Models */,
+			);
+			path = Clipboard;
+			sourceTree = "<group>";
+		};
 		1113ABB82E80E27000EC13B2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -455,6 +570,8 @@
 		14288DD92C6E015000B9F80C /* helpers */ = {
 			isa = PBXGroup;
 			children = (
+				6F5633B4A88F65A05D8CC138 /* NotchHoldToken.swift */,
+				CE5AB8ABA00DEA0EFD324FB6 /* Clipboard+Content.swift */,
 				118EBE242E92DCCB00D54B5A /* AssociatedObject.swift */,
 				11A45C782E34E63100CEB175 /* MediaChecker.swift */,
 				1153BD972D9881F900979FB0 /* AppleScriptHelper.swift */,
@@ -486,6 +603,7 @@
 		1471639B2C5D362F0068B555 /* components */ = {
 			isa = PBXGroup;
 			children = (
+				51E9F005BF71BBA56067DBE1 /* Clipboard */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
 				14C08BB72C8DE49E000F8AA0 /* Calendar */,
@@ -674,6 +792,8 @@
 		B15063502C63D3F600EBB0E3 /* extensions */ = {
 			isa = PBXGroup;
 			children = (
+				BBE4F3F442000545A06E622E /* AnyTransition+NotchTab.swift */,
+				E2DD055DDA4E49C4715407DF /* NSPasteboardType+NotchFun.swift */,
 				111BEA602ED09B1B0079DD4E /* NSScreen+UUID.swift */,
 				1194E93F2EACC652009C82D6 /* Color+AccentColor.swift */,
 				118EBE302E9717DB00D54B5A /* URL+SecurityScoped.swift */,
@@ -717,6 +837,7 @@
 		B18654302C6F4590000B926A /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */,
 				11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */,
 				11C5E3152DFE88510065821E /* SettingsView.swift */,
 				11C5E3112DFE85970065821E /* SettingsWindowController.swift */,
@@ -905,6 +1026,33 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94B887751F2B6D6BCF74A1FC /* AnyTransition+NotchTab.swift in Sources */,
+				994F2F683A17B37E167B316D /* ClipboardAccessibility.swift in Sources */,
+				1C644F3D37B608205BF237EE /* ClipboardSettings.swift in Sources */,
+				167220B43ABF835FDC10BAC2 /* ClipboardPasteboardWriter.swift in Sources */,
+				98F0D829DBB7C44C9D90F6F8 /* ClipboardKeyInterpreter.swift in Sources */,
+				4FF49D37D1C29FEC168E838A /* ClipboardSearchBar.swift in Sources */,
+				ADDC2E226F0E59382D906AC0 /* ClipboardSearchService.swift in Sources */,
+				DF836B4CF072BA53F8A02C12 /* ClipboardKeyCaptureService.swift in Sources */,
+				AA9A619AED7CA0AD9A017722 /* ClipboardKeyEvent.swift in Sources */,
+				20A1523788D3946E940AD455 /* ClipboardPasteService.swift in Sources */,
+				51B14889C7402CC5E1F62190 /* NotchHoldToken.swift in Sources */,
+				FC60D437BB413780FED6D164 /* ClipboardEmptyStateView.swift in Sources */,
+				104A1C65BFA6651156165CB1 /* ClipboardRowView.swift in Sources */,
+				5BDF180FDAC66C27F8CF60D3 /* ClipboardView.swift in Sources */,
+				3E99909F821759743F2299EB /* ClipboardThumbnailService.swift in Sources */,
+				6260115EF6564C694A5013D9 /* ClipboardStateViewModel.swift in Sources */,
+				0C479280973DB3D33EE0BD68 /* ClipboardMonitor.swift in Sources */,
+				C11A56BE3FE5CFFB22853E7D /* ClipboardCapture.swift in Sources */,
+				A60CBAC77A0D8EF5C6594110 /* ClipboardPersistenceService.swift in Sources */,
+				D9837EE05BD1EBBD3922B54A /* ClipboardBlobStore.swift in Sources */,
+				5BADD23DD3F47A40B04445F5 /* ClipboardHistory.swift in Sources */,
+				53A277218675D1553F0A9D60 /* ClipboardCaptureConfig.swift in Sources */,
+				4E3D8A135C6A86E6A20E82D0 /* ClipboardItem.swift in Sources */,
+				A2C20874F1D29D27BF3EA87A /* ClipboardContentRef.swift in Sources */,
+				7D132F28D22845E6E068BB05 /* ClipboardKind.swift in Sources */,
+				3E4E2924BA41EBE997412A3E /* NSPasteboardType+NotchFun.swift in Sources */,
+				278716479FA416717B031C3B /* Clipboard+Content.swift in Sources */,
 				115C12EC2ED3D003009754CA /* OpenNotchHUD.swift in Sources */,
 				14C08BB92C8DE4B1000F8AA0 /* BoringCalendar.swift in Sources */,
 				5955950D2E900ED800C66711 /* ApplicationRelauncher.swift in Sources */,
@@ -1042,15 +1190,15 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 271;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BoringNotchXPCHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BoringNotchXPCHelper;
+				INFOPLIST_KEY_CFBundleDisplayName = "NotchFun Helper";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.BoringNotchXPCHelper;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun.XPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;
@@ -1067,15 +1215,15 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 271;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BoringNotchXPCHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BoringNotchXPCHelper;
+				INFOPLIST_KEY_CFBundleDisplayName = "NotchFun Helper";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.BoringNotchXPCHelper;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun.XPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;
@@ -1221,7 +1369,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 271;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"boringNotch/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -1234,7 +1382,8 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = boringNotch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TheBoringNotch;
+				INFOPLIST_KEY_CFBundleDisplayName = "NotchFun";
+				PRODUCT_NAME = "NotchFun";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSBackgroundOnly = NO;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -1248,9 +1397,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = targeted;
@@ -1275,7 +1423,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 271;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"boringNotch/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -1287,7 +1435,8 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = boringNotch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TheBoringNotch;
+				INFOPLIST_KEY_CFBundleDisplayName = "NotchFun";
+				PRODUCT_NAME = "NotchFun";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSBackgroundOnly = NO;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -1301,9 +1450,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = targeted;

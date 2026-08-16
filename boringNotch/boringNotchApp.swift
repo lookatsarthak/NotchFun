@@ -29,7 +29,7 @@ struct DynamicNotchApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("boring.notch", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
+        MenuBarExtra("NotchFun", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
             Button("Settings") {
                 DispatchQueue.main.async {
                     SettingsWindowController.shared.showWindow()
@@ -38,7 +38,7 @@ struct DynamicNotchApp: App {
             .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
             CheckForUpdatesView(updater: updaterController.updater)
             Divider()
-            Button("Restart Boring Notch") {
+            Button("Restart NotchFun") {
                 ApplicationRelauncher.restart()
             }
             Button("Quit", role: .destructive) {
@@ -86,11 +86,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         cleanupDragDetectors()
         cleanupWindows()
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
+        // Clipboard writes are debounced, so force out anything still pending.
+        MainActor.assumeIsolated {
+            ClipboardStateViewModel.shared.flushSynchronously()
+        }
+    }
+
+    /// The notch view model for the display the pointer is currently on, falling back
+    /// to the primary one when multi-display mode is off.
+    @MainActor
+    func viewModelForMouseLocation() -> BoringViewModel {
+        guard Defaults[.showOnAllDisplays] else { return vm }
+        let mouseLocation = NSEvent.mouseLocation
+        for screen in NSScreen.screens where screen.frame.contains(mouseLocation) {
+            if let uuid = screen.displayUUID, let screenViewModel = viewModels[uuid] {
+                return screenViewModel
+            }
+        }
+        return vm
     }
 
     @MainActor
     func onScreenLocked(_ notification: Notification) {
         isScreenLocked = true
+        ClipboardStateViewModel.shared.suspendMonitoring()
         if !Defaults[.showOnLockScreen] {
             cleanupWindows()
         } else {
@@ -101,6 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     func onScreenUnlocked(_ notification: Notification) {
         isScreenLocked = false
+        ClipboardStateViewModel.shared.resumeMonitoring()
         if !Defaults[.showOnLockScreen] {
             adjustWindowPosition(changeAlpha: true)
         } else {
@@ -351,6 +371,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
         }
 
+        // Clipboard history. Does nothing at all unless Defaults[.clipboardHistoryEnabled]
+        // is on — bootstrap only installs the preference observers.
+        ClipboardStateViewModel.shared.bootstrap()
+
+        // Pasteboard polling is pointless while the machine is asleep, so pause it.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil, queue: .main) { _ in
+                Task { @MainActor in
+                    ClipboardStateViewModel.shared.suspendMonitoring()
+                }
+        }
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil, queue: .main) { _ in
+                Task { @MainActor in
+                    ClipboardStateViewModel.shared.resumeMonitoring()
+                }
+        }
+
         KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
             guard let self = self else { return }
             if Defaults[.sneakPeekStyles] == .inline {
@@ -362,6 +403,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     type: .music,
                     duration: 3.0
                 )
+            }
+        }
+
+        // Completes the `clipboardHistoryPanel` shortcut that was declared in
+        // Shortcuts/ShortcutConstants.swift but never had a handler.
+        // (`viewModelForMouseLocation` mirrors the display-picking logic in the
+        // toggleNotchOpen handler below.)
+        KeyboardShortcuts.onKeyDown(for: .clipboardHistoryPanel) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self, Defaults[.clipboardHistoryEnabled] else { return }
+
+                let viewModel = self.viewModelForMouseLocation()
+
+                // Unlike the plain open shortcut, this must not auto-close after a few
+                // seconds — the user is about to read and pick from a list.
+                self.closeNotchTask?.cancel()
+                self.closeNotchTask = nil
+
+                if viewModel.notchState == .open && self.coordinator.currentView == .clipboard {
+                    viewModel.close(force: true)
+                } else {
+                    self.coordinator.currentView = .clipboard
+                    viewModel.open()
+                }
             }
         }
 
@@ -404,7 +469,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.closeNotchTask = task
                 case .open:
                     await MainActor.run {
-                        viewModel.close()
+                        // Forced: pressing the toggle shortcut is an explicit user
+                        // action and must win over any feature holding the notch open.
+                        viewModel.close(force: true)
                     }
                 }
             }

@@ -13,10 +13,18 @@ struct BoringHeader: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
+
+    /// The tab bar used to be gated purely on the Shelf. Any feature that owns a tab
+    /// can now bring it on screen.
+    private var shouldShowTabs: Bool {
+        let shelfWantsTabs = Defaults[.boringShelf] && (!tvm.isEmpty || coordinator.alwaysShowTabs)
+        return shelfWantsTabs || Defaults[.clipboardHistoryEnabled]
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf] {
+                if shouldShowTabs {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()

@@ -344,11 +344,20 @@ struct ContentView: View {
               .zIndex(2)
             if vm.notchState == .open {
                 VStack {
+                    // Each branch carries the same transition so every tab animates
+                    // identically. The transition on the enclosing VStack below is a
+                    // different thing entirely — it fires when the notch itself opens
+                    // and closes, not when the tab changes.
                     switch coordinator.currentView {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
+                            .transition(.notchTab.animation(.smooth(duration: 0.25)))
                     case .shelf:
                         ShelfView()
+                            .transition(.notchTab.animation(.smooth(duration: 0.25)))
+                    case .clipboard:
+                        ClipboardView()
+                            .transition(.notchTab.animation(.smooth(duration: 0.25)))
                     }
                 }
                 .transition(
@@ -583,7 +592,7 @@ struct ContentView: View {
     }
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
-        guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard vm.notchState == .open, !vm.isHoveringCalendar, !vm.isHoveringScrollableContent else { return }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20

@@ -30,6 +30,10 @@ class BoringViewModel: NSObject, ObservableObject {
 
     @Published var edgeAutoOpenActive: Bool = false
     @Published var isHoveringCalendar: Bool = false
+    /// Set while the pointer is over a vertically scrolling area inside the open notch.
+    /// The pan-up-to-close gesture reads raw scroll-wheel events, so without this a
+    /// scroll gesture inside such content is also read as "close the notch".
+    @Published var isHoveringScrollableContent: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
 
     @Published var screenUUID: String?
@@ -197,9 +201,12 @@ class BoringViewModel: NSObject, ObservableObject {
         MusicManager.shared.forceUpdate()
     }
 
-    func close() {
+    /// - Parameter force: Bypasses `preventNotchClose`. An action the user took
+    ///   deliberately — the toggle shortcut, picking a clipboard entry — must always
+    ///   be able to close the notch, even while a feature is holding it open.
+    func close(force: Bool = false) {
         // Do not close while a share picker or sharing service is active
-        if SharingStateManager.shared.preventNotchClose {
+        if !force && SharingStateManager.shared.preventNotchClose {
             return
         }
         self.notchSize = getClosedNotchSize(screenUUID: self.screenUUID)
