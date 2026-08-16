@@ -36,6 +36,44 @@ xcodebuild -scheme "$SCHEME" -configuration Release \
 
 [ -d "$APP_PATH" ] || { echo "error: $APP_PATH not found"; exit 1; }
 
+# Re-sign every nested bundle with the same ad-hoc identity as the app.
+#
+# MediaRemoteAdapter.framework is vendored pre-signed by its original author, and
+# xcodebuild leaves that signature alone. With hardened runtime enabled, macOS enforces
+# library validation and refuses to load a library whose Team ID differs from the
+# process loading it — so the app builds fine and then dies at launch with
+# "Library not loaded ... different Team IDs". Re-signing everything with one identity
+# makes the Team IDs consistent (all absent, for ad-hoc).
+echo "==> Re-signing nested code"
+ENTITLEMENTS=$(mktemp -t notchfun-entitlements).plist
+codesign -d --entitlements "$ENTITLEMENTS" --xml "$APP_PATH" 2>/dev/null || true
+
+while IFS= read -r nested; do
+  codesign --force --sign - --timestamp=none "$nested"
+done < <(find "$APP_PATH/Contents" \
+           \( -name "*.framework" -o -name "*.xpc" -o -name "*.app" -o -name "*.dylib" \) \
+           -not -path "$APP_PATH" | sort -r)
+
+# Hardened runtime enforces library validation, which requires every loaded library to
+# share the app's signing identity. Ad-hoc signatures have no identity to share, so an
+# ad-hoc build embedding third-party frameworks cannot satisfy it however carefully
+# everything is re-signed — the app builds, verifies, and then dies at launch. This
+# entitlement exists for exactly that case. A build signed with a real Developer ID
+# would not need it, because the frameworks would carry that Team ID.
+if [ -s "$ENTITLEMENTS" ]; then
+  /usr/libexec/PlistBuddy -c "Add :com.apple.security.cs.disable-library-validation bool true" "$ENTITLEMENTS" 2>/dev/null \
+    || /usr/libexec/PlistBuddy -c "Set :com.apple.security.cs.disable-library-validation true" "$ENTITLEMENTS"
+  # The app itself is re-signed last, since its nested content just changed.
+  # Entitlements are re-applied explicitly or the sandbox would be silently dropped.
+  codesign --force --sign - --options runtime --entitlements "$ENTITLEMENTS" "$APP_PATH"
+else
+  echo "error: could not read entitlements from the built app" >&2
+  exit 1
+fi
+rm -f "$ENTITLEMENTS"
+
+codesign --verify --deep --strict "$APP_PATH" && echo "    signature verifies"
+
 echo "==> Staging disk image"
 STAGING=$(mktemp -d)
 trap 'rm -rf "$STAGING"' EXIT
