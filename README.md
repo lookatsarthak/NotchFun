@@ -59,14 +59,24 @@ Download the latest `.dmg` from [Releases](https://github.com/lookatsarthak/Notc
 open it, and drag NotchFun to your Applications folder.
 
 > [!IMPORTANT]
-> NotchFun isn't signed with an Apple Developer certificate, so on first launch macOS
-> will say it "cannot verify the developer". This is expected for an app distributed
-> outside the App Store without a paid developer account — it isn't a warning about the
-> app itself.
+> NotchFun isn't notarised by Apple, so the first time you open it macOS will say it
+> *"could not verify NotchFun is free of malware"*. That is what macOS says about any
+> app distributed outside the App Store without a paid Apple Developer account — it is
+> not a finding about this app.
 >
-> To open it: **right-click** NotchFun in Applications and choose **Open**, then confirm.
-> You only need to do this once. If that doesn't work, open **System Settings →
-> Privacy & Security**, scroll down, and click **Open Anyway**.
+> **To open it (macOS 15 Sequoia and later):**
+> 1. Double-click NotchFun. You'll get the warning — click **Done**, *not* Move to Bin.
+> 2. Open **System Settings → Privacy & Security** and scroll to **Security**.
+> 3. Next to *"NotchFun was blocked to protect your Mac"*, click **Open Anyway**.
+> 4. Authenticate, then open NotchFun again and confirm.
+>
+> You only need to do this once. The old right-click → Open trick no longer works;
+> Apple removed it in macOS 15.
+>
+> If you prefer the terminal, this does the same thing:
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/NotchFun.app
+> ```
 
 ### Permissions
 
