@@ -19,13 +19,13 @@ permissions:
 
 jobs:
   build:
-    name: Build Boring Notch
+    name: Build NotchFun
     strategy:
       matrix:
         platform:
           - macOS
         xcode:
-          - ^16
+          - ^26
         scheme:
           - boringNotch
     runs-on: macos-latest
