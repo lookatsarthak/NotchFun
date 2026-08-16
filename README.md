@@ -55,8 +55,15 @@ It's off by default. Turn it on in **Settings → Clipboard**.
 
 **Requires macOS 14 Sonoma or later.** Apple Silicon or Intel.
 
-Download the latest `.dmg` from [Releases](https://github.com/lookatsarthak/NotchFun/releases),
-open it, and drag NotchFun to your Applications folder.
+**Homebrew**
+
+```bash
+brew install --cask lookatsarthak/tap/notchfun
+```
+
+**Or manually** — download the latest `.dmg` from
+[Releases](https://github.com/lookatsarthak/NotchFun/releases), open it, and drag
+NotchFun to your Applications folder.
 
 > [!IMPORTANT]
 > NotchFun isn't notarised by Apple, so the first time you open it macOS will say it
