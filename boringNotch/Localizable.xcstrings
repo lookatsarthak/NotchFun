@@ -12309,12 +12309,12 @@
         }
       }
     },
-    "Made with 🫶🏻 by not so boring not.people" : {
+    "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "cs" : {
@@ -12332,13 +12332,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "es" : {
@@ -12356,13 +12356,13 @@
         "hu" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Realizzato col 🫶🏻 da not so boring not.people"
+            "value" : "Realizzato col 🫶🏻 da Sarthak · basato su boring.notch di TheBoredTeam"
           }
         },
         "ko" : {
@@ -12380,13 +12380,13 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "tr" : {
@@ -12398,7 +12398,7 @@
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "Made with 🫶🏻 by Sarthak · built on boring.notch by TheBoredTeam"
           }
         },
         "zh-Hans" : {
