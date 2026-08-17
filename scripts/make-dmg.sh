@@ -74,6 +74,13 @@ done < <(find "$APP_PATH/Contents" \
 if [ -s "$ENTITLEMENTS" ]; then
   /usr/libexec/PlistBuddy -c "Add :com.apple.security.cs.disable-library-validation bool true" "$ENTITLEMENTS" 2>/dev/null \
     || /usr/libexec/PlistBuddy -c "Set :com.apple.security.cs.disable-library-validation true" "$ENTITLEMENTS"
+
+  # Strip get-task-allow. Xcode adds it so debuggers can attach, and because these
+  # entitlements are copied off the built app it would otherwise be carried into the
+  # shipped DMG — letting any process running as the user attach to NotchFun and read
+  # its memory. This app holds clipboard history, so that is not a theoretical concern.
+  /usr/libexec/PlistBuddy -c "Delete :com.apple.security.get-task-allow" "$ENTITLEMENTS" 2>/dev/null \
+    && echo "    stripped get-task-allow" || true
   # The app itself is re-signed last, since its nested content just changed.
   # Entitlements are re-applied explicitly or the sandbox would be silently dropped.
   codesign --force --sign "$SIGN_IDENTITY" --options runtime --entitlements "$ENTITLEMENTS" "$APP_PATH"
