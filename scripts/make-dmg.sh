@@ -109,6 +109,8 @@ echo
 echo "Built: $DMG"
 echo "Size:  $(du -h "$DMG" | cut -f1)"
 echo
-echo "Note: this build is ad-hoc signed and not notarised. On first launch macOS will"
-echo "say it cannot verify the developer. Users must right-click the app and choose"
-echo "Open, or allow it under System Settings > Privacy & Security."
+echo "Note: this build is not notarised. On first launch macOS will say it cannot verify"
+echo "the developer. Tell users to open System Settings > Privacy & Security, scroll to"
+echo "Security and click \"Open Anyway\". Do NOT tell them to right-click > Open: macOS 15"
+echo "removed that bypass, and the dialog they get instead has \"Move to Bin\" as its"
+echo "prominent button."
