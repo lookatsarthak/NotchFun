@@ -36,23 +36,70 @@ DMG="$ROOT/dist/NotchFun-$VERSION.dmg"
 # be dead on arrival — that has happened here before, so this check is not optional.
 echo "==> Verifying the packaged app launches"
 MNT=$(hdiutil attach "$DMG" -nobrowse -readonly | grep -o '/Volumes/.*$' | tail -1)
-TEST_APP="/tmp/NotchFun-launch-test.app"
-rm -rf "$TEST_APP"
+# mktemp -d, not /tmp: on macOS /tmp is a symlink to /private/tmp, and the kernel
+# reports the process under the resolved path. A pattern built from "/tmp/..." therefore
+# never matched, so the pkill below silently did nothing and every release left an
+# orphaned NotchFun running from a bundle this script had already deleted - a second
+# notch app fighting the installed one, with its own clipboard monitor and its own power
+# assertions. mktemp -d hands back an already-resolved path, so the pattern matches.
+#
+# `pwd -P` because the path has to be the *physical* one to compare against what the
+# kernel reports. Both of macOS's temp roots are symlinks - /tmp -> /private/tmp, and
+# /var -> /private/var, so even mktemp -d hands back a /var/folders/... path while the
+# process shows up under /private/var/folders/... Resolving it once here is what makes
+# the comparison below reliable.
+TEST_DIR=$(cd "$(mktemp -d)" && pwd -P)
+TEST_APP="$TEST_DIR/NotchFun.app"
 cp -R "$MNT/NotchFun.app" "$TEST_APP"
 hdiutil detach "$MNT" >/dev/null 2>&1 || true
-pkill -f "$TEST_APP" 2>/dev/null || true
+
+# Which running NotchFun processes belong to the test copy.
+#
+# Matches on the process's executable path (ps -o comm=), not on `pgrep -f` over the
+# whole command line: a -f pattern also matches any shell whose command text happens to
+# contain the path, including the one running this script, which made an earlier version
+# of this check abort a release that was actually fine.
+test_instances() {
+  local pid image
+  for pid in $(pgrep -x NotchFun 2>/dev/null || true); do
+    image=$(ps -o comm= -p "$pid" 2>/dev/null || true)
+    case "$image" in "$TEST_DIR"*) echo "$pid" ;; esac
+  done
+}
+
+# Always clean up the test instance, however this script exits.
+cleanup_test_app() {
+  local pids
+  pids=$(test_instances)
+  [ -n "$pids" ] && kill $pids 2>/dev/null || true
+  for _ in 1 2 3 4 5; do
+    [ -z "$(test_instances)" ] && break
+    sleep 1
+  done
+  # SIGTERM is not guaranteed to stop an AppKit app; make sure.
+  pids=$(test_instances)
+  [ -n "$pids" ] && kill -9 $pids 2>/dev/null || true
+  rm -rf "$TEST_DIR"
+}
+trap cleanup_test_app EXIT
+
 open -a "$TEST_APP"
 sleep 6
-if pgrep -f "$TEST_APP/Contents/MacOS/NotchFun" >/dev/null; then
+if [ -n "$(test_instances)" ]; then
   echo "    launches OK"
-  pkill -f "$TEST_APP" 2>/dev/null || true
 else
   echo "    ERROR: the packaged app failed to launch. Not releasing."
   echo "    Check: ls -t ~/Library/Logs/DiagnosticReports/NotchFun-*.ips | head -1"
-  rm -rf "$TEST_APP"
   exit 1
 fi
-rm -rf "$TEST_APP"
+
+cleanup_test_app
+trap - EXIT
+if [ -n "$(test_instances)" ]; then
+  echo "    ERROR: the launch-test instance is still running. Not releasing."
+  exit 1
+fi
+echo "    launch-test instance cleaned up"
 
 if [ ! -x "$SIGN_UPDATE" ]; then
   echo "error: sign_update not found at $SIGN_UPDATE"
