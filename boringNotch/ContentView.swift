@@ -19,6 +19,7 @@ struct ContentView: View {
     @ObservedObject var webcamManager = WebcamManager.shared
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var caffeine = CaffeineManager.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
@@ -284,6 +285,15 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                      } else if coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
+                                  && vm.notchState == .closed && Defaults[.caffeineShowNotification]
+                      {
+                          CaffeineNotification(
+                              isActive: caffeine.isActive,
+                              detail: caffeine.session?.duration.shortTitle,
+                              notchWidth: vm.closedNotchSize.width
+                          )
+                          .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)

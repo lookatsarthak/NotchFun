@@ -54,6 +54,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Clipboard") {
                     Label("Clipboard", systemImage: "doc.on.clipboard")
                 }
+                NavigationLink(value: "Caffeine") {
+                    Label("Caffeine", systemImage: "cup.and.saucer")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -90,6 +93,8 @@ struct SettingsView: View {
                     Shelf()
                 case "Clipboard":
                     ClipboardSettings()
+                case "Caffeine":
+                    CaffeineSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":

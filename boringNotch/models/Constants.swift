@@ -171,6 +171,21 @@ extension Defaults.Keys {
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     
+    // MARK: Caffeine
+    /// Show the caffeine button in the notch header. On by default — unlike clipboard
+    /// history this has no permission, privacy or disk cost.
+    static let caffeineButtonInNotch = Key<Bool>("caffeineButtonInNotch", default: true)
+    /// Show the "Caffeine on/off" indicator beside the closed notch.
+    static let caffeineShowNotification = Key<Bool>("caffeineShowNotification", default: true)
+    /// What a plain click keeps awake.
+    static let caffeineMode = Key<CaffeineMode>("caffeineMode", default: .displayAwake)
+    /// What a plain click schedules. Indefinite by default: an unexpected sleep during
+    /// a long task is worse than caffeine staying on longer than needed, and the lit
+    /// button makes the state obvious.
+    static let caffeineDefaultDuration = Key<CaffeineDuration>("caffeineDefaultDuration", default: .indefinite)
+    /// Turn caffeine on whenever the app launches.
+    static let caffeineActivateOnLaunch = Key<Bool>("caffeineActivateOnLaunch", default: false)
+
     // MARK: Clipboard
     /// Master switch. Off by default: with this disabled there is no polling timer,
     /// no tab, no key capture and nothing written to disk.

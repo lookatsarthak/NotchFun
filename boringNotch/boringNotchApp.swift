@@ -67,6 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isScreenLocked: Bool = false
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
+    private var caffeineObserver: AnyCancellable?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -89,6 +90,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Clipboard writes are debounced, so force out anything still pending.
         MainActor.assumeIsolated {
             ClipboardStateViewModel.shared.flushSynchronously()
+            // Never leave a power assertion behind: the Mac would stop sleeping with
+            // nothing on screen to explain why.
+            CaffeineManager.shared.releaseForTermination()
+        }
+    }
+
+    /// Shows the transient caffeine indicator whenever the state changes.
+    ///
+    /// Uses `toggleExpandingView`, not `toggleSneakPeek`: sneak peek returns early for
+    /// every type except `.music` unless Defaults[.hudReplacement] is on, so an
+    /// indicator built on it would be invisible for most users.
+    @MainActor
+    private func observeCaffeineChanges() {
+        caffeineObserver = CaffeineManager.shared.changes.sink { [weak self] _ in
+            guard let self, Defaults[.caffeineShowNotification] else { return }
+            self.coordinator.toggleExpandingView(status: true, type: .caffeine)
         }
     }
 
@@ -375,6 +392,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // is on — bootstrap only installs the preference observers.
         ClipboardStateViewModel.shared.bootstrap()
 
+        // Caffeine. restore() resumes a session that survived a quit and drops one that
+        // expired while we were not running; startObserving() wires sleep/wake and
+        // app-termination handling.
+        CaffeineManager.shared.restore()
+        CaffeineManager.shared.startObserving()
+        if Defaults[.caffeineActivateOnLaunch], !CaffeineManager.shared.isActive {
+            CaffeineManager.shared.activate(
+                mode: Defaults[.caffeineMode],
+                duration: Defaults[.caffeineDefaultDuration]
+            )
+        }
+        observeCaffeineChanges()
+
         // Pasteboard polling is pointless while the machine is asleep, so pause it.
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.willSleepNotification,
@@ -390,6 +420,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 Task { @MainActor in
                     ClipboardStateViewModel.shared.resumeMonitoring()
                 }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .toggleCaffeine) {
+            Task { @MainActor in
+                CaffeineManager.shared.toggle(
+                    mode: Defaults[.caffeineMode],
+                    duration: Defaults[.caffeineDefaultDuration]
+                )
+            }
         }
 
         KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in

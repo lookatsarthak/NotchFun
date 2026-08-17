@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D2AC7272081A3D1784360A29 /* CaffeineSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9912C1E58DED983F80DC005 /* CaffeineSettings.swift */; };
+		AE87BFAB9EBCE883C3328361 /* CaffeineAppBoundMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77D962BBB9B0415055D1EAD /* CaffeineAppBoundMenu.swift */; };
+		739344C814B4BE55392F609C /* CaffeineNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D453591EECCD11456846D20 /* CaffeineNotification.swift */; };
+		AF6A0127720B9CFC06B64E75 /* CaffeineButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E7ED7053D328E44DF10854 /* CaffeineButton.swift */; };
+		5AB46F0ED0AD7DBCE9F0D53A /* Caffeine+Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467502465BF5DCBD4C019E64 /* Caffeine+Defaults.swift */; };
+		27B2A8EA16668B7FEDD6EC83 /* CaffeineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E34D6665BDC59276F70669 /* CaffeineManager.swift */; };
+		0256C321F8A48EC0CA040E5F /* CaffeineSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F932612F8C733A0A7ED90525 /* CaffeineSessionStore.swift */; };
+		A2DE2571300B0428C3F6A91F /* PowerAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5897AF0716FFB5F340648AF1 /* PowerAssertion.swift */; };
+		7F7DFE2832F6DE5EBEC89F4A /* CaffeineSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28163AFE65D968A605B39270 /* CaffeineSession.swift */; };
+		F5DAAA96FB58AA29C0E60C02 /* CaffeineDuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0063C069368D4A1BC2A98B /* CaffeineDuration.swift */; };
+		2D473821334BC4E122351DDF /* CaffeineMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97B210F388574A167196F62 /* CaffeineMode.swift */; };
 		94B887751F2B6D6BCF74A1FC /* AnyTransition+NotchTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE4F3F442000545A06E622E /* AnyTransition+NotchTab.swift */; };
 		994F2F683A17B37E167B316D /* ClipboardAccessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DB10C2B3FAB04935111EC0 /* ClipboardAccessibility.swift */; };
 		1C644F3D37B608205BF237EE /* ClipboardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */; };
@@ -208,6 +219,17 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B9912C1E58DED983F80DC005 /* CaffeineSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineSettings.swift; sourceTree = "<group>"; };
+		A77D962BBB9B0415055D1EAD /* CaffeineAppBoundMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineAppBoundMenu.swift; sourceTree = "<group>"; };
+		5D453591EECCD11456846D20 /* CaffeineNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineNotification.swift; sourceTree = "<group>"; };
+		10E7ED7053D328E44DF10854 /* CaffeineButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineButton.swift; sourceTree = "<group>"; };
+		467502465BF5DCBD4C019E64 /* Caffeine+Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Caffeine+Defaults.swift"; sourceTree = "<group>"; };
+		28E34D6665BDC59276F70669 /* CaffeineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineManager.swift; sourceTree = "<group>"; };
+		F932612F8C733A0A7ED90525 /* CaffeineSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineSessionStore.swift; sourceTree = "<group>"; };
+		5897AF0716FFB5F340648AF1 /* PowerAssertion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerAssertion.swift; sourceTree = "<group>"; };
+		28163AFE65D968A605B39270 /* CaffeineSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineSession.swift; sourceTree = "<group>"; };
+		8B0063C069368D4A1BC2A98B /* CaffeineDuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineDuration.swift; sourceTree = "<group>"; };
+		C97B210F388574A167196F62 /* CaffeineMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineMode.swift; sourceTree = "<group>"; };
 		BBE4F3F442000545A06E622E /* AnyTransition+NotchTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyTransition+NotchTab.swift"; sourceTree = "<group>"; };
 		41DB10C2B3FAB04935111EC0 /* ClipboardAccessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAccessibility.swift; sourceTree = "<group>"; };
 		780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSettings.swift; sourceTree = "<group>"; };
@@ -411,6 +433,47 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		47750178A2AA5FA99D390508 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A77D962BBB9B0415055D1EAD /* CaffeineAppBoundMenu.swift */,
+				5D453591EECCD11456846D20 /* CaffeineNotification.swift */,
+				10E7ED7053D328E44DF10854 /* CaffeineButton.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		5E3AC1F1EE92A26E45554BD4 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				28E34D6665BDC59276F70669 /* CaffeineManager.swift */,
+				F932612F8C733A0A7ED90525 /* CaffeineSessionStore.swift */,
+				5897AF0716FFB5F340648AF1 /* PowerAssertion.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AC474FAAC0E5FFE315E20F2D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				467502465BF5DCBD4C019E64 /* Caffeine+Defaults.swift */,
+				28163AFE65D968A605B39270 /* CaffeineSession.swift */,
+				8B0063C069368D4A1BC2A98B /* CaffeineDuration.swift */,
+				C97B210F388574A167196F62 /* CaffeineMode.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3160A43E255073F6BF6DBEC1 /* Caffeine */ = {
+			isa = PBXGroup;
+			children = (
+				47750178A2AA5FA99D390508 /* Views */,
+				5E3AC1F1EE92A26E45554BD4 /* Services */,
+				AC474FAAC0E5FFE315E20F2D /* Models */,
+			);
+			path = Caffeine;
+			sourceTree = "<group>";
+		};
 		FEC2272D996F89D8A79160BC /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -603,6 +666,7 @@
 		1471639B2C5D362F0068B555 /* components */ = {
 			isa = PBXGroup;
 			children = (
+				3160A43E255073F6BF6DBEC1 /* Caffeine */,
 				51E9F005BF71BBA56067DBE1 /* Clipboard */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
@@ -837,6 +901,7 @@
 		B18654302C6F4590000B926A /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				B9912C1E58DED983F80DC005 /* CaffeineSettings.swift */,
 				780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */,
 				11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */,
 				11C5E3152DFE88510065821E /* SettingsView.swift */,
@@ -1026,6 +1091,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2AC7272081A3D1784360A29 /* CaffeineSettings.swift in Sources */,
+				AE87BFAB9EBCE883C3328361 /* CaffeineAppBoundMenu.swift in Sources */,
+				739344C814B4BE55392F609C /* CaffeineNotification.swift in Sources */,
+				AF6A0127720B9CFC06B64E75 /* CaffeineButton.swift in Sources */,
+				5AB46F0ED0AD7DBCE9F0D53A /* Caffeine+Defaults.swift in Sources */,
+				27B2A8EA16668B7FEDD6EC83 /* CaffeineManager.swift in Sources */,
+				0256C321F8A48EC0CA040E5F /* CaffeineSessionStore.swift in Sources */,
+				A2DE2571300B0428C3F6A91F /* PowerAssertion.swift in Sources */,
+				7F7DFE2832F6DE5EBEC89F4A /* CaffeineSession.swift in Sources */,
+				F5DAAA96FB58AA29C0E60C02 /* CaffeineDuration.swift in Sources */,
+				2D473821334BC4E122351DDF /* CaffeineMode.swift in Sources */,
 				94B887751F2B6D6BCF74A1FC /* AnyTransition+NotchTab.swift in Sources */,
 				994F2F683A17B37E167B316D /* ClipboardAccessibility.swift in Sources */,
 				1C644F3D37B608205BF237EE /* ClipboardSettings.swift in Sources */,
