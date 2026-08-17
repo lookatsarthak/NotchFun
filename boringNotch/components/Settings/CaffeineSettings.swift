@@ -20,7 +20,7 @@ struct CaffeineSettings: View {
                     Spacer()
                     if let session = caffeine.session {
                         Text(caffeine.remainingLabel.map { "On — \($0) left" }
-                             ?? "On — \(session.duration.title.lowercased())")
+                             ?? "On — \(session.duration.phrase)")
                             .foregroundStyle(Color.effectiveAccent)
                     } else {
                         Text("Off").foregroundStyle(.secondary)

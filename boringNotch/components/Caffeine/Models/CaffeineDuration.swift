@@ -38,6 +38,19 @@ enum CaffeineDuration: Codable, Hashable, Sendable {
         }
     }
 
+    /// Mid-sentence form, for status lines like "On — until you turn it off".
+    ///
+    /// `title` cannot simply be lowercased for this: that turns "Until I turn it off"
+    /// into "until i turn it off", and lowercases app names such as "TextEdit" too.
+    var phrase: String {
+        switch self {
+        case .indefinite: return "until you turn it off"
+        case .minutes(let m): return "for \(m) minutes"
+        case .hours(let h): return h == 1 ? "for 1 hour" : "for \(h) hours"
+        case .whileAppRunning(_, let name): return "while \(name) is running"
+        }
+    }
+
     /// Compact form for the notch, where there is very little room.
     var shortTitle: String {
         switch self {

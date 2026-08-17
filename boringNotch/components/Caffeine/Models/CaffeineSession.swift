@@ -47,11 +47,13 @@ struct CaffeineSession: Codable, Equatable, Sendable {
     func remainingLabel(at now: Date = .now) -> String? {
         guard let remaining = remaining(at: now) else { return nil }
         let total = Int(remaining.rounded())
-        let hours = total / 3600
-        let minutes = (total % 3600) / 60
-        let seconds = total % 60
-        if hours > 0 { return String(format: "%d:%02d", hours, minutes) }
-        if minutes > 0 { return "\(minutes)m" }
-        return "\(seconds)s"
+        if total < 60 { return "\(total)s" }
+
+        // Round the minutes up, not down. Flooring meant a freshly started five-minute
+        // session immediately read "4m left", which looks like the timer began a minute
+        // short. Rounding up never under-reports the time left.
+        let minutes = Int((Double(total) / 60).rounded(.up))
+        if minutes < 60 { return "\(minutes)m" }
+        return String(format: "%d:%02d", minutes / 60, minutes % 60)
     }
 }

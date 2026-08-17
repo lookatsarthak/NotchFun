@@ -41,7 +41,7 @@ struct CaffeineButton: View {
         if let remaining = caffeine.remainingLabel {
             return "Caffeine on — \(remaining) left"
         }
-        return "Caffeine on — \(session.duration.title.lowercased())"
+        return "Caffeine on — \(session.duration.phrase)"
     }
 
     private func toggle() {
