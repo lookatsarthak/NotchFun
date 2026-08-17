@@ -183,7 +183,6 @@
 		B10348D92C74E56000475897 /* ConditionalModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10348D82C74E56000475897 /* ConditionalModifier.swift */; };
 		B10F84A32C6C9596009F3026 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10F84A22C6C9596009F3026 /* TestView.swift */; };
 		B141C2412CA5F53F00AC8CC8 /* SparkleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B141C2402CA5F53E00AC8CC8 /* SparkleView.swift */; };
-		B1628B922CC260C0003D8DF3 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = B1628B912CC260C0003D8DF3 /* SwiftUIIntrospect */; };
 		B17266DF2C64DFA00031BA0D /* BundleInfos.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17266DE2C64DFA00031BA0D /* BundleInfos.swift */; };
 		B17266E12C6532560031BA0D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B17266E02C6532560031BA0D /* Localizable.xcstrings */; };
 		B17266E32C65F7FB0031BA0D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17266E22C65F7FB0031BA0D /* WhatsNewView.swift */; };
@@ -467,7 +466,6 @@
 				B18654392C6F4990000B926A /* KeyboardShortcuts in Frameworks */,
 				B19016222CC15B3D00E3F12E /* Defaults in Frameworks */,
 				111BE95D2ECD71E10079DD4E /* AsyncXPCConnection in Frameworks */,
-				B1628B922CC260C0003D8DF3 /* SwiftUIIntrospect in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1066,7 +1064,6 @@
 				B18654382C6F4990000B926A /* KeyboardShortcuts */,
 				9A987A0F2C73CA8D005CA465 /* Collections */,
 				B19016212CC15B3D00E3F12E /* Defaults */,
-				B1628B912CC260C0003D8DF3 /* SwiftUIIntrospect */,
 				1194E8842EA57D23009C82D6 /* SkyLightWindow */,
 				11F748722EC9DA9300F841DB /* Lottie */,
 				111BE95C2ECD71E10079DD4E /* AsyncXPCConnection */,
@@ -1113,7 +1110,6 @@
 				9A987A0E2C73CA8D005CA465 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				9A987A112C73CAA1005CA465 /* XCRemoteSwiftPackageReference "Pow" */,
 				B19016202CC15B3D00E3F12E /* XCRemoteSwiftPackageReference "Defaults" */,
-				B1628B902CC260C0003D8DF3 /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 				1194E8832EA57D23009C82D6 /* XCRemoteSwiftPackageReference "SkyLightWindow" */,
 				11F748712EC9DA9300F841DB /* XCRemoteSwiftPackageReference "lottie-spm" */,
 				111BE95B2ECD71E10079DD4E /* XCRemoteSwiftPackageReference "AsyncXPCConnection" */,
@@ -1801,14 +1797,6 @@
 				minimumVersion = 1.0.6;
 			};
 		};
-		B1628B902CC260C0003D8DF3 /* XCRemoteSwiftPackageReference "swiftui-introspect" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/siteline/swiftui-introspect";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 26.0.1;
-			};
-		};
 		B18654372C6F4990000B926A /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -1870,11 +1858,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9A987A0E2C73CA8D005CA465 /* XCRemoteSwiftPackageReference "swift-collections" */;
 			productName = Collections;
-		};
-		B1628B912CC260C0003D8DF3 /* SwiftUIIntrospect */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B1628B902CC260C0003D8DF3 /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
-			productName = SwiftUIIntrospect;
 		};
 		B18654382C6F4990000B926A /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;

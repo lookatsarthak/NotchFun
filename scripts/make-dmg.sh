@@ -33,11 +33,18 @@ DERIVED="$ROOT/.build/dmg"
 APP_PATH="$DERIVED/Build/Products/Release/$APP_NAME.app"
 
 echo "==> Building $APP_NAME $VERSION (Release)"
+# `clean build`, not `build`. This script reuses a fixed derived-data directory, so an
+# incremental build can link object files compiled against a previous version of a
+# dependency. That is not hypothetical: after Lottie went to 4.6.1 -- which changed
+# LottieAnimation.loadedFrom(url:session:closure:animationCache:) from returning Void to
+# returning URLSessionDataTask?, and so changed its mangled symbol -- a stale LottieView.o
+# failed to link with "Undefined symbols", while clean builds of the same source
+# succeeded. A release is worth the extra few minutes to be sure of what is in it.
 xcodebuild -scheme "$SCHEME" -configuration Release \
   -destination 'platform=macOS' \
   -derivedDataPath "$DERIVED" \
   CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES \
-  build
+  clean build
 
 [ -d "$APP_PATH" ] || { echo "error: $APP_PATH not found"; exit 1; }
 
