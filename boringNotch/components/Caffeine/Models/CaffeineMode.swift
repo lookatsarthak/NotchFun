@@ -10,6 +10,10 @@ import Foundation
 /// The distinction matters more than it looks: most "keep awake didn't work" reports
 /// are someone expecting their screen to stay on and getting only system wake, so both
 /// are offered and the display one is the default.
+///
+/// Neither mode survives closing the lid, and neither overrides a critical-battery
+/// sleep — see the limitations section in `PowerAssertion.swift` for why, and what
+/// adding lid support would actually cost.
 enum CaffeineMode: String, Codable, CaseIterable, Sendable {
     /// Display stays on, and the system stays awake with it.
     case displayAwake

@@ -74,8 +74,31 @@ struct CaffeineSettings: View {
                 Text("No shortcut is set by default, to avoid taking one another app already uses.")
             }
 
-            Section {} footer: {
-                Text("Caffeine cannot keep a MacBook awake with the lid closed — macOS only allows that with administrator privileges, which NotchFun does not ask for. Use an external display and power adapter for clamshell use.")
+            Section {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "laptopcomputer.slash")
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Closing the lid still sleeps the Mac")
+                        Text("Caffeine cannot prevent this. macOS only allows overriding lid sleep with administrator privileges, which NotchFun does not ask for. For clamshell use, connect an external display and power adapter.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "battery.25")
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("A critically low battery wins")
+                        Text("macOS may sleep the Mac to protect against data loss regardless of caffeine.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } header: {
+                Text("What caffeine cannot do")
             }
         }
         .accentColor(.effectiveAccent)

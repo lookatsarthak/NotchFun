@@ -21,6 +21,32 @@ protocol PowerAssertionHolding: AnyObject {
     func release()
 }
 
+/// # Known limitations of power assertions
+///
+/// These are properties of macOS, not gaps in this implementation. Both are surfaced to
+/// the user in Settings → Caffeine under "What caffeine cannot do".
+///
+/// ## Closing the lid always sleeps the Mac
+///
+/// No `IOPMAssertion` prevents lid-close sleep. The only mechanism that does is
+/// `pmset -a disablesleep 1`, which requires root, so implementing it would mean one of:
+///
+/// 1. A privileged helper installed with `SMJobBless` and an admin prompt on first use.
+///    Real, but it means shipping a root daemon — a large security surface for one
+///    feature, and something a clipboard-reading app should be slow to add.
+/// 2. Prompting for admin rights per toggle via `AuthorizationExecuteWithPrivileges`,
+///    which is deprecated and rightly distrusted.
+/// 3. Asking the user to run `sudo pmset -a disablesleep 1` themselves, which leaves
+///    their Mac unable to sleep at all until they undo it — worse than not offering it.
+///
+/// None of these is worth it yet. If it is ever revisited, option 1 is the only
+/// defensible route, and it should be opt-in, clearly labelled, and reversible.
+///
+/// ## Critical battery overrides everything
+///
+/// macOS may sleep the machine to protect against data loss regardless of any
+/// assertion. This is desirable and should not be worked around.
+///
 /// The real implementation, using `IOPMAssertionCreateWithName`.
 ///
 /// This is deliberately *not* the `caffeinate` command-line tool that most keep-awake
