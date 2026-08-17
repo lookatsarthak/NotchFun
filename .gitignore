@@ -57,3 +57,7 @@ build/
 # Local release artefacts
 dist/
 .build/
+
+# Shared schemes are the exception to the *.xcscheme rules above: they exist to be
+# committed. CI selects the test scheme by name, so it has to be in the repo.
+!*.xcodeproj/xcshareddata/xcschemes/*.xcscheme
