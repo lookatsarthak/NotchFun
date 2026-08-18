@@ -108,7 +108,15 @@ final class XPCHelperClient: NSObject {
         }
     }
     
-    nonisolated func isAccessibilityAuthorized() async -> Bool {
+    /// Whether Accessibility is authorized, or `nil` when the helper could not be
+    /// reached to find out.
+    ///
+    /// A failed XPC connection is not a denial, and collapsing the two is not harmless:
+    /// it is how the HUD replacement setting used to switch itself off after an update.
+    /// The first launch following an update is precisely when the helper is most likely
+    /// to be briefly unreachable, because macOS is revalidating the bundle that Sparkle
+    /// just replaced. Any caller that writes the answer to disk must handle `nil`.
+    nonisolated func accessibilityAuthorizationStatus() async -> Bool? {
         do {
             let service = await MainActor.run {
                 ensureRemoteService()
@@ -123,11 +131,21 @@ final class XPCHelperClient: NSObject {
             }
             return result
         } catch {
-            return false
+            return nil
         }
     }
+
+    /// Convenience for callers that only need a yes/no and do nothing irreversible with
+    /// it - showing a checkmark, or deciding whether to start the interceptor now.
+    /// Anything that persists the answer should use `accessibilityAuthorizationStatus()`.
+    nonisolated func isAccessibilityAuthorized() async -> Bool {
+        await accessibilityAuthorizationStatus() ?? false
+    }
     
-    nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
+    /// Asks for Accessibility, prompting if requested. `nil` means the helper could not
+    /// be reached, which is not the same as the user saying no - see
+    /// `accessibilityAuthorizationStatus()`.
+    nonisolated func ensureAccessibilityAuthorizationStatus(promptIfNeeded: Bool) async -> Bool? {
         do {
             let service = await MainActor.run {
                 ensureRemoteService()
@@ -142,8 +160,12 @@ final class XPCHelperClient: NSObject {
             }
             return result
         } catch {
-            return false
+            return nil
         }
+    }
+
+    nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
+        await ensureAccessibilityAuthorizationStatus(promptIfNeeded: promptIfNeeded) ?? false
     }
     
     // MARK: - Keyboard Brightness

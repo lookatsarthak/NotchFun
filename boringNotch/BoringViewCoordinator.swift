@@ -147,13 +147,22 @@ class BoringViewCoordinator: ObservableObject {
 
                     if change.newValue {
                         self.hudEnableTask = Task { @MainActor in
-                            let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+                            let granted = await XPCHelperClient.shared
+                                .ensureAccessibilityAuthorizationStatus(promptIfNeeded: true)
                             if Task.isCancelled { return }
 
-                            if granted {
+                            switch granted {
+                            case .some(true):
                                 await MediaKeyInterceptor.shared.start()
-                            } else {
+                            case .some(false):
+                                // The user declined the prompt, so put the toggle back
+                                // rather than leaving it on and doing nothing.
                                 Defaults[.hudReplacement] = false
+                            case .none:
+                                // The helper could not be reached. Keep the toggle where
+                                // the user just put it; the observer above starts the
+                                // interceptor once authorization is known.
+                                break
                             }
                         }
                     } else {
@@ -166,10 +175,31 @@ class BoringViewCoordinator: ObservableObject {
             helloAnimationRunning = firstLaunch
 
             if Defaults[.hudReplacement] {
-                let authorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
-                if !authorized {
-                    Defaults[.hudReplacement] = false
-                } else {
+                // Retry instead of trusting one answer. This runs at launch, and the
+                // launch right after an update is when the helper is most likely to be
+                // momentarily unreachable.
+                var status: Bool?
+                for attempt in 0..<3 {
+                    status = await XPCHelperClient.shared.accessibilityAuthorizationStatus()
+                    if status != nil { break }
+                    if attempt < 2 { try? await Task.sleep(for: .seconds(1)) }
+                }
+
+                // Deliberately never writes to Defaults[.hudReplacement] here.
+                //
+                // This runs at launch, and launch is the one moment the answer cannot be
+                // trusted: right after an update macOS is still revalidating the bundle
+                // Sparkle replaced, and the helper can report "not authorized", or fail
+                // to answer at all, while the grant is perfectly intact. The old code
+                // treated that as a decision and switched the setting off, so the user
+                // silently lost their preference and had to find it again in Settings.
+                //
+                // Not starting the interceptor is enough. If authorization is missing,
+                // nothing is intercepted; and the accessibilityAuthorizationChanged
+                // observer above starts it as soon as the grant shows up, with no further
+                // action from the user. Settings shows the authorization state separately,
+                // so an enabled toggle without permission is visible rather than silent.
+                if status == true {
                     await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
                 }
             }
