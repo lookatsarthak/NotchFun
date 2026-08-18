@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0CDD25EE5601C09446DAE6D7 /* CaffeineIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */; };
+		4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */; };
+		A4119AD23E521C13D3FA3FEF /* CaffeineNotchIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */; };
+		E42E6A6D49E6F38B9CF638C1 /* CaffeineIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */; };
+		B9EAA9B93FA609CFFF753BBF /* CaffeineIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */; };
 		53072201E4724796C6591CB4 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDAACCD3FF19535A03DF752 /* TestSupport.swift */; };
 		4A65F846848109D1DDE37DB0 /* CaffeineSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E410C3B9F801EF17969B1920 /* CaffeineSessionTests.swift */; };
 		1A43C16AC094C45427D6DA17 /* CaffeineManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA2251216AC0834B2486494 /* CaffeineManagerTests.swift */; };
@@ -245,6 +250,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicyTests.swift; sourceTree = "<group>"; };
+		296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineNotchIndicator.swift; sourceTree = "<group>"; };
+		758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicy.swift; sourceTree = "<group>"; };
 		4EDAACCD3FF19535A03DF752 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		E410C3B9F801EF17969B1920 /* CaffeineSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineSessionTests.swift; sourceTree = "<group>"; };
 		0EA2251216AC0834B2486494 /* CaffeineManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineManagerTests.swift; sourceTree = "<group>"; };
@@ -477,6 +485,7 @@
 			children = (
 				4EDAACCD3FF19535A03DF752 /* TestSupport.swift */,
 				E410C3B9F801EF17969B1920 /* CaffeineSessionTests.swift */,
+				089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */,
 				0EA2251216AC0834B2486494 /* CaffeineManagerTests.swift */,
 				78B4B9F0BD40215F39505BD8 /* ClipboardStorageTests.swift */,
 				0FB552834835472B8E06AC53 /* ClipboardCaptureTests.swift */,
@@ -491,6 +500,7 @@
 				A77D962BBB9B0415055D1EAD /* CaffeineAppBoundMenu.swift */,
 				5D453591EECCD11456846D20 /* CaffeineNotification.swift */,
 				10E7ED7053D328E44DF10854 /* CaffeineButton.swift */,
+				296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -510,6 +520,7 @@
 			children = (
 				467502465BF5DCBD4C019E64 /* Caffeine+Defaults.swift */,
 				28163AFE65D968A605B39270 /* CaffeineSession.swift */,
+				758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */,
 				8B0063C069368D4A1BC2A98B /* CaffeineDuration.swift */,
 				C97B210F388574A167196F62 /* CaffeineMode.swift */,
 			);
@@ -1163,6 +1174,7 @@
 			files = (
 				53072201E4724796C6591CB4 /* TestSupport.swift in Sources */,
 				4A65F846848109D1DDE37DB0 /* CaffeineSessionTests.swift in Sources */,
+				4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */,
 				1A43C16AC094C45427D6DA17 /* CaffeineManagerTests.swift in Sources */,
 				1E65879C8F1AF43D34EF07A0 /* ClipboardStorageTests.swift in Sources */,
 				0D917382EEE119F36749DDA9 /* ClipboardCaptureTests.swift in Sources */,
@@ -1185,6 +1197,7 @@
 				E38726C6C4CD33D01F9BFCF6 /* CaffeineDuration.swift in Sources */,
 				54CDB059359293C5DF65D2E9 /* CaffeineMode.swift in Sources */,
 				03B01989FA42DBFC112FD705 /* CaffeineSession.swift in Sources */,
+				0CDD25EE5601C09446DAE6D7 /* CaffeineIndicatorPolicy.swift in Sources */,
 				76F1341910536C5DE13DD7CA /* CaffeineManager.swift in Sources */,
 				EBEB092A5AFB8E4F1EA39AD9 /* CaffeineSessionStore.swift in Sources */,
 				18D6100D95B6DDA3436E12EA /* PowerAssertion.swift in Sources */,
@@ -1206,11 +1219,14 @@
 				AE87BFAB9EBCE883C3328361 /* CaffeineAppBoundMenu.swift in Sources */,
 				739344C814B4BE55392F609C /* CaffeineNotification.swift in Sources */,
 				AF6A0127720B9CFC06B64E75 /* CaffeineButton.swift in Sources */,
+				A4119AD23E521C13D3FA3FEF /* CaffeineNotchIndicator.swift in Sources */,
 				5AB46F0ED0AD7DBCE9F0D53A /* Caffeine+Defaults.swift in Sources */,
 				27B2A8EA16668B7FEDD6EC83 /* CaffeineManager.swift in Sources */,
 				0256C321F8A48EC0CA040E5F /* CaffeineSessionStore.swift in Sources */,
 				A2DE2571300B0428C3F6A91F /* PowerAssertion.swift in Sources */,
 				7F7DFE2832F6DE5EBEC89F4A /* CaffeineSession.swift in Sources */,
+				B9EAA9B93FA609CFFF753BBF /* CaffeineIndicatorPolicy.swift in Sources */,
+				E42E6A6D49E6F38B9CF638C1 /* CaffeineIndicatorPolicy.swift in Sources */,
 				F5DAAA96FB58AA29C0E60C02 /* CaffeineDuration.swift in Sources */,
 				2D473821334BC4E122351DDF /* CaffeineMode.swift in Sources */,
 				94B887751F2B6D6BCF74A1FC /* AnyTransition+NotchTab.swift in Sources */,

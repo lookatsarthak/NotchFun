@@ -175,6 +175,9 @@ extension Defaults.Keys {
     /// Show the caffeine button in the notch header. On by default — unlike clipboard
     /// history this has no permission, privacy or disk cost.
     static let caffeineButtonInNotch = Key<Bool>("caffeineButtonInNotch", default: true)
+    /// Shows a cup in the closed notch for as long as caffeine is on. On by default:
+    /// the point of caffeine is that it is easy to forget you left it running.
+    static let caffeineIndicatorInNotch = Key<Bool>("caffeineIndicatorInNotch", default: true)
     /// Show the "Caffeine on/off" indicator beside the closed notch.
     static let caffeineShowNotification = Key<Bool>("caffeineShowNotification", default: true)
     /// What a plain click keeps awake.

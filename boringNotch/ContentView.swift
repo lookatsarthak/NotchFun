@@ -58,6 +58,28 @@ struct ContentView: View {
         )
     }
 
+    /// Whether the closed notch is currently showing the caffeine cup.
+    ///
+    /// The single source of truth for both the width below and the view body. Restating
+    /// these conditions in two places is how the notch ends up wide with an empty slot.
+    private var showsCaffeineIndicator: Bool {
+        CaffeineIndicatorPolicy.showsIndicator(
+            .init(
+                isActive: caffeine.isActive,
+                settingEnabled: Defaults[.caffeineIndicatorInNotch],
+                notchIsClosed: vm.notchState == .closed,
+                hiddenForFullscreen: vm.hideOnClosed,
+                bannerIsShowing: coordinator.expandingView.show,
+                inlineHUDIsShowing: coordinator.sneakPeek.show && Defaults[.inlineHUD]
+                    && coordinator.sneakPeek.type != .music
+                    && coordinator.sneakPeek.type != .battery
+            )
+        )
+    }
+
+    /// One square slot beside the physical notch, the same size the face and album art use.
+    private var notchSlotSize: CGFloat { max(0, vm.effectiveClosedNotchHeight - 12) }
+
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
@@ -75,6 +97,14 @@ struct ContentView: View {
             && !vm.hideOnClosed
         {
             chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
+            // The face already reserves an empty slot on the left, so the cup goes there
+            // for free - no width change when caffeine turns on while idle.
+            return chinWidth
+        }
+
+        if showsCaffeineIndicator {
+            // Music uses both slots, and the bare notch has none, so the cup needs its own.
+            chinWidth += notchSlotSize + 10
         }
 
         return chinWidth
@@ -284,6 +314,11 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                      // A key the user just pressed outranks a caffeine banner. Battery stays
+                      // above both: it reports a power change nothing else announces.
+                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
+                          InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
+                              .transition(.opacity)
                       } else if coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
                                   && vm.notchState == .closed && Defaults[.caffeineShowNotification]
                       {
@@ -293,14 +328,31 @@ struct ContentView: View {
                               notchWidth: vm.closedNotchSize.width
                           )
                           .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
-                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
-                          InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
-                              .transition(.opacity)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
-                          MusicLiveActivity()
-                              .frame(alignment: .center)
+                          HStack(spacing: 0) {
+                              // Music owns both slots, so the cup gets its own on the far left.
+                              if showsCaffeineIndicator {
+                                  CaffeineNotchIndicator(size: notchSlotSize)
+                                      .padding(.trailing, 10)
+                                      .transition(.opacity.combined(with: .scale))
+                              }
+                              MusicLiveActivity()
+                          }
+                          .frame(alignment: .center)
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           BoringFaceAnimation()
+                      } else if showsCaffeineIndicator {
+                          // Nothing else is claiming the closed notch - the face is off and
+                          // no music is playing - so the cup stands on its own.
+                          HStack(spacing: 0) {
+                              CaffeineNotchIndicator(size: notchSlotSize)
+                                  .padding(.trailing, 10)
+                              Rectangle()
+                                  .fill(.black)
+                                  .frame(width: vm.closedNotchSize.width - 20)
+                          }
+                          .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                          .transition(.opacity)
                        } else if vm.notchState == .open {
                            BoringHeader()
                                .frame(height: max(24, vm.effectiveClosedNotchHeight))
@@ -386,12 +438,14 @@ struct ContentView: View {
     func BoringFaceAnimation() -> some View {
         HStack {
             HStack {
-                Rectangle()
-                    .fill(.clear)
-                    .frame(
-                        width: max(0, vm.effectiveClosedNotchHeight - 12),
-                        height: max(0, vm.effectiveClosedNotchHeight - 12)
-                    )
+                // This slot is otherwise empty, so the cup costs no extra notch width here.
+                if showsCaffeineIndicator {
+                    CaffeineNotchIndicator(size: notchSlotSize)
+                } else {
+                    Rectangle()
+                        .fill(.clear)
+                        .frame(width: notchSlotSize, height: notchSlotSize)
+                }
                 Rectangle()
                     .fill(.black)
                     .frame(width: vm.closedNotchSize.width - 20)

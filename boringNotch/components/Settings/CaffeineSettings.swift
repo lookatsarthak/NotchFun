@@ -59,11 +59,16 @@ struct CaffeineSettings: View {
                 Defaults.Toggle(key: .caffeineShowNotification) {
                     Text("Show an indicator when it turns on or off")
                 }
+                Defaults.Toggle(key: .caffeineIndicatorInNotch) {
+                    Text("Show a cup in the notch while active")
+                }
                 Defaults.Toggle(key: .caffeineActivateOnLaunch) {
                     Text("Turn on when NotchFun launches")
                 }
             } header: {
                 Text("Appearance")
+            } footer: {
+                Text("The cup appears in the closed notch and steps aside for volume, brightness and battery indicators, returning when they disappear.")
             }
 
             Section {

@@ -39,7 +39,7 @@ struct CaffeineNotification: View {
                         .foregroundStyle(.gray)
                 }
                 Image(systemName: isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
-                    .foregroundStyle(isActive ? Color.effectiveAccent : .gray)
+                    .foregroundStyle(isActive ? .white : .gray)
                     .imageScale(.medium)
             }
             .frame(width: 76, alignment: .trailing)
