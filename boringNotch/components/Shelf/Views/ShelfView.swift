@@ -25,6 +25,21 @@ struct ShelfView: View {
                     handleDrop(providers: providers)
                 }
         }
+        .overlay(alignment: .bottom) {
+            if let error = tvm.lastDropError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+                    .padding(.bottom, 4)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.smooth(duration: 0.2), value: tvm.lastDropError)
         // Bind Quick Look to shelf selection
         .onChange(of: selection.selectedIDs) {
             updateQuickLookSelection()

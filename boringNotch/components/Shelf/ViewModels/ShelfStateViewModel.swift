@@ -17,6 +17,13 @@ final class ShelfStateViewModel: ObservableObject {
 
     @Published var isLoading: Bool = false
 
+    /// Why the last drop added nothing, shown briefly in the shelf.
+    ///
+    /// A drop that resolves to no items used to be indistinguishable from a drop that
+    /// never registered, which is exactly how a real bug went unnoticed: the item was
+    /// discarded and nothing was written anywhere.
+    @Published var lastDropError: String?
+
     var isEmpty: Bool { items.isEmpty }
 
     // Queue for deferred bookmark updates to avoid publishing during view updates
@@ -81,10 +88,27 @@ final class ShelfStateViewModel: ObservableObject {
         guard !providers.isEmpty else { return }
         isLoading = true
         Task { [weak self] in
+            ShelfDropService.lastFailureReason = nil
             let dropped = await ShelfDropService.items(from: providers)
             await MainActor.run {
                 self?.add(dropped)
                 self?.isLoading = false
+                if dropped.isEmpty {
+                    self?.reportDropFailure(ShelfDropService.lastFailureReason)
+                }
+            }
+        }
+    }
+
+    /// Shows why a drop produced nothing, then clears it again.
+    private func reportDropFailure(_ reason: String?) {
+        lastDropError = reason ?? "That item could not be added to the shelf."
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            await MainActor.run {
+                if self?.lastDropError == (reason ?? "That item could not be added to the shelf.") {
+                    self?.lastDropError = nil
+                }
             }
         }
     }

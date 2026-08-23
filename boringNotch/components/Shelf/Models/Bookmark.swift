@@ -16,20 +16,39 @@ struct Bookmark: Sendable, Equatable, Codable {
     }
 
     init(url: URL) throws {
-        guard url.isFileURL, FileManager.default.fileExists(atPath: url.path) else {
-            throw NSError(domain: "Bookmark", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not a valid file URL or file does not exist at \(url.path)"])
+        guard url.isFileURL else {
+            throw NSError(domain: "Bookmark", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Not a file URL: \(url.absoluteString)"
+            ])
         }
-        do {
-            let bookmark = try url.bookmarkData(
-                options: .withSecurityScope,
-                includingResourceValuesForKeys: nil,
-                relativeTo: nil
-            )
-            NSLog("✅ Successfully created bookmark for \(url.path)")
-            self.data = bookmark
-        } catch {
-            NSLog("❌ Failed to create bookmark for \(url.path): \(error.localizedDescription)")
-            throw error
+
+        // Access has to be started before anything touches the file, including the
+        // existence check below.
+        //
+        // A file dropped onto the shelf arrives with a sandbox extension attached to
+        // this URL. Nothing here used to consume it - this was the one place in the
+        // app that used a security-scoped URL without starting access - so both
+        // `fileExists` and `bookmarkData` were asking about a file the sandbox would
+        // not let us see. `fileExists` then returns false for a file that is plainly
+        // there, and the item is discarded before `bookmarkData` is even reached.
+        // Whether that happened came down to timing, which is why drops failed
+        // intermittently rather than always.
+        self.data = try url.accessSecurityScopedResource { url -> Data in
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                throw NSError(domain: "Bookmark", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "No file at \(url.path), or it is not readable from the sandbox"
+                ])
+            }
+            do {
+                return try url.bookmarkData(
+                    options: .withSecurityScope,
+                    includingResourceValuesForKeys: nil,
+                    relativeTo: nil
+                )
+            } catch {
+                NSLog("Bookmark: could not create one for \(url.path): \(error)")
+                throw error
+            }
         }
     }
 
