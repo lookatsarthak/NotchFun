@@ -39,6 +39,11 @@ struct ClipboardKeyInterpreterTests {
     func navigation() {
         #expect(interpret(kVK_Return) == .confirm)
         #expect(interpret(kVK_ANSI_KeypadEnter) == .confirm)
+        // Option-Return pastes without formatting. This shipped unreachable: the guard
+        // that passes option combos through to the app underneath sat above the case
+        // that handles Return, so it swallowed this one too.
+        #expect(interpret(kVK_Return, .maskAlternate) == .confirmAsPlainText)
+        #expect(interpret(kVK_ANSI_KeypadEnter, .maskAlternate) == .confirmAsPlainText)
         #expect(interpret(kVK_Escape) == .cancel)
         #expect(interpret(kVK_Delete) == .backspace)
         #expect(interpret(kVK_UpArrow) == .moveUp)
