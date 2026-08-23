@@ -103,7 +103,7 @@ struct ShelfItemView: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 56, height: 56)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: NotchRadius.item, style: .continuous))
             .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
     }
 
@@ -118,10 +118,10 @@ struct ShelfItemView: View {
     }
 
     private var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
+        RoundedRectangle(cornerRadius: NotchRadius.item, style: .continuous)
             .fill(backgroundColor)
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: NotchRadius.item, style: .continuous)
                     .strokeBorder(
                         strokeColor,
                         lineWidth: strokeWidth

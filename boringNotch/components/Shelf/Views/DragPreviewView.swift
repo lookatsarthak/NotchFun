@@ -11,7 +11,7 @@ struct DragPreviewView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: NotchRadius.item, style: .continuous))
 
             Text(displayName)
                 .font(.system(size: 12, weight: .medium))
@@ -21,7 +21,7 @@ struct DragPreviewView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 4).fill(Color.accentColor))
+                .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(Color.accentColor))
                 .frame(alignment: .top)
         }
         .frame(width: 105)

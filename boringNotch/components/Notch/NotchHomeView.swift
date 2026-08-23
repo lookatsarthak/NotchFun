@@ -46,7 +46,8 @@ struct AlbumArtView: View {
                 RoundedRectangle(
                     cornerRadius: Defaults[.cornerRadiusScaling]
                         ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                        : MusicPlayerImageSizes.cornerRadiusInset.closed)
+                        : MusicPlayerImageSizes.cornerRadiusInset.closed,
+                    style: .continuous)
             )
             .aspectRatio(1, contentMode: .fit)
             .scaleEffect(x: 1.3, y: 1.4)
@@ -91,7 +92,8 @@ struct AlbumArtView: View {
                 RoundedRectangle(
                     cornerRadius: Defaults[.cornerRadiusScaling]
                         ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                        : MusicPlayerImageSizes.cornerRadiusInset.closed)
+                        : MusicPlayerImageSizes.cornerRadiusInset.closed,
+                    style: .continuous)
             )
     }
 
@@ -555,7 +557,7 @@ struct CustomSlider: View {
                     .fill(color)
                     .frame(width: filledTrackWidth, height: height)
             }
-            .cornerRadius(height / 2)
+            .clipShape(RoundedRectangle(cornerRadius: height / 2, style: .continuous))
             .frame(height: 10)
             .contentShape(Rectangle())
             .gesture(

@@ -34,7 +34,7 @@ struct ShelfView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+                    .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                     .padding(.bottom, 4)
                     .transition(.opacity)
             }
@@ -83,7 +83,7 @@ struct ShelfView: View {
     }
 
     var panel: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: NotchRadius.panel, style: .continuous)
             .stroke(
                 vm.dragDetectorTargeting
                     ? Color.accentColor.opacity(0.9)

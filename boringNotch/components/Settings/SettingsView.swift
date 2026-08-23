@@ -1266,7 +1266,7 @@ struct Appearance: View {
                             selectedListVisualizer != nil
                                 ? selectedListVisualizer == visualizer
                                     ? Color.effectiveAccent : Color.clear : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 5)
+                            in: RoundedRectangle(cornerRadius: 5, style: .continuous)
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -1580,7 +1580,7 @@ struct Advanced: View {
                                 .resizable()
                                 .frame(width: 80, height: 80)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 20, style: .circular)
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                                         .strokeBorder(
                                             icon == selectedIcon ? Color.effectiveAccent : .clear,
                                             lineWidth: 2.5
@@ -1756,7 +1756,7 @@ func proFeatureBadge() -> some View {
         .padding(.vertical, 3)
         .padding(.horizontal, 6)
         .background(
-            RoundedRectangle(cornerRadius: 4).stroke(
+            RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(
                 Color(red: 0.545, green: 0.196, blue: 0.98), lineWidth: 1))
 }
 

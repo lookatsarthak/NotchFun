@@ -72,11 +72,11 @@ struct MusicSlotConfigurationView: View {
             }
             .padding(12)
             .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(Color(NSColor.controlBackgroundColor))
                         .frame(width: 56, height: 56)
 
@@ -84,8 +84,8 @@ struct MusicSlotConfigurationView: View {
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(Color.primary)
                 }
-                .cornerRadius(10)
-                .contentShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .onDrop(of: [UTType.plainText.identifier], isTargeted: nil) { providers in
                     return handleDropOnTrash(providers)
                 }
@@ -125,7 +125,7 @@ struct MusicSlotConfigurationView: View {
                         ForEach(MusicControlButton.pickerOptions, id: \.self) { control in
                             VStack(spacing: 6) {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                                         .fill(Color(NSColor.controlBackgroundColor))
                                         .frame(width: 44, height: 44)
 
@@ -136,8 +136,8 @@ struct MusicSlotConfigurationView: View {
                                             .frame(width: 28, height: 28)
                                     }
                                 }
-                                .cornerRadius(8)
-                                .contentShape(RoundedRectangle(cornerRadius: 8))
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                 .onDrag {
                                     return NSItemProvider(object: NSString(string: "control:\(control.rawValue)"))
                                 }
@@ -203,13 +203,13 @@ struct MusicSlotConfigurationView: View {
         }
         .padding(8)
         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-        .cornerRadius(6)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     @ViewBuilder
     private func slotPreview(for slot: MusicControlButton) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(NSColor.controlBackgroundColor))
                 .frame(width: 44, height: 44)
 
@@ -219,14 +219,15 @@ struct MusicSlotConfigurationView: View {
                     .foregroundStyle(previewIconColor(for: slot))
                     .frame(width: 28, height: 28)
             } else {
-                RoundedRectangle(cornerRadius: 6)
+                // 32pt centred inside the 44pt tile above, so the gap is 6 on every side.
+                RoundedRectangle(cornerRadius: NotchRadius.concentric(outer: 8, inset: 6), style: .continuous)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .foregroundStyle(Color.secondary.opacity(0.3))
                     .frame(width: 32, height: 32)
             }
         }
-        .cornerRadius(8)
-        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func previewIconColor(for slot: MusicControlButton) -> Color {
