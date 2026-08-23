@@ -25,9 +25,14 @@ struct HoverButton: View {
                 .contentShape(Rectangle())
                 .frame(width: size, height: size)
                 .overlay {
+                    // Glass only while hovered, so the control appears to lift off the
+                    // notch rather than being cut into it. The notch surface underneath
+                    // stays opaque black — see ClearConfirmButton for why that matters.
                     Capsule()
-                        .fill(isHovering ? Color.gray.opacity(0.2) : .clear)
+                        .fill(.clear)
                         .frame(width: size, height: size)
+                        .glassEffect(.regular.interactive(), in: .capsule)
+                        .opacity(isHovering ? 1 : 0)
                         .overlay {
                             Image(systemName: icon)
                                 .foregroundColor(iconColor)

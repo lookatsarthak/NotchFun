@@ -11,9 +11,24 @@ import SwiftUI
 /// the hover-to-open and drag-to-shelf gestures that own the closed notch. Toggling
 /// caffeine is the header button's job, or the right-click menu's.
 struct CaffeineNotchIndicator: View {
+    /// Shared with `CaffeineNotification` so the cup in the banner and the cup that stays
+    /// behind are the same object to SwiftUI, and one flies into the other instead of the
+    /// pair cross-fading.
+    static let morphID = "caffeineCup"
+
     let size: CGFloat
+    /// Optional so previews and any non-morphing use site do not have to invent one.
+    var namespace: Namespace.ID?
 
     var body: some View {
+        if let namespace {
+            cup.matchedGeometryEffect(id: Self.morphID, in: namespace)
+        } else {
+            cup
+        }
+    }
+
+    private var cup: some View {
         Image(systemName: "cup.and.saucer.fill")
             .resizable()
             .aspectRatio(contentMode: .fit)

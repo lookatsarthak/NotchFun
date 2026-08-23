@@ -25,7 +25,14 @@ struct ClearConfirmButton: View {
 
     @State private var confirming = false
     @State private var armedAt: Date?
-    @State private var confirmWidth: CGFloat = 0
+    /// Starts at the idle diameter rather than zero.
+    ///
+    /// The real width arrives from `widthReader` about a millisecond after the control
+    /// appears, so in practice a press always has a measured target. Zero would collapse
+    /// `max(confirmWidth + 16, idleDiameter)` back to the idle size, leaving the capsule
+    /// nothing to grow into if this is ever placed somewhere it can be clicked in its
+    /// first frame.
+    @State private var confirmWidth: CGFloat = 26
 
     private let idleDiameter: CGFloat = 26
 
@@ -65,10 +72,14 @@ struct ClearConfirmButton: View {
                 width: confirming ? max(confirmWidth + 16, idleDiameter) : idleDiameter,
                 height: idleDiameter
             )
-            .background(
-                Capsule().fill(
-                    confirming ? Color.red.opacity(0.15) : Color.white.opacity(0.08)
-                )
+            // Glass, because this capsule sits *on* the notch rather than being part of
+            // it. The shell itself stays opaque black: the whole illusion is that the
+            // physical notch is growing, and anything translucent on that surface would
+            // let the wallpaper through and break it on the first frame. Controls resting
+            // on top are the opposite case — they should read as separate objects.
+            .glassEffect(
+                .regular.tint(confirming ? Color.red.opacity(0.25) : nil),
+                in: .capsule
             )
             // Without this the confirm text spills out of the collapsed capsule while it
             // is still fading, since it stays in the layout to be measured.

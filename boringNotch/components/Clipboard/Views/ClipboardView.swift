@@ -44,8 +44,7 @@ struct ClipboardView: View {
     ///
     /// Deletion here is unrecoverable, so a single tap only arms it: the button becomes a
     /// labelled confirmation naming how many entries would go, and a second tap within a
-    /// few seconds does it. Option-click skips the confirmation once you know the button.
-    /// Pinned entries always survive - pinning is a deliberate act, and the count shown
+    /// few seconds does it. Pinned entries always survive - pinning is a deliberate act, and the count shown
     /// excludes them.
     @ViewBuilder
     private var clearHistoryControl: some View {

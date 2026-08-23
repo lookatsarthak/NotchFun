@@ -19,6 +19,10 @@ struct CaffeineNotification: View {
     let isActive: Bool
     let detail: String?
     let notchWidth: CGFloat
+    /// Shared with `CaffeineNotchIndicator`. When the banner goes away the cup does not
+    /// fade out and a second one fade in — the one cup travels to where it lives next.
+    /// Only matched while the session is on: an "off" banner has nothing to hand over to.
+    var namespace: Namespace.ID?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -38,11 +42,21 @@ struct CaffeineNotification: View {
                         .font(.caption2)
                         .foregroundStyle(.gray)
                 }
-                Image(systemName: isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
-                    .foregroundStyle(isActive ? .white : .gray)
-                    .imageScale(.medium)
+                cup
             }
             .frame(width: 76, alignment: .trailing)
+        }
+    }
+
+    @ViewBuilder
+    private var cup: some View {
+        let image = Image(systemName: isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
+            .foregroundStyle(isActive ? .white : .gray)
+            .imageScale(.medium)
+        if let namespace, isActive {
+            image.matchedGeometryEffect(id: CaffeineNotchIndicator.morphID, in: namespace)
+        } else {
+            image
         }
     }
 }

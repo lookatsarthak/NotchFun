@@ -32,6 +32,7 @@ struct ContentView: View {
     @State private var haptics: Bool = false
 
     @Namespace var albumArtNamespace
+    @Namespace private var caffeineNamespace
 
     @Default(.useMusicVisualizer) var useMusicVisualizer
 
@@ -324,7 +325,8 @@ struct ContentView: View {
                           CaffeineNotification(
                               isActive: caffeine.isActive,
                               detail: caffeine.session?.duration.shortTitle,
-                              notchWidth: vm.closedNotchSize.width
+                              notchWidth: vm.closedNotchSize.width,
+                              namespace: caffeineNamespace
                           )
                           .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
@@ -338,7 +340,7 @@ struct ContentView: View {
                               // side of it are the same width. Adding the cup to one side alone
                               // slid the whole row across and put the artwork over the notch.
                               if showsCaffeineIndicator {
-                                  CaffeineNotchIndicator(size: notchSlotSize)
+                                  CaffeineNotchIndicator(size: notchSlotSize, namespace: caffeineNamespace)
                                       .padding(.trailing, 10)
                                       .transition(.opacity.combined(with: .scale))
                               }
@@ -355,7 +357,7 @@ struct ContentView: View {
                           // Nothing else is claiming the closed notch - the face is off and
                           // no music is playing - so the cup stands on its own.
                           HStack(spacing: 0) {
-                              CaffeineNotchIndicator(size: notchSlotSize)
+                              CaffeineNotchIndicator(size: notchSlotSize, namespace: caffeineNamespace)
                                   .padding(.trailing, 10)
                               Rectangle()
                                   .fill(.black)
@@ -487,7 +489,7 @@ struct ContentView: View {
             HStack {
                 // This slot is otherwise empty, so the cup costs no extra notch width here.
                 if showsCaffeineIndicator {
-                    CaffeineNotchIndicator(size: notchSlotSize)
+                    CaffeineNotchIndicator(size: notchSlotSize, namespace: caffeineNamespace)
                 } else {
                     Rectangle()
                         .fill(.clear)
