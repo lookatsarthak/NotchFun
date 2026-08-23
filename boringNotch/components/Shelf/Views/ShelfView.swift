@@ -39,7 +39,7 @@ struct ShelfView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.smooth(duration: 0.2), value: tvm.lastDropError)
+        .animation(NotchMotion.content, value: tvm.lastDropError)
         // Bind Quick Look to shelf selection
         .onChange(of: selection.selectedIDs) {
             updateQuickLookSelection()

@@ -41,8 +41,8 @@ struct ShelfItemView: View {
                 .padding(.horizontal, 5)
                 .background(backgroundView)
                 .contentShape(Rectangle())
-                .animation(.easeInOut(duration: 0.1), value: debouncedDropTarget)
-                .animation(.easeInOut(duration: 0.1), value: isSelected)
+                .animation(NotchMotion.control, value: debouncedDropTarget)
+                .animation(NotchMotion.control, value: isSelected)
 
                 DraggableClickHandler(
                     item: item,

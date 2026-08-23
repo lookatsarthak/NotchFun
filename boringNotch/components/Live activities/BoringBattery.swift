@@ -14,12 +14,15 @@ struct BatteryView: View {
     var icon: String = "battery.0"
 
     /// Determines the icon to display when charging.
+    ///
+    /// Both are narrow upright symbols: they stand beside the numerals inside the glyph,
+    /// where the landscape plug would cost more width than all three digits together.
     var iconStatus: String {
         if isCharging {
-            return "bolt"
+            return "bolt.fill"
         }
         else if isPluggedIn {
-            return "plug"
+            return "powerplug.portrait.fill"
         }
         else {
             return ""
@@ -39,6 +42,58 @@ struct BatteryView: View {
         }
     }
 
+    /// The interior the fill sweeps across, and the box the readout has to live in.
+    private var cavityWidth: CGFloat { batteryWidth - 6 }
+
+    private var fillWidth: CGFloat {
+        CGFloat(min(max(levelBattery, 0), 100) / 100) * cavityWidth
+    }
+
+    /// Proportional rather than the old `(batteryWidth - 2.75) - 18`, which lands on the
+    /// same height at the 30pt the app draws but collapses below the digits' cap height at
+    /// smaller widths — the numerals sit on this bar, so it has to stay taller than they are.
+    private var fillHeight: CGFloat { batteryWidth * 0.31 }
+
+    private var showsLevel: Bool { Defaults[.showBatteryPercentage] }
+
+    private var showsStatus: Bool {
+        iconStatus != "" && (isForNotification || Defaults[.showPowerStatusIcons])
+    }
+
+    /// Condensed and rounded because three digits have to clear a cavity around 24pt wide,
+    /// bold because the counters of 8 and 0 close up at this size against a lit fill.
+    /// Monospaced digits so the readout does not re-centre itself on every percent.
+    private var readoutFont: Font {
+        .system(size: batteryWidth * 0.3, weight: .bold, design: .rounded)
+            .width(.condensed)
+            .monospacedDigit()
+    }
+
+    /// Smaller than the numerals so the two carry equal optical weight: a symbol set at the
+    /// digits' point size stands as tall as their ascenders and takes over the cavity.
+    private var symbolFont: Font {
+        .system(size: batteryWidth * 0.23, weight: .bold)
+    }
+
+    /// The digits scale rather than truncate: a bolt beside "100" is the one combination
+    /// that outgrows the cavity, and the symbol is the half that must stay unambiguous.
+    private func readout(_ color: Color) -> some View {
+        HStack(spacing: 0) {
+            if showsStatus {
+                Image(systemName: iconStatus)
+                    .font(symbolFont)
+            }
+            if showsLevel {
+                Text(verbatim: "\(Int(levelBattery.rounded()))")
+                    .font(readoutFont)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        }
+        .foregroundStyle(color)
+        .frame(width: cavityWidth)
+    }
+
     var body: some View {
         ZStack(alignment: .leading) {
 
@@ -54,25 +109,27 @@ struct BatteryView: View {
             RoundedRectangle(cornerRadius: 2.5)
                 .fill(batteryColor)
                 .frame(
-                    width: CGFloat(((CGFloat(CFloat(levelBattery)) / 100) * (batteryWidth - 6))),
-                    height: (batteryWidth - 2.75) - 18
+                    width: fillWidth,
+                    height: fillHeight
                 )
                 .padding(.leading, 2)
 
-            if iconStatus != "" && (isForNotification || Defaults[.showPowerStatusIcons]) {
-                ZStack {
-                    Image(iconStatus)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .foregroundColor(.white)
-                        .frame(
-                            width: 17,
-                            height: 17
-                        )
+            if showsLevel || showsStatus {
+                // Drawn twice because the cavity is two-toned: the white copy carries the
+                // unfilled side, and the copy clipped to the fill flips to black, so the
+                // readout survives the boundary passing through the middle of a digit.
+                ZStack(alignment: .leading) {
+                    readout(.white)
+                    readout(.black)
+                        .mask(alignment: .leading) {
+                            Rectangle()
+                                .frame(width: fillWidth)
+                        }
                 }
-                .frame(width: batteryWidth, height: batteryWidth)
+                .padding(.leading, 2)
             }
         }
+        .animation(NotchMotion.content, value: levelBattery)
     }
 }
 
@@ -80,7 +137,7 @@ struct ScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
+            .animation(NotchMotion.control, value: configuration.isPressed)
     }
 }
 
@@ -192,21 +249,14 @@ struct BoringBatteryView: View {
                 showPopupMenu.toggle()
             }
         }) {
-            HStack {
-                if Defaults[.showBatteryPercentage] {
-                    Text("\(Int32(levelBattery))%")
-                        .font(.callout)
-                        .foregroundStyle(.white)
-                }
-                BatteryView(
-                    levelBattery: levelBattery,
-                    isPluggedIn: isPluggedIn,
-                    isCharging: isCharging,
-                    isInLowPowerMode: isInLowPowerMode,
-                    batteryWidth: batteryWidth,
-                    isForNotification: isForNotification
-                )
-            }
+            BatteryView(
+                levelBattery: levelBattery,
+                isPluggedIn: isPluggedIn,
+                isCharging: isCharging,
+                isInLowPowerMode: isInLowPowerMode,
+                batteryWidth: batteryWidth,
+                isForNotification: isForNotification
+            )
         }
         .buttonStyle(ScaleButtonStyle())
         .popover(
@@ -264,4 +314,31 @@ struct BoringBatteryView: View {
         timeToFullCharge: 10,
         isForNotification: false
     ).frame(width: 200, height: 200)
+}
+
+#Preview("Levels") {
+    VStack(alignment: .leading, spacing: 8) {
+        ForEach([Float(5), 42, 68, 100], id: \.self) { level in
+            HStack(spacing: 16) {
+                BatteryView(
+                    levelBattery: level,
+                    isPluggedIn: false,
+                    isCharging: false,
+                    isInLowPowerMode: false,
+                    batteryWidth: 30,
+                    isForNotification: false
+                )
+                BatteryView(
+                    levelBattery: level,
+                    isPluggedIn: true,
+                    isCharging: true,
+                    isInLowPowerMode: false,
+                    batteryWidth: 30,
+                    isForNotification: true
+                )
+            }
+        }
+    }
+    .padding(24)
+    .background(.black)
 }

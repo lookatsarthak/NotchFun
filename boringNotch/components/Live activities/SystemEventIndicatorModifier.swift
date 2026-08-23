@@ -133,13 +133,13 @@ struct DraggableProgressBar: View {
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { gesture in
-                            withAnimation(.smooth(duration: 0.3)) {
+                            withAnimation(NotchMotion.content) {
                                 isDragging = true
                                 updateValue(gesture: gesture, in: geo)
                             }
                         }
                         .onEnded { _ in
-                            withAnimation(.smooth(duration: 0.3)) {
+                            withAnimation(NotchMotion.content) {
                                 isDragging = false
                             }
                         }

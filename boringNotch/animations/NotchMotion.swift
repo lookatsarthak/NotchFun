@@ -43,12 +43,20 @@ enum NotchMotion {
     /// Full-panel swaps outside the notch: onboarding steps, settings panes.
     static var page: Animation { resolve(.spring(duration: 0.40, bounce: 0)) }
 
+    /// Following a pointer through a drag.
+    ///
+    /// Deliberately not one of the tokens above. Those describe motion the app starts and
+    /// finishes on its own; this one is being driven by a finger and has to stay glued to
+    /// it, which is a different job with different tuning. It lives here so there is still
+    /// only one file to look in.
+    static var drag: Animation { resolve(.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)) }
+
     /// How far behind the shell the content follows when the notch opens.
     ///
     /// This is what makes the notch read as one object rather than a box with things in
     /// it: the container starts moving first and the content arrives a beat later. On
     /// close there is no delay — the content leaves first and the shell follows it down.
-    static let contentLead: Duration = .milliseconds(60)
+    static let contentLead: TimeInterval = 0.06
 
     // MARK: - Accessibility
 

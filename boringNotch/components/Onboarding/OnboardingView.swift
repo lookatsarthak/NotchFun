@@ -30,7 +30,7 @@ struct OnboardingView: View {
             switch step {
             case .welcome:
                 WelcomeView {
-                    withAnimation(.easeInOut(duration: 0.6)) {
+                    withAnimation(NotchMotion.page) {
                         step = .cameraPermission
                     }
                 }
@@ -45,13 +45,13 @@ struct OnboardingView: View {
                     onAllow: {
                         Task {
                             await requestCameraPermission()
-                            withAnimation(.easeInOut(duration: 0.6)) {
+                            withAnimation(NotchMotion.page) {
                                 step = .calendarPermission
                             }
                         }
                     },
                     onSkip: {
-                        withAnimation(.easeInOut(duration: 0.6)) {
+                        withAnimation(NotchMotion.page) {
                             step = .calendarPermission
                         }
                     }
@@ -67,13 +67,13 @@ struct OnboardingView: View {
                     onAllow: {
                         Task {
                                 await requestCalendarPermission()
-                                withAnimation(.easeInOut(duration: 0.6)) {
+                                withAnimation(NotchMotion.page) {
                                     step = .remindersPermission
                                 }
                         }
                     },
                     onSkip: {
-                            withAnimation(.easeInOut(duration: 0.6)) {
+                            withAnimation(NotchMotion.page) {
                                 step = .remindersPermission
                             }
                     }
@@ -89,13 +89,13 @@ struct OnboardingView: View {
                         onAllow: {
                             Task {
                                 await requestRemindersPermission()
-                                withAnimation(.easeInOut(duration: 0.6)) {
+                                withAnimation(NotchMotion.page) {
                                     step = .accessibilityPermission
                                 }
                             }
                         },
                         onSkip: {
-                            withAnimation(.easeInOut(duration: 0.6)) {
+                            withAnimation(NotchMotion.page) {
                                 step = .accessibilityPermission
                             }
                         }
@@ -111,13 +111,13 @@ struct OnboardingView: View {
                     onAllow: {
                         Task {
                             await requestAccessibilityPermission()
-                            withAnimation(.easeInOut(duration: 0.6)) {
+                            withAnimation(NotchMotion.page) {
                                 step = .musicPermission
                             }
                         }
                     },
                     onSkip: {
-                        withAnimation(.easeInOut(duration: 0.6)) {
+                        withAnimation(NotchMotion.page) {
                             step = .musicPermission
                         }
                     }
@@ -127,7 +127,7 @@ struct OnboardingView: View {
             case .musicPermission:
                 MusicControllerSelectionView(
                     onContinue: {
-                        withAnimation(.easeInOut(duration: 0.6)) {
+                        withAnimation(NotchMotion.page) {
                             BoringViewCoordinator.shared.firstLaunch = false
                             step = .finished
                         }

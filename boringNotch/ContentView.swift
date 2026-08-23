@@ -38,7 +38,7 @@ struct ContentView: View {
     @Default(.showNotHumanFace) var showNotHumanFace
 
     // Shared interactive spring for movement/resizing to avoid conflicting animations
-    private let animationSpring = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)
+    private let animationSpring = NotchMotion.drag
 
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
@@ -150,14 +150,12 @@ struct ContentView: View {
                 
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
-                    .conditionalModifier(true) { view in
-                        let openAnimation = Animation.spring(response: 0.42, dampingFraction: 0.8, blendDuration: 0)
-                        let closeAnimation = Animation.spring(response: 0.45, dampingFraction: 1.0, blendDuration: 0)
-                        
-                        return view
-                            .animation(vm.notchState == .open ? openAnimation : closeAnimation, value: vm.notchState)
-                            .animation(.smooth, value: gestureProgress)
-                    }
+                    // Opening overshoots slightly and closing settles flat. The asymmetry
+                    // is the point: the shell should feel physical on the way out and
+                    // decisive on the way back.
+                    .animation(vm.notchState == .open ? NotchMotion.shellOpen : NotchMotion.shellClose,
+                               value: vm.notchState)
+                    .animation(NotchMotion.content, value: gestureProgress)
                     .contentShape(Rectangle())
                     .onHover { hovering in
                         handleHover(hovering)
@@ -241,7 +239,7 @@ struct ContentView: View {
             y: gestureScale,
             anchor: .top
         )
-        .animation(.smooth, value: gestureProgress)
+        .animation(NotchMotion.content, value: gestureProgress)
         .background(dragDetector)
         .preferredColorScheme(.dark)
         .environmentObject(vm)
@@ -427,19 +425,34 @@ struct ContentView: View {
                     switch coordinator.currentView {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
-                            .transition(.notchTab.animation(.smooth(duration: 0.25)))
+                            .transition(.notchTab.animation(NotchMotion.content))
                     case .shelf:
                         ShelfView()
-                            .transition(.notchTab.animation(.smooth(duration: 0.25)))
+                            .transition(.notchTab.animation(NotchMotion.content))
                     case .clipboard:
                         ClipboardView()
-                            .transition(.notchTab.animation(.smooth(duration: 0.25)))
+                            .transition(.notchTab.animation(NotchMotion.content))
                     }
                 }
+                // The container leads, the content follows.
+                //
+                // This is what makes the notch read as one object growing rather than a
+                // box with things appearing inside it. Opening, the shell starts moving
+                // first and the content arrives a beat behind it. Closing, the content
+                // goes first and the shell follows it down - so the notch is never seen
+                // shrinking around content that is still there.
+                //
+                // Both halves finish inside the shell's own window: insertion runs
+                // 60-340ms against a 420ms open, removal is done at 200ms against a 450ms
+                // close.
                 .transition(
-                    .scale(scale: 0.8, anchor: .top)
-                    .combined(with: .opacity)
-                    .animation(.smooth(duration: 0.35))
+                    .asymmetric(
+                        insertion: NotchMotion.transition(
+                            .scale(scale: 0.8, anchor: .top).combined(with: .opacity)
+                        )
+                        .animation(NotchMotion.content.delay(NotchMotion.contentLead)),
+                        removal: .opacity.animation(NotchMotion.control)
+                    )
                 )
                 .zIndex(1)
                 .allowsHitTesting(vm.notchState == .open)

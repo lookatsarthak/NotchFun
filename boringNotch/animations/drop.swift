@@ -17,7 +17,7 @@ public class BoringAnimations {
     }
     
     var animation: Animation {
-        Animation.spring(.bouncy(duration: 0.4))
+        NotchMotion.shellOpen
     }
     
     // TODO: Move all animations to this file

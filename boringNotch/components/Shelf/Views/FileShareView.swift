@@ -95,7 +95,7 @@ struct FileShareView: View {
                         .scaleEffect(
                             vm.dropZoneTargeting ? 1.06 : 1.0
                         )
-                        .animation(.spring(response: 0.36, dampingFraction: 0.7), value: vm.dropZoneTargeting)
+                        .animation(NotchMotion.control, value: vm.dropZoneTargeting)
                 }
 
                 Text(selectedProvider.id)

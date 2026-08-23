@@ -38,10 +38,10 @@ struct ClearConfirmButton: View {
             // saving one click on something unrecoverable.
             if confirming {
                 action()
-                confirming = false
+                setConfirming(false)
                 armedAt = nil
             } else {
-                confirming = true
+                setConfirming(true)
                 armedAt = Date()
             }
         } label: {
@@ -78,22 +78,34 @@ struct ClearConfirmButton: View {
         .disabled(count == 0)
         .opacity(count == 0 ? 0.4 : 1)
         .help(confirming ? confirmHelp : idleHelp)
-        .animation(.smooth(duration: 2.5), value: confirming)   // TEMP-DIAGNOSTIC
         .onChange(of: armedAt) { _, armed in
             guard let armed else { return }
             Task {
                 try? await Task.sleep(for: .seconds(3))
                 // Only disarm if nothing re-armed it in the meantime.
                 if armedAt == armed {
-                    confirming = false
+                    setConfirming(false)
                     armedAt = nil
                 }
             }
         }
         .onChange(of: count) { _, newCount in
             // Losing the last item while armed would leave a confirmation for nothing.
-            if newCount == 0 { confirming = false; armedAt = nil }
+            if newCount == 0 { setConfirming(false); armedAt = nil }
         }
+    }
+
+    /// The only place `confirming` changes, so every route between the two states carries
+    /// the same curve.
+    ///
+    /// The animation lives here rather than in an `.animation(_:value:)` on the button
+    /// because that modifier does not see changes made inside a `Button` action closure:
+    /// the press committed the new value without the animation and the capsule jumped to
+    /// its confirm width in one frame, while the three-second disarm — an ordinary
+    /// programmatic change — animated correctly. That split is what made this look like a
+    /// layout problem rather than a transaction one.
+    private func setConfirming(_ value: Bool) {
+        withAnimation(NotchMotion.control) { confirming = value }
     }
 
     /// Reports the confirm label's natural width, so the capsule has a target to grow to.

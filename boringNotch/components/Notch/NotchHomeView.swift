@@ -339,7 +339,7 @@ struct VolumeControlView: View {
         HStack(spacing: 4) {
             Button(action: {
                 if musicManager.volumeControlSupported {
-                    withAnimation(.easeInOut(duration: 0.12)) {
+                    withAnimation(NotchMotion.control) {
                         showVolumeSlider.toggle()
                     }
                 }
@@ -382,7 +382,7 @@ struct VolumeControlView: View {
         }
         .onReceive(musicManager.$volumeControlSupported) { supported in
             if !supported {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(NotchMotion.content) {
                     showVolumeSlider = false
                 }
             }
@@ -458,7 +458,7 @@ struct NotchHomeView: View {
                     .scaledToFit()
                     .opacity(vm.notchState == .closed ? 0 : 1)
                     .blur(radius: vm.notchState == .closed ? 20 : 0)
-                    .animation(.interactiveSpring(response: 0.32, dampingFraction: 0.76, blendDuration: 0), value: shouldShowCamera)
+                    .animation(NotchMotion.content, value: shouldShowCamera)
             }
         }
         // Tab-switch animation now lives on the switch branches in ContentView, so all
@@ -574,7 +574,7 @@ struct CustomSlider: View {
                         lastDragged = Date()
                     }
             )
-            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: dragging)
+            .animation(NotchMotion.drag, value: dragging)
         }
     }
 }
