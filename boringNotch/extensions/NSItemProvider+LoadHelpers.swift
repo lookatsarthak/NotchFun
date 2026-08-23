@@ -25,11 +25,17 @@ extension NSItemProvider {
         return nil
     }
     
-    /// Loads raw data for the given type identifier
-    func loadData() async -> Data? {
-        NSLog(String(describing: self.registeredTypeIdentifiers))
+    /// Loads raw data for the given type identifier, along with the file name it came
+    /// from when there is one.
+    ///
+    /// The name is returned rather than written back to `suggestedName`. That write
+    /// happened inside the load handler, on whichever thread the item arrived on, and
+    /// `NSItemProvider` is not safe to mutate across threads - the caller only wanted the
+    /// name to hand to temporary storage, so handing it back directly avoids the shared
+    /// mutable state entirely.
+    func loadData() async -> (data: Data, suggestedName: String?)? {
         guard hasItemConformingToTypeIdentifier(UTType.data.identifier) else { return nil }
-        return await withCheckedContinuation { (cont: CheckedContinuation<Data?, Never>) in
+        return await withCheckedContinuation { (cont: CheckedContinuation<(data: Data, suggestedName: String?)?, Never>) in
             loadItem(forTypeIdentifier: UTType.data.identifier, options: nil) { item, error in
                 if let error = error {
                     print("Error loading data for type \(UTType.data.identifier): \(error.localizedDescription)")
@@ -41,7 +47,7 @@ extension NSItemProvider {
                         cont.resume(returning: nil)
                         return
                     }
-                    self.suggestedName = self.suggestedName ?? url.lastPathComponent
+                    let derivedName = url.lastPathComponent
                     
                     let fileManager = FileManager.default
                     let folderURL = url.deletingLastPathComponent()
@@ -64,9 +70,9 @@ extension NSItemProvider {
                         print("Error: \(error.localizedDescription)")
                     }
                     
-                    cont.resume(returning: data)
+                    cont.resume(returning: (data, derivedName))
                 } else if let data = item as? Data {
-                    cont.resume(returning: data)
+                    cont.resume(returning: (data, nil))
                 } else {
                     cont.resume(returning: nil)
                 }

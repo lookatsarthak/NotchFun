@@ -58,7 +58,9 @@ final class NSScreenUUIDCache {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.rebuildCache()
+            // Delivered on .main above, but the closure is nonisolated as far as the
+            // compiler is concerned, so make the hop explicit rather than assumed.
+            Task { @MainActor in self?.rebuildCache() }
         }
     }
     

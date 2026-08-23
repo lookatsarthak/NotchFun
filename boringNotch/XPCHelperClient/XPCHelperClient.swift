@@ -2,24 +2,40 @@ import Foundation
 import Cocoa
 import AsyncXPCConnection
 
+/// Talks to the XPC helper.
+///
+/// Isolated to the main actor as a whole, which is what it already was in practice: the
+/// connection and the cached service were only ever created and cleared inside
+/// `MainActor.run`, and every method hopped there to reach them. Saying so directly means
+/// the service no longer has to be carried back out across an isolation boundary - it is
+/// not `Sendable`, and moving it was what most of the concurrency warnings here were
+/// about. `await` on these methods suspends rather than blocking, so an XPC round trip
+/// still does not hold up the main thread.
+@MainActor
 final class XPCHelperClient: NSObject {
     nonisolated static let shared = XPCHelperClient()
+
+    /// Explicitly nonisolated: `shared` is initialised lazily by whichever thread reaches
+    /// it first, and every stored property here starts out nil or a constant, so there is
+    /// nothing main-actor about constructing one.
+    nonisolated override init() { super.init() }
     
     private let serviceName = "io.github.lookatsarthak.notchfun.XPCHelper"
     
     private var remoteService: RemoteXPCService<BoringNotchXPCHelperProtocol>?
     private var connection: NSXPCConnection?
     private var lastKnownAuthorization: Bool?
-    private var monitoringTask: Task<Void, Never>?
-    
+    /// `nonisolated(unsafe)` so `deinit` can cancel it. A `Task` handle is safe to cancel
+    /// from any thread; deinit cannot hop to the main actor to do it.
+    private nonisolated(unsafe) var monitoringTask: Task<Void, Never>?
+
     deinit {
         connection?.invalidate()
-        stopMonitoringAccessibilityAuthorization()
+        monitoringTask?.cancel()
     }
     
     // MARK: - Connection Management (Main Actor Isolated)
     
-    @MainActor
     private func ensureRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol> {
         if let existing = remoteService {
             return existing
@@ -53,7 +69,6 @@ final class XPCHelperClient: NSObject {
         return service
     }
     
-    @MainActor
     private func getRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol>? {
         remoteService
     }
@@ -70,7 +85,7 @@ final class XPCHelperClient: NSObject {
     }
 
     // MARK: - Monitoring
-    nonisolated func startMonitoringAccessibilityAuthorization(every interval: TimeInterval = 3.0) {
+    func startMonitoringAccessibilityAuthorization(every interval: TimeInterval = 3.0) {
         // Ensure only one monitor exists
         stopMonitoringAccessibilityAuthorization()
         monitoringTask = Task.detached { [weak self] in
@@ -85,7 +100,7 @@ final class XPCHelperClient: NSObject {
         }
     }
 
-    nonisolated func stopMonitoringAccessibilityAuthorization() {
+    func stopMonitoringAccessibilityAuthorization() {
         monitoringTask?.cancel()
         monitoringTask = nil
     }
@@ -97,11 +112,9 @@ final class XPCHelperClient: NSObject {
     
     // MARK: - Accessibility
     
-    nonisolated func requestAccessibilityAuthorization() {
+    func requestAccessibilityAuthorization() {
         Task {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             try? await service.withService { service in
                 service.requestAccessibilityAuthorization()
             }
@@ -116,19 +129,15 @@ final class XPCHelperClient: NSObject {
     /// The first launch following an update is precisely when the helper is most likely
     /// to be briefly unreachable, because macOS is revalidating the bundle that Sparkle
     /// just replaced. Any caller that writes the answer to disk must handle `nil`.
-    nonisolated func accessibilityAuthorizationStatus() async -> Bool? {
+    func accessibilityAuthorizationStatus() async -> Bool? {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             let result: Bool = try await service.withContinuation { service, continuation in
                 service.isAccessibilityAuthorized { authorized in
                     continuation.resume(returning: authorized)
                 }
             }
-            await MainActor.run {
-                notifyAuthorizationChange(result)
-            }
+            notifyAuthorizationChange(result)
             return result
         } catch {
             return nil
@@ -138,43 +147,37 @@ final class XPCHelperClient: NSObject {
     /// Convenience for callers that only need a yes/no and do nothing irreversible with
     /// it - showing a checkmark, or deciding whether to start the interceptor now.
     /// Anything that persists the answer should use `accessibilityAuthorizationStatus()`.
-    nonisolated func isAccessibilityAuthorized() async -> Bool {
+    func isAccessibilityAuthorized() async -> Bool {
         await accessibilityAuthorizationStatus() ?? false
     }
     
     /// Asks for Accessibility, prompting if requested. `nil` means the helper could not
     /// be reached, which is not the same as the user saying no - see
     /// `accessibilityAuthorizationStatus()`.
-    nonisolated func ensureAccessibilityAuthorizationStatus(promptIfNeeded: Bool) async -> Bool? {
+    func ensureAccessibilityAuthorizationStatus(promptIfNeeded: Bool) async -> Bool? {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             let result: Bool = try await service.withContinuation { service, continuation in
                 service.ensureAccessibilityAuthorization(promptIfNeeded) { authorized in
                     continuation.resume(returning: authorized)
                 }
             }
-            await MainActor.run {
-                notifyAuthorizationChange(result)
-            }
+            notifyAuthorizationChange(result)
             return result
         } catch {
             return nil
         }
     }
 
-    nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
+    func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
         await ensureAccessibilityAuthorizationStatus(promptIfNeeded: promptIfNeeded) ?? false
     }
     
     // MARK: - Keyboard Brightness
     
-    nonisolated func isKeyboardBrightnessAvailable() async -> Bool {
+    func isKeyboardBrightnessAvailable() async -> Bool {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             return try await service.withContinuation { service, continuation in
                 service.isKeyboardBrightnessAvailable { available in
                     continuation.resume(returning: available)
@@ -185,11 +188,9 @@ final class XPCHelperClient: NSObject {
         }
     }
     
-    nonisolated func currentKeyboardBrightness() async -> Float? {
+    func currentKeyboardBrightness() async -> Float? {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             let result: NSNumber? = try await service.withContinuation { service, continuation in
                 service.currentKeyboardBrightness { value in
                     continuation.resume(returning: value)
@@ -201,11 +202,9 @@ final class XPCHelperClient: NSObject {
         }
     }
     
-    nonisolated func setKeyboardBrightness(_ value: Float) async -> Bool {
+    func setKeyboardBrightness(_ value: Float) async -> Bool {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             return try await service.withContinuation { service, continuation in
                 service.setKeyboardBrightness(value) { success in
                     continuation.resume(returning: success)
@@ -218,11 +217,9 @@ final class XPCHelperClient: NSObject {
     
     // MARK: - Screen Brightness
     
-    nonisolated func isScreenBrightnessAvailable() async -> Bool {
+    func isScreenBrightnessAvailable() async -> Bool {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             return try await service.withContinuation { service, continuation in
                 service.isScreenBrightnessAvailable { available in
                     continuation.resume(returning: available)
@@ -233,11 +230,9 @@ final class XPCHelperClient: NSObject {
         }
     }
     
-    nonisolated func currentScreenBrightness() async -> Float? {
+    func currentScreenBrightness() async -> Float? {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             let result: NSNumber? = try await service.withContinuation { service, continuation in
                 service.currentScreenBrightness { value in
                     continuation.resume(returning: value)
@@ -249,11 +244,9 @@ final class XPCHelperClient: NSObject {
         }
     }
     
-    nonisolated func setScreenBrightness(_ value: Float) async -> Bool {
+    func setScreenBrightness(_ value: Float) async -> Bool {
         do {
-            let service = await MainActor.run {
-                ensureRemoteService()
-            }
+            let service = ensureRemoteService()
             return try await service.withContinuation { service, continuation in
                 service.setScreenBrightness(value) { success in
                     continuation.resume(returning: success)

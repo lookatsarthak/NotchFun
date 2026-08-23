@@ -695,7 +695,9 @@ final class ShelfItemViewModel: ObservableObject {
                     self.chooserDelegate = chooserDelegate
                     self.panel = panel
                 }
-                @objc func changed(_ sender: Any?) {
+                // Target/action from an NSPopUpButton always arrives on the main
+                // thread, so the AppKit objects touched below are safe to reach here.
+                @MainActor @objc func changed(_ sender: Any?) {
                     if popup?.indexOfSelectedItem == 1 {
                         chooserDelegate?.mode = .all
                     } else {
