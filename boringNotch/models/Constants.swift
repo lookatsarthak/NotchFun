@@ -207,6 +207,13 @@ extension Defaults.Keys {
     /// Bundle identifiers whose copies are never recorded.
     static let clipboardIgnoredApps = Key<[String]>("clipboardIgnoredApps", default: [])
 
+    /// Strip tracking parameters from a link on its way back to the pasteboard.
+    ///
+    /// Off by default: it changes what the user pastes, and a setting that silently
+    /// rewrites your clipboard should be one you asked for. The history entry keeps the
+    /// original either way, so turning this off restores it with no data lost.
+    static let clipboardCleanLinks = Key<Bool>("clipboardCleanLinks", default: false)
+
     /// Seconds after a copy before the system clipboard is emptied. Zero means never.
     static let clipboardAutoClearDelay = Key<Double>("clipboardAutoClearDelay", default: 0)
     /// Empty the system clipboard when the Mac sleeps.

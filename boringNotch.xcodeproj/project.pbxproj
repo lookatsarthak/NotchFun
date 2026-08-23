@@ -11,8 +11,11 @@
 		03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */; };
 		0D0ACC5199355FAB6BF1B332 /* ClipboardAutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */; };
 		64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */; };
+		7B7C2BEC95784CB1A69056DA /* URLCleanerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92207BBACAA9410788BB8463 /* URLCleanerTests.swift */; };
 		68DF8A19CD76DDC2537980D6 /* ClipboardSecretHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */; };
+		E0768B9B57374B3580B23640 /* URLCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95D159687544B04B2B42C9F /* URLCleaner.swift */; };
 		CD0EE573435B78DE5885BA28 /* ClipboardSecretHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */; };
+		2553C297577D49C297D12A9C /* URLCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95D159687544B04B2B42C9F /* URLCleaner.swift */; };
 		0CDD25EE5601C09446DAE6D7 /* CaffeineIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */; };
 		4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */; };
 		A4119AD23E521C13D3FA3FEF /* CaffeineNotchIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */; };
@@ -259,7 +262,9 @@
 		79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardIgnoredAppsSection.swift; sourceTree = "<group>"; };
 		FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAutoClearService.swift; sourceTree = "<group>"; };
 		793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristicTests.swift; sourceTree = "<group>"; };
+		92207BBACAA9410788BB8463 /* URLCleanerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCleanerTests.swift; sourceTree = "<group>"; };
 		898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristic.swift; sourceTree = "<group>"; };
+		B95D159687544B04B2B42C9F /* URLCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCleaner.swift; sourceTree = "<group>"; };
 		089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicyTests.swift; sourceTree = "<group>"; };
 		296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineNotchIndicator.swift; sourceTree = "<group>"; };
 		758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicy.swift; sourceTree = "<group>"; };
@@ -495,6 +500,7 @@
 				4EDAACCD3FF19535A03DF752 /* TestSupport.swift */,
 				E410C3B9F801EF17969B1920 /* CaffeineSessionTests.swift */,
 				793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */,
+				92207BBACAA9410788BB8463 /* URLCleanerTests.swift */,
 				089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */,
 				0EA2251216AC0834B2486494 /* CaffeineManagerTests.swift */,
 				78B4B9F0BD40215F39505BD8 /* ClipboardStorageTests.swift */,
@@ -595,6 +601,7 @@
 				2CD0FBDD01DCDC8BF8CD789E /* ClipboardContentRef.swift */,
 				52B149B15D024C39ADBAF640 /* ClipboardKind.swift */,
 				898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */,
+				B95D159687544B04B2B42C9F /* URLCleaner.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1188,6 +1195,7 @@
 				53072201E4724796C6591CB4 /* TestSupport.swift in Sources */,
 				4A65F846848109D1DDE37DB0 /* CaffeineSessionTests.swift in Sources */,
 				64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */,
+				7B7C2BEC95784CB1A69056DA /* URLCleanerTests.swift in Sources */,
 				4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */,
 				1A43C16AC094C45427D6DA17 /* CaffeineManagerTests.swift in Sources */,
 				1E65879C8F1AF43D34EF07A0 /* ClipboardStorageTests.swift in Sources */,
@@ -1203,6 +1211,7 @@
 				C75BF6640E905544DA5911F5 /* ClipboardKeyInterpreter.swift in Sources */,
 				0ACCE01FEE9138F26DED0091 /* ClipboardKind.swift in Sources */,
 				68DF8A19CD76DDC2537980D6 /* ClipboardSecretHeuristic.swift in Sources */,
+				E0768B9B57374B3580B23640 /* URLCleaner.swift in Sources */,
 				2FAEF610EEFDA8A198475972 /* ClipboardBlobStore.swift in Sources */,
 				F7A327BEAB148244959DE5BC /* ClipboardCapture.swift in Sources */,
 				A968BCE26F3F20A6E915B780 /* ClipboardMonitor.swift in Sources */,
@@ -1271,6 +1280,7 @@
 				A2C20874F1D29D27BF3EA87A /* ClipboardContentRef.swift in Sources */,
 				7D132F28D22845E6E068BB05 /* ClipboardKind.swift in Sources */,
 				CD0EE573435B78DE5885BA28 /* ClipboardSecretHeuristic.swift in Sources */,
+				2553C297577D49C297D12A9C /* URLCleaner.swift in Sources */,
 				3E4E2924BA41EBE997412A3E /* NSPasteboardType+NotchFun.swift in Sources */,
 				278716479FA416717B031C3B /* Clipboard+Content.swift in Sources */,
 				115C12EC2ED3D003009754CA /* OpenNotchHUD.swift in Sources */,

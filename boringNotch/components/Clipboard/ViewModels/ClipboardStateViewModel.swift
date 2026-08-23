@@ -250,7 +250,8 @@ final class ClipboardStateViewModel: ObservableObject {
     /// does not record it again — without this, selecting an entry would re-add it on
     /// the next poll and the history would slowly fill with copies of itself.
     func copyToPasteboard(_ item: ClipboardItem) {
-        guard ClipboardPasteboardWriter.write(item, to: .general, blobStore: blobStore) else {
+        guard ClipboardPasteboardWriter.write(item, to: .general, blobStore: blobStore,
+                                              cleanLinks: Defaults[.clipboardCleanLinks]) else {
             Self.logger.error("Failed to write clipboard entry to the pasteboard")
             return
         }
@@ -265,7 +266,8 @@ final class ClipboardStateViewModel: ObservableObject {
     /// Copies an entry with its formatting removed. Falls back to a normal copy when the
     /// entry has no text - an image has no plain form, and doing nothing would look broken.
     func copyToPasteboardAsPlainText(_ item: ClipboardItem) {
-        if ClipboardPasteboardWriter.writePlainText(item, blobStore: blobStore) {
+        if ClipboardPasteboardWriter.writePlainText(item, blobStore: blobStore,
+                                                    cleanLinks: Defaults[.clipboardCleanLinks]) {
             ClipboardMonitor.shared.acknowledgeSelfCopy()
         } else {
             copyToPasteboard(item)

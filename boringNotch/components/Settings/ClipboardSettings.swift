@@ -86,6 +86,16 @@ struct ClipboardSettings: View {
             }
 
             Section {
+                Defaults.Toggle(key: .clipboardCleanLinks) {
+                    Text("Remove tracking parameters from links")
+                }
+            } header: {
+                Text("Links")
+            } footer: {
+                Text("Strips utm_, fbclid, gclid and similar from a copied link when you paste it — never from a parameter that selects content, like a YouTube timestamp. Only applies to a copy that is a single link, and pastes it as plain text. Your history keeps the original.")
+            }
+
+            Section {
                 Defaults.Toggle(key: .clipboardPasteOnSelect) {
                     Text("Paste into the active app on select")
                 }

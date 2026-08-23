@@ -15,6 +15,9 @@ struct ClipboardRowView: View, Equatable {
     var highlightRanges: [Range<String.Index>] = []
     let shortcutLabel: String?
     let isSelected: Bool
+    /// Whether pasting this entry will rewrite it. Passed in rather than computed here
+    /// so it stays part of `==` and the row still skips re-rendering when nothing moved.
+    var cleansLink: Bool = false
 
     static let height: CGFloat = 26
 
@@ -24,6 +27,7 @@ struct ClipboardRowView: View, Equatable {
             && lhs.item.pin == rhs.item.pin
             && lhs.shortcutLabel == rhs.shortcutLabel
             && lhs.isSelected == rhs.isSelected
+            && lhs.cleansLink == rhs.cleansLink
             && lhs.highlightRanges == rhs.highlightRanges
     }
 
@@ -41,6 +45,15 @@ struct ClipboardRowView: View, Equatable {
                 .truncationMode(.middle)
                 .foregroundStyle(isSelected ? .white : .white.opacity(0.85))
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            if cleansLink {
+                // Never rewrite what someone pastes without saying so somewhere they
+                // can see it before they paste.
+                Image(systemName: "scissors")
+                    .font(.system(size: 9))
+                    .foregroundStyle(isSelected ? .white.opacity(0.9) : .gray)
+                    .help("Tracking parameters will be removed when you paste this.")
+            }
 
             if let icon = ClipboardThumbnailService.shared.appIcon(forBundleID: item.appBundleID) {
                 Image(nsImage: icon)

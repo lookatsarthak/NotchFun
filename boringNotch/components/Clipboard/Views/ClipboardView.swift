@@ -11,6 +11,8 @@ struct ClipboardView: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject private var clipboard = ClipboardStateViewModel.shared
 
+    @Default(.clipboardCleanLinks) private var cleanLinks
+
     /// Keeps the notch open while the tab is in use. Released on every exit path.
     @State private var hold: NotchHoldToken?
     @State private var selectedID: UUID?
@@ -115,7 +117,8 @@ struct ClipboardView: View {
                             item: match.item,
                             highlightRanges: match.ranges,
                             shortcutLabel: shortcutLabel(for: match.item, among: results, at: index),
-                            isSelected: match.item.id == selectedID
+                            isSelected: match.item.id == selectedID,
+                            cleansLink: cleanLinks && URLCleaner.wouldClean(match.item.title)
                         )
                         .equatable()
                         .id(match.item.id)

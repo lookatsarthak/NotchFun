@@ -21,23 +21,34 @@ enum ClipboardPasteboardWriter {
     static func writePlainText(
         _ item: ClipboardItem,
         to pasteboard: NSPasteboard = .general,
-        blobStore: ClipboardBlobStore
+        blobStore: ClipboardBlobStore,
+        cleanLinks: Bool = false
     ) -> Bool {
         guard let text = plainText(of: item, blobStore: blobStore), !text.isEmpty else { return false }
+        let resolved = cleanLinks ? (URLCleaner.clean(text)?.cleaned ?? text) : text
         pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        pasteboard.setString(resolved, forType: .string)
         pasteboard.setData(Data(), forType: .fromNotchFun)
         return true
     }
 
     /// The item's text, preferring a real string payload and falling back to the title.
     static func plainText(of item: ClipboardItem, blobStore: ClipboardBlobStore) -> String? {
+        stringPayload(of: item, blobStore: blobStore) ?? (item.title.isEmpty ? nil : item.title)
+    }
+
+    /// The item's actual `public.utf8-plain-text` payload, with no title fallback.
+    ///
+    /// Link cleaning uses this rather than `plainText`: the title is a display string
+    /// that has been truncated and stripped of newlines, so rewriting a pasteboard from
+    /// it would mean pasting something the user never copied.
+    static func stringPayload(of item: ClipboardItem, blobStore: ClipboardBlobStore) -> String? {
         for ref in item.contents where ref.type == NSPasteboard.PasteboardType.string.rawValue {
             if let data = blobStore.data(for: ref), let string = String(data: data, encoding: .utf8) {
                 return string
             }
         }
-        return item.title.isEmpty ? nil : item.title
+        return nil
     }
 
     /// - Returns: `true` if something was actually written.
@@ -45,8 +56,29 @@ enum ClipboardPasteboardWriter {
     static func write(
         _ item: ClipboardItem,
         to pasteboard: NSPasteboard,
-        blobStore: ClipboardBlobStore
+        blobStore: ClipboardBlobStore,
+        cleanLinks: Bool = false
     ) -> Bool {
+        // A link that cleans is written as plain text and nothing else.
+        //
+        // Browsers put a URL on the pasteboard three or four ways at once - plain text,
+        // public.url, and an HTML anchor. Cleaning only the plain text would leave the
+        // tracker in the copies an app might prefer, so a half-cleaned pasteboard is
+        // worse than none: the setting would appear to work and sometimes not. A bare
+        // URL carries no formatting worth preserving, so dropping the other
+        // representations costs nothing.
+        if cleanLinks,
+           let text = stringPayload(of: item, blobStore: blobStore),
+           let cleaned = URLCleaner.clean(text) {
+            pasteboard.clearContents()
+            pasteboard.setString(cleaned.cleaned, forType: .string)
+            pasteboard.setData(Data(), forType: .fromNotchFun)
+            if let bundleID = item.appBundleID {
+                pasteboard.setString(bundleID, forType: .source)
+            }
+            return true
+        }
+
         // Collect everything first, so a failure to resolve content leaves the existing
         // pasteboard untouched instead of clearing it and writing nothing.
         let fileURLs = item.fileURLs(using: blobStore)
