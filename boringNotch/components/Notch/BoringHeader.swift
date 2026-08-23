@@ -48,7 +48,7 @@ struct BoringHeader: View {
                 if vm.notchState == .open {
                     if isHUDType(coordinator.sneakPeek.type) && coordinator.sneakPeek.show && Defaults[.showOpenNotchHUD] {
                         OpenNotchHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon)
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
+                            .transition(NotchMotion.transition(.scale(scale: 0.8).combined(with: .opacity)))
                     } else {
                         if Defaults[.caffeineButtonInNotch] {
                             CaffeineButton()

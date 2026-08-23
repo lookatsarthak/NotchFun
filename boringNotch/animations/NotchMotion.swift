@@ -83,7 +83,12 @@ enum NotchMotion {
     ///
     /// A 280 ms spring cannot be reviewed by eye or captured in a screenshot, which is
     /// how inconsistencies survived this long. Toggled from the debug menu.
-    nonisolated(unsafe) static var slowMotion = false
+    /// Read once at launch from `defaults write <bundle-id> NotchFunSlowMotion -bool true`
+    /// rather than bound to a keystroke, because the point is to inspect animations from
+    /// outside the app - a screenshot harness cannot press a shortcut, and a five-times
+    /// slower animation is exactly what makes one reviewable in a still.
+    nonisolated(unsafe) static var slowMotion =
+        UserDefaults.standard.bool(forKey: "NotchFunSlowMotion")
     #endif
 
     private static func resolve(_ animation: Animation) -> Animation {

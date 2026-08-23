@@ -342,7 +342,7 @@ struct ContentView: View {
                               if showsCaffeineIndicator {
                                   CaffeineNotchIndicator(size: notchSlotSize, namespace: caffeineNamespace)
                                       .padding(.trailing, 10)
-                                      .transition(.opacity.combined(with: .scale))
+                                      .transition(NotchMotion.transition(.opacity.combined(with: .scale)))
                               }
                               MusicLiveActivity()
                               if showsCaffeineIndicator {

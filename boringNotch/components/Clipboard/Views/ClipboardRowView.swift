@@ -70,7 +70,7 @@ struct ClipboardRowView: View, Equatable {
         .padding(.horizontal, 8)
         .frame(height: Self.height)
         .background {
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(isSelected ? Color.effectiveAccent.opacity(0.65) : Color.clear)
         }
         .contentShape(Rectangle())
@@ -98,7 +98,7 @@ struct ClipboardRowView: View, Equatable {
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1)
                 .background {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(.white.opacity(0.12))
                 }
         } else {
@@ -114,7 +114,7 @@ struct ClipboardRowView: View, Equatable {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 18, height: 18)
-                .clipShape(RoundedRectangle(cornerRadius: 3))
+                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
         } else {
             Image(systemName: item.isPinned ? "pin.fill" : item.kind.systemImage)
                 .font(.system(size: 11))

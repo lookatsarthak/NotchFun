@@ -103,7 +103,7 @@ struct AlbumArtView: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 30, height: 30)
                 .offset(x: 10, y: 10)
-                .transition(.scale.combined(with: .opacity))
+                .transition(NotchMotion.transition(.scale.combined(with: .opacity)))
                 .zIndex(2)
         }
     }
@@ -183,7 +183,7 @@ struct MusicControlsView: View {
                     .font(isPersian ? .custom("Vazirmatn-Regular", size: NSFont.preferredFont(forTextStyle: .subheadline).pointSize) : .subheadline)
                     .lineLimit(1)
                     .opacity(musicManager.isPlaying ? 1 : 0)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(NotchMotion.transition(.opacity.combined(with: .move(edge: .top))))
                 }
             }
         }
@@ -371,7 +371,7 @@ struct VolumeControlView: View {
                     }
                 )
                 .frame(width: 48, height: 8)
-                .transition(.scale.combined(with: .opacity))
+                .transition(NotchMotion.transition(.scale.combined(with: .opacity)))
             }
         }
         .clipped()

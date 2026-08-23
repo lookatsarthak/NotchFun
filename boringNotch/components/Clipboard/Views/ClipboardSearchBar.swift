@@ -98,7 +98,7 @@ struct ClipboardSearchBar: View {
         .padding(.horizontal, 8)
         .frame(height: Self.height)
         .background {
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(.white.opacity(0.08))
         }
         .task(id: state) {

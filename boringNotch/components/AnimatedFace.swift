@@ -22,7 +22,7 @@ struct MinimalFaceFeatures: View {
             // Nose and mouth combined
             VStack(spacing: 2) { // Adjusted spacing to fit within 30x30
                 // Nose
-                RoundedRectangle(cornerRadius: 2)
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(Color.white)
                     .frame(width: 3, height: 4)
                 
@@ -63,7 +63,7 @@ struct Eye: View {
     @Binding var isBlinking: Bool
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 10)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(Color.white)
             .frame(width: 4, height: isBlinking ? 1 : 4)
             .frame(maxWidth: 15, maxHeight: 15) // Adjusted max size

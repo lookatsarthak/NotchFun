@@ -17,7 +17,7 @@ struct EmptyStateView: View {
             Text(message)
                 .font(.system(size:14))
                 .foregroundColor(.gray)
-        }.transition(.blurReplace.animation(NotchMotion.content))
+        }.transition(NotchMotion.transition(AnyTransition(.blurReplace)).animation(NotchMotion.content))
     }
 }
 
