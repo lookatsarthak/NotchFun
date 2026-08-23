@@ -26,7 +26,21 @@ struct FileShareView: View {
     var body: some View {
         dropArea
             .background(NSViewHost(view: $hostView))
-            .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data, .image], isTargeted: $vm.dropZoneTargeting) { providers in
+            // Publish where this zone is, and how to share into it. The drop target
+            // covering the whole notch wins every drop inside it, so it routes by
+            // location and calls back here rather than this view ever seeing the drop.
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { vm.airDropZoneFrame = geometry.frame(in: .named(NotchDropSpace.name)) }
+                        .onChange(of: geometry.frame(in: .named(NotchDropSpace.name))) { _, frame in
+                            vm.airDropZoneFrame = frame
+                        }
+                }
+            )
+            .onAppear { registerShareHandler() }
+            .onChange(of: hostView) { _, _ in registerShareHandler() }
+            .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data, .image], isTargeted: nil) { providers in
                 interactionNonce = .init()
                 vm.dropEvent = true
                 Task { await handleDrop(providers) }
@@ -106,6 +120,20 @@ struct FileShareView: View {
     }
 
     // MARK: - Actions
+
+    /// The share sheet has to be anchored to a real NSView, which only this view owns,
+    /// so the notch-wide drop target calls back through here.
+    private func registerShareHandler() {
+        let anchor = hostView
+        vm.airDropDropHandler = { providers in
+            Task { @MainActor in
+                let provider = QuickShareService.shared.availableProviders
+                    .first { $0.id == Defaults[.quickShareProvider] }
+                    ?? QuickShareProvider(id: "System Share Menu", imageData: nil, supportsRawText: true)
+                await QuickShareService.shared.shareDroppedFiles(providers, using: provider, from: anchor)
+            }
+        }
+    }
 
     private func handleDrop(_ providers: [NSItemProvider]) async {
         isProcessing = true

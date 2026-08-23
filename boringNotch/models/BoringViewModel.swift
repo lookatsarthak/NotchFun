@@ -23,6 +23,46 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published var generalDropTargeting: Bool = false
     @Published var dropZoneTargeting: Bool = false
     @Published var dropEvent: Bool = false
+
+    /// Where the AirDrop zone sits, in the notch's drop coordinate space.
+    ///
+    /// The drop target covering the notch wins every drop inside it - the shelf's own
+    /// targets are never consulted, whether that target is in front of them or behind.
+    /// Rather than keep fighting SwiftUI over which view should win, it routes by
+    /// location, and needs to know where the zones are to do that.
+    @Published var airDropZoneFrame: CGRect = .zero
+    /// Hands providers to the AirDrop zone's own handler, which owns the NSView the
+    /// share sheet has to be anchored to.
+    var airDropDropHandler: (([NSItemProvider]) -> Void)?
+
+    private var dropHighlightWatchdog: Task<Void, Never>?
+
+    /// Lights the zone under the pointer, and arms a watchdog to put it out.
+    ///
+    /// The highlight cannot rely on being told the drag ended: a `dropUpdated` can
+    /// arrive *after* `performDrop`, turning the zone back on with nothing left to turn
+    /// it off, and the zone then stays lit until the app restarts. SwiftUI sends these
+    /// updates about twenty times a second for as long as a drag is live, even a
+    /// stationary one, so anything older than a few hundred milliseconds means the drag
+    /// is over.
+    func noteDropActivity(overAirDrop: Bool) {
+        if dropZoneTargeting != overAirDrop { dropZoneTargeting = overAirDrop }
+        if dragDetectorTargeting != !overAirDrop { dragDetectorTargeting = !overAirDrop }
+
+        dropHighlightWatchdog?.cancel()
+        dropHighlightWatchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            self?.clearDropHighlight()
+        }
+    }
+
+    func clearDropHighlight() {
+        dropHighlightWatchdog?.cancel()
+        dropHighlightWatchdog = nil
+        if dropZoneTargeting { dropZoneTargeting = false }
+        if dragDetectorTargeting { dragDetectorTargeting = false }
+    }
     @Published var anyDropZoneTargeting: Bool = false
     var cancellables: Set<AnyCancellable> = []
     

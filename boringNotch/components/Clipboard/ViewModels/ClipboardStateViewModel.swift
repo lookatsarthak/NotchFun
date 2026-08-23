@@ -101,8 +101,21 @@ final class ClipboardStateViewModel: ObservableObject {
                     enabled ? self.enable() : self.disable()
                 }
             },
+            // Every key `currentConfig` reads has to be here, or changing it in Settings
+            // does nothing until the app is restarted. That is not hypothetical: the
+            // privacy toggle and the ignore list both looked broken because only the
+            // poll interval was being watched.
             Task { [weak self] in
-                for await _ in Defaults.updates(.clipboardCheckInterval, initial: false) {
+                for await _ in Defaults.updates(
+                    [
+                        .clipboardCheckInterval,
+                        .clipboardMaxPayloadMB,
+                        .clipboardIgnoreUniversalClipboard,
+                        .clipboardSkipSensitiveText,
+                        .clipboardIgnoredApps,
+                    ],
+                    initial: false
+                ) {
                     self?.monitor.update(config: Self.currentConfig)
                 }
             },
