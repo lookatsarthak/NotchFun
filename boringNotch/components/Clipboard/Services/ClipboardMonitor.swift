@@ -36,6 +36,15 @@ final class ClipboardMonitor {
     /// quick succession are still recorded in the order they were made.
     private var processingChain: Task<Void, Never>?
 
+    /// How many captures may be waiting to be processed before we start dropping them.
+    ///
+    /// Each tick chains onto the previous one so history keeps the order things were
+    /// copied in. Left unbounded, an app that rewrites the pasteboard in a loop would
+    /// queue a task per change and hold every snapshot's bytes in memory until the
+    /// backlog drained. Dropping a capture is bad; being killed for memory is worse.
+    private static let maxPendingCaptures = 8
+    private var pendingCaptures = 0
+
     private(set) var isRunning = false
     private var config: ClipboardCaptureConfig = .default
     private var onCapture: OnCapture?
@@ -127,18 +136,32 @@ final class ClipboardMonitor {
             config: config
         ) else { return }
 
+        guard pendingCaptures < Self.maxPendingCaptures else {
+            // changeCount has already moved on, so this copy is skipped rather than
+            // retried. The alternative is an ever-growing queue.
+            NSLog("Clipboard: capture backlog full, skipping one copy")
+            return
+        }
+
         let blobStore = self.blobStore
         let previous = processingChain
+        pendingCaptures += 1
         processingChain = Task.detached(priority: .utility) { [weak self] in
             _ = await previous?.value
             let item = ClipboardCapture.makeItem(from: snapshot, blobStore: blobStore)
-            guard let item else { return }
-            await self?.deliver(item)
+            await self?.finishCapture(item)
         }
     }
 
     private func deliver(_ item: ClipboardItem) {
         onCapture?(item)
+    }
+
+    /// Runs once per queued capture, whether or not it produced an item, so the
+    /// backlog count cannot drift upwards and wedge the monitor shut.
+    private func finishCapture(_ item: ClipboardItem?) {
+        pendingCaptures = max(0, pendingCaptures - 1)
+        if let item { deliver(item) }
     }
 
     /// Re-syncs `changeCount` after the app itself writes to the pasteboard, so the

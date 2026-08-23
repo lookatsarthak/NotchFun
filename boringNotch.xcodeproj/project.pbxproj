@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CD82A3CCE1080D3B09FECBCE /* ClearConfirmButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */; };
+		03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */; };
+		0D0ACC5199355FAB6BF1B332 /* ClipboardAutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */; };
+		64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */; };
+		68DF8A19CD76DDC2537980D6 /* ClipboardSecretHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */; };
+		CD0EE573435B78DE5885BA28 /* ClipboardSecretHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */; };
 		0CDD25EE5601C09446DAE6D7 /* CaffeineIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */; };
 		4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */; };
 		A4119AD23E521C13D3FA3FEF /* CaffeineNotchIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */; };
@@ -250,6 +256,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearConfirmButton.swift; sourceTree = "<group>"; };
+		79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardIgnoredAppsSection.swift; sourceTree = "<group>"; };
+		FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAutoClearService.swift; sourceTree = "<group>"; };
+		793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristicTests.swift; sourceTree = "<group>"; };
+		898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristic.swift; sourceTree = "<group>"; };
 		089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicyTests.swift; sourceTree = "<group>"; };
 		296E3B00EFAEB9AA8161095F /* CaffeineNotchIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineNotchIndicator.swift; sourceTree = "<group>"; };
 		758D6C5446B51EC1F3B8DF72 /* CaffeineIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicy.swift; sourceTree = "<group>"; };
@@ -485,6 +496,7 @@
 			children = (
 				4EDAACCD3FF19535A03DF752 /* TestSupport.swift */,
 				E410C3B9F801EF17969B1920 /* CaffeineSessionTests.swift */,
+				793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */,
 				089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */,
 				0EA2251216AC0834B2486494 /* CaffeineManagerTests.swift */,
 				78B4B9F0BD40215F39505BD8 /* ClipboardStorageTests.swift */,
@@ -569,6 +581,7 @@
 				A9C6EFC8BEE8DD8ACBCC0DBD /* ClipboardCapture.swift */,
 				D392FFD656C91D7E5AEE63D8 /* ClipboardPersistenceService.swift */,
 				17438917841AAA4B948BCF21 /* ClipboardBlobStore.swift */,
+				FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -583,6 +596,7 @@
 				B90A11EA2D0DA8F6B237EDCC /* ClipboardItem.swift */,
 				2CD0FBDD01DCDC8BF8CD789E /* ClipboardContentRef.swift */,
 				52B149B15D024C39ADBAF640 /* ClipboardKind.swift */,
+				898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -748,6 +762,7 @@
 				B10F84A22C6C9596009F3026 /* TestView.swift */,
 				507266DA2C908E2E00A2D00D /* HoverButton.swift */,
 				B1F747F82EC7E94000F841DB /* LottieView.swift */,
+				FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */,
 			);
 			path = components;
 			sourceTree = "<group>";
@@ -968,6 +983,7 @@
 			children = (
 				B9912C1E58DED983F80DC005 /* CaffeineSettings.swift */,
 				780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */,
+				79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */,
 				11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */,
 				11C5E3152DFE88510065821E /* SettingsView.swift */,
 				11C5E3112DFE85970065821E /* SettingsWindowController.swift */,
@@ -1174,6 +1190,7 @@
 			files = (
 				53072201E4724796C6591CB4 /* TestSupport.swift in Sources */,
 				4A65F846848109D1DDE37DB0 /* CaffeineSessionTests.swift in Sources */,
+				64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */,
 				4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */,
 				1A43C16AC094C45427D6DA17 /* CaffeineManagerTests.swift in Sources */,
 				1E65879C8F1AF43D34EF07A0 /* ClipboardStorageTests.swift in Sources */,
@@ -1188,6 +1205,7 @@
 				E60C11928F3A0595A60B63B8 /* ClipboardKeyEvent.swift in Sources */,
 				C75BF6640E905544DA5911F5 /* ClipboardKeyInterpreter.swift in Sources */,
 				0ACCE01FEE9138F26DED0091 /* ClipboardKind.swift in Sources */,
+				68DF8A19CD76DDC2537980D6 /* ClipboardSecretHeuristic.swift in Sources */,
 				2FAEF610EEFDA8A198475972 /* ClipboardBlobStore.swift in Sources */,
 				F7A327BEAB148244959DE5BC /* ClipboardCapture.swift in Sources */,
 				A968BCE26F3F20A6E915B780 /* ClipboardMonitor.swift in Sources */,
@@ -1226,12 +1244,12 @@
 				A2DE2571300B0428C3F6A91F /* PowerAssertion.swift in Sources */,
 				7F7DFE2832F6DE5EBEC89F4A /* CaffeineSession.swift in Sources */,
 				B9EAA9B93FA609CFFF753BBF /* CaffeineIndicatorPolicy.swift in Sources */,
-				E42E6A6D49E6F38B9CF638C1 /* CaffeineIndicatorPolicy.swift in Sources */,
 				F5DAAA96FB58AA29C0E60C02 /* CaffeineDuration.swift in Sources */,
 				2D473821334BC4E122351DDF /* CaffeineMode.swift in Sources */,
 				94B887751F2B6D6BCF74A1FC /* AnyTransition+NotchTab.swift in Sources */,
 				994F2F683A17B37E167B316D /* ClipboardAccessibility.swift in Sources */,
 				1C644F3D37B608205BF237EE /* ClipboardSettings.swift in Sources */,
+				03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */,
 				167220B43ABF835FDC10BAC2 /* ClipboardPasteboardWriter.swift in Sources */,
 				98F0D829DBB7C44C9D90F6F8 /* ClipboardKeyInterpreter.swift in Sources */,
 				4FF49D37D1C29FEC168E838A /* ClipboardSearchBar.swift in Sources */,
@@ -1249,11 +1267,13 @@
 				C11A56BE3FE5CFFB22853E7D /* ClipboardCapture.swift in Sources */,
 				A60CBAC77A0D8EF5C6594110 /* ClipboardPersistenceService.swift in Sources */,
 				D9837EE05BD1EBBD3922B54A /* ClipboardBlobStore.swift in Sources */,
+				0D0ACC5199355FAB6BF1B332 /* ClipboardAutoClearService.swift in Sources */,
 				5BADD23DD3F47A40B04445F5 /* ClipboardHistory.swift in Sources */,
 				53A277218675D1553F0A9D60 /* ClipboardCaptureConfig.swift in Sources */,
 				4E3D8A135C6A86E6A20E82D0 /* ClipboardItem.swift in Sources */,
 				A2C20874F1D29D27BF3EA87A /* ClipboardContentRef.swift in Sources */,
 				7D132F28D22845E6E068BB05 /* ClipboardKind.swift in Sources */,
+				CD0EE573435B78DE5885BA28 /* ClipboardSecretHeuristic.swift in Sources */,
 				3E4E2924BA41EBE997412A3E /* NSPasteboardType+NotchFun.swift in Sources */,
 				278716479FA416717B031C3B /* Clipboard+Content.swift in Sources */,
 				115C12EC2ED3D003009754CA /* OpenNotchHUD.swift in Sources */,
@@ -1289,6 +1309,7 @@
 				118EBE292E946B3F00D54B5A /* ShareServiceFinder.swift in Sources */,
 				B19424092CD0FF01003E5DC2 /* LottieAnimationView.swift in Sources */,
 				B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */,
+				CD82A3CCE1080D3B09FECBCE /* ClearConfirmButton.swift in Sources */,
 				B1C974342C642B6D0000E707 /* MarqueeTextView.swift in Sources */,
 				14288DE82C6E01C800B9F80C /* ProgressIndicator.swift in Sources */,
 				1113ABC52E80E27000EC13B2 /* ShelfItemView.swift in Sources */,

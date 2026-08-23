@@ -431,7 +431,26 @@ struct ContentView: View {
                 .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
             }
         }
-        .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting))
+        // Behind the content, deliberately.
+        //
+        // As a normal modifier this sits in front and wins every drop in the notch,
+        // which is what stopped the shelf's own targets from ever running. Accepting the
+        // drop here instead of cancelling it fixed dropping onto the notch, but it also
+        // meant the AirDrop zone never saw a drop and neither zone lit up, because their
+        // isTargeted bindings belong to targets that were no longer being consulted.
+        //
+        // In `.background` it only receives what nothing in front of it claimed: drop on
+        // AirDrop and FileShareView handles it, drop on the shelf and ShelfView does,
+        // drop anywhere else on the notch and this catches it.
+        .coordinateSpace(name: NotchDropSpace.name)
+        .background {
+            Color.clear
+                .contentShape(Rectangle())
+                .onDrop(
+                    of: [.fileURL, .url, .utf8PlainText, .plainText, .data],
+                    delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting, vm: vm)
+                )
+        }
     }
 
     @ViewBuilder
@@ -564,7 +583,7 @@ struct ContentView: View {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
-        .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+        .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: nil) { providers in
             vm.dropEvent = true
             ShelfStateViewModel.shared.load(providers)
             return true
@@ -703,8 +722,32 @@ struct FullScreenDropDelegate: DropDelegate {
 
 }
 
+/// The drop target covering the whole notch.
+///
+/// This sits on the outermost container, and in this layout it wins the drop over the
+/// shelf's own targets inside it. It used to answer `dropUpdated` with `.cancel` and
+/// `performDrop` with `false`, so a file dragged onto the notch lit up the drop zones
+/// and was then refused: the shelf's handler never ran, nothing was recorded, and the
+/// file simply did not arrive. Dragging onto an already-open shelf worked, which is why
+/// it looked intermittent rather than broken.
+///
+/// It now accepts and hands the items to the shelf, so a drop anywhere on the notch
+/// lands. When the shelf is switched off it still cancels, which is what should happen.
+/// The coordinate space drop locations and zone frames are both measured in.
+enum NotchDropSpace {
+    static let name = "notchDropSpace"
+}
+
 struct GeneralDropTargetDelegate: DropDelegate {
     @Binding var isTargeted: Bool
+    let vm: BoringViewModel
+
+    private static let acceptedTypes: [UTType] = [.fileURL, .url, .utf8PlainText, .plainText, .data]
+
+    private func isOverAirDrop(_ info: DropInfo) -> Bool {
+        let frame = vm.airDropZoneFrame
+        return frame != .zero && frame.contains(info.location)
+    }
 
     func dropEntered(info: DropInfo) {
         isTargeted = true
@@ -712,14 +755,35 @@ struct GeneralDropTargetDelegate: DropDelegate {
 
     func dropExited(info: DropInfo) {
         isTargeted = false
+        vm.clearDropHighlight()
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .cancel)
+        guard Defaults[.boringShelf] else { return DropProposal(operation: .cancel) }
+        // Light up whichever zone the pointer is actually over. These are the same
+        // flags the zones' own targets would set, and the zones already draw their
+        // border from them - they simply never got set once this target started
+        // winning the drop.
+        vm.noteDropActivity(overAirDrop: isOverAirDrop(info))
+        return DropProposal(operation: .copy)
     }
 
     func performDrop(info: DropInfo) -> Bool {
-        return false
+        isTargeted = false
+        vm.clearDropHighlight()
+        guard Defaults[.boringShelf] else { return false }
+
+        let providers = info.itemProviders(for: Self.acceptedTypes)
+        guard !providers.isEmpty else { return false }
+
+        vm.dropEvent = true
+        if isOverAirDrop(info), let share = vm.airDropDropHandler {
+            share(providers)
+        } else {
+            ShelfStateViewModel.shared.load(providers)
+        }
+
+        return true
     }
 }
 

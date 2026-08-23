@@ -64,7 +64,11 @@ struct ShelfItemView: View {
             }
         }
         .onChange(of: viewModel.isDropTargeted) { _, targeted in
-            vm.dragDetectorTargeting = targeted
+            // Deliberately does not write vm.dragDetectorTargeting. Each tile used to
+            // mirror its own targeting onto that shared flag, and a tile that is under
+            // the pointer when the drop happens never receives an exit - so the flag was
+            // left true and the whole panel stayed highlighted until the app restarted.
+            // The notch-wide drop target owns that flag now.
             // Debounce drop target state changes
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(50))

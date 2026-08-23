@@ -32,6 +32,13 @@ struct ClipboardSearchBar: View {
 
     @SwiftUI.State private var caretVisible = true
 
+    private var caret: some View {
+        Rectangle()
+            .fill(Color.effectiveAccent)
+            .frame(width: 1.5, height: 12)
+            .opacity(caretVisible ? 1 : 0)
+    }
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
@@ -41,20 +48,32 @@ struct ClipboardSearchBar: View {
             switch state {
             case .ready:
                 HStack(spacing: 1) {
+                    // The caret goes before the placeholder and after typed text, which
+                    // is where a real text field puts it: at the insertion point. Drawing
+                    // it after the placeholder left it stranded at the far right of the
+                    // hint, pointing at nothing.
                     if query.isEmpty {
+                        caret
                         Text("Type to search")
                             .font(.system(size: 11))
                             .foregroundStyle(.gray)
+                            .lineLimit(1)
+                            .padding(.leading, 3)
                     } else {
                         Text(query)
                             .font(.system(size: 12))
                             .foregroundStyle(.white)
                             .lineLimit(1)
+                        caret
                     }
-                    Rectangle()
-                        .fill(Color.effectiveAccent)
-                        .frame(width: 1.5, height: 12)
-                        .opacity(caretVisible ? 1 : 0)
+                }
+                if query.isEmpty {
+                    Spacer(minLength: 6)
+                    Text("⌥↩ plain text")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.gray.opacity(0.7))
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             case .secureInput:
                 Text("Typing is unavailable while a password field is focused")

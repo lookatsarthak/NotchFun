@@ -137,7 +137,15 @@ class BoringViewCoordinator: ObservableObject {
         }
 
         // Observe changes to hudReplacement
-        hudReplacementCancellable = Defaults.publisher(.hudReplacement)
+        // options: [] - not the default [.initial].
+        //
+        // With .initial the publisher replays the stored value the moment it is
+        // subscribed, at launch, and this observer cannot tell that from the user
+        // actually flicking the switch. It would ask for Accessibility, get "no" while
+        // macOS was still revalidating a freshly replaced bundle, and write false -
+        // which is exactly how the setting kept turning itself off after an update.
+        // Starting the interceptor at launch is the job of the block further down.
+        hudReplacementCancellable = Defaults.publisher(.hudReplacement, options: [])
             .sink { [weak self] change in
                 Task { @MainActor in
                     guard let self = self else { return }

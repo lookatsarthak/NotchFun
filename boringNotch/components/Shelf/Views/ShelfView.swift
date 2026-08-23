@@ -21,10 +21,25 @@ struct ShelfView: View {
                 .aspectRatio(1, contentMode: .fit)
                 .environmentObject(vm)
             panel
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: nil) { providers in
                     handleDrop(providers: providers)
                 }
         }
+        .overlay(alignment: .bottom) {
+            if let error = tvm.lastDropError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+                    .padding(.bottom, 4)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.smooth(duration: 0.2), value: tvm.lastDropError)
         // Bind Quick Look to shelf selection
         .onChange(of: selection.selectedIDs) {
             updateQuickLookSelection()
@@ -58,6 +73,15 @@ struct ShelfView: View {
         }
     }
 
+    private var clearButton: some View {
+        ClearConfirmButton(
+            count: tvm.items.count,
+            idleHelp: "Clear the shelf — your files are not deleted",
+            confirmHelp: "Remove everything from the shelf",
+            action: tvm.clearAll
+        )
+    }
+
     var panel: some View {
         RoundedRectangle(cornerRadius: 16)
             .stroke(
@@ -69,6 +93,12 @@ struct ShelfView: View {
             .overlay {
                 content
                     .padding()
+            }
+            .overlay(alignment: .topTrailing) {
+                if !tvm.items.isEmpty {
+                    clearButton
+                        .padding(8)
+                }
             }
             .transaction { transaction in
                 transaction.animation = vm.animation
@@ -103,7 +133,7 @@ struct ShelfView: View {
                 }
                 .padding(-spacing)
                 .scrollIndicators(.never)
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: nil) { providers in
                     handleDrop(providers: providers)
                 }
             }

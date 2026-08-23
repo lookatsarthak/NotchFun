@@ -46,6 +46,9 @@ final class CaffeineManager: ObservableObject {
     private let store: CaffeineSessionStoring
     private var countdown: Timer?
     private var observers: [Any] = []
+    private var batteryObserverID: Int?
+    private var autoTriggerEnabled: (@Sendable (AutoTrigger) -> Bool)?
+    private var autoTriggerMode: (@Sendable () -> CaffeineMode)?
 
     init(assertion: PowerAssertionHolding, store: CaffeineSessionStoring) {
         self.assertion = assertion
@@ -76,6 +79,40 @@ final class CaffeineManager: ObservableObject {
         }
 
         apply(saved, announce: false)
+    }
+
+    /// What can switch caffeine on by itself.
+    enum AutoTrigger: Sendable {
+        case powerConnected
+        case externalDisplay
+    }
+
+    /// Records what may switch caffeine on by itself.
+    ///
+    /// Only the decision lives here. Watching the power adapter and the screens is the
+    /// app layer's job, because this type is compiled into the test bundle, which links
+    /// neither Defaults nor the battery manager - keeping it that way is what lets these
+    /// rules be tested at all.
+    func configureAutoTriggers(
+        isEnabled: @escaping @Sendable (AutoTrigger) -> Bool,
+        mode: @escaping @Sendable () -> CaffeineMode
+    ) {
+        autoTriggerEnabled = isEnabled
+        autoTriggerMode = mode
+    }
+
+    /// Turns caffeine on when the trigger appears, and off again only if we were the one
+    /// who turned it on.
+    func handleAutoTrigger(_ trigger: AutoTrigger, active: Bool) {
+        guard autoTriggerEnabled?(trigger) == true else { return }
+
+        if active {
+            guard !isActive else { return }
+            startedAutomatically = true
+            activate(mode: autoTriggerMode?() ?? .displayAwake, duration: .indefinite)
+        } else if startedAutomatically {
+            deactivate()
+        }
     }
 
     /// Hooks up sleep/wake and app-termination observers. Called once at launch.
@@ -111,6 +148,7 @@ final class CaffeineManager: ObservableObject {
         guard session != nil else { return }
         assertion.release()
         session = nil
+        startedAutomatically = false
         remainingLabel = nil
         stopCountdown()
         store.save(nil)
@@ -173,6 +211,14 @@ final class CaffeineManager: ObservableObject {
     // MARK: - Internals
 
     private static let assertionReason = "NotchFun caffeine"
+
+    /// True when *this* turned caffeine on, rather than the user.
+    ///
+    /// It decides whether unplugging may turn it off again. A session the user started
+    /// deliberately is never cancelled by hardware changing underneath them - having
+    /// your Mac decide to stop staying awake because you moved to battery is a worse
+    /// surprise than it staying on.
+    private var startedAutomatically = false
 
     /// The single place the assertion and the session are set together.
     @discardableResult

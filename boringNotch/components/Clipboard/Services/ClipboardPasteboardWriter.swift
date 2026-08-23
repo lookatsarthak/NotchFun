@@ -13,6 +13,33 @@ import Foundation
 /// user the thing they just clicked.
 enum ClipboardPasteboardWriter {
 
+    /// Writes only the plain text of an item, dropping fonts, colours and links.
+    ///
+    /// Returns false when the entry has no text at all - an image has no plain form, and
+    /// pasting nothing would be worse than doing nothing.
+    @discardableResult
+    static func writePlainText(
+        _ item: ClipboardItem,
+        to pasteboard: NSPasteboard = .general,
+        blobStore: ClipboardBlobStore
+    ) -> Bool {
+        guard let text = plainText(of: item, blobStore: blobStore), !text.isEmpty else { return false }
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        pasteboard.setData(Data(), forType: .fromNotchFun)
+        return true
+    }
+
+    /// The item's text, preferring a real string payload and falling back to the title.
+    static func plainText(of item: ClipboardItem, blobStore: ClipboardBlobStore) -> String? {
+        for ref in item.contents where ref.type == NSPasteboard.PasteboardType.string.rawValue {
+            if let data = blobStore.data(for: ref), let string = String(data: data, encoding: .utf8) {
+                return string
+            }
+        }
+        return item.title.isEmpty ? nil : item.title
+    }
+
     /// - Returns: `true` if something was actually written.
     @discardableResult
     static func write(

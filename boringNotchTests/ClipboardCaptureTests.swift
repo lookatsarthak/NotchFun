@@ -9,7 +9,10 @@ import Testing
 
 /// Every test here uses `NSPasteboard.withUniqueName()`, so the real system clipboard is
 /// never read or written — running the suite must not disturb whatever the user copied.
-@Suite("Clipboard capture filtering")
+/// Serialized: every test here creates a uniquely named NSPasteboard, and running them
+/// concurrently occasionally produced a pasteboard that returned nothing at all - a flake
+/// in the harness rather than the product, but a flake either way.
+@Suite("Clipboard capture filtering", .serialized)
 struct ClipboardCaptureTests {
     private func capture(_ pasteboard: NSPasteboard, store: ClipboardBlobStore) -> ClipboardItem? {
         guard let snapshot = ClipboardCapture.snapshot(

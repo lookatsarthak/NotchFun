@@ -12,6 +12,7 @@ struct ClipboardSettings: View {
     @Default(.clipboardPasteOnSelect) var pasteOnSelect
     @Default(.clipboardHistorySize) var historySize
     @Default(.clipboardCheckInterval) var checkInterval
+    @Default(.clipboardAutoClearDelay) var autoClearDelay
 
     @State private var showClearConfirmation = false
     @State private var accessibilityGranted: Bool?
@@ -46,7 +47,42 @@ struct ClipboardSettings: View {
             } header: {
                 Text("History")
             } footer: {
-                Text("Pinned entries are never counted against the limit or removed automatically.")
+                Text("Pinned entries are never counted against the limit or removed automatically. While history is on, NotchFun checks the clipboard at the interval above.")
+            }
+
+            Section {
+                Defaults.Toggle(key: .clipboardSkipSensitiveText) {
+                    Text("Skip text that looks like a password")
+                }
+            } header: {
+                Text("Privacy")
+            } footer: {
+                Text("Copies marked as passwords by the app that made them are always skipped. This adds a guess for apps that don't mark them, like a token copied from a terminal. Being a guess, it can miss some and skip text that only mentions a password.")
+            }
+
+            ClipboardIgnoredAppsSection()
+
+            Section {
+                Picker("Empty it after copying", selection: $autoClearDelay) {
+                    Text("Never").tag(0.0)
+                    Text("30 seconds").tag(30.0)
+                    Text("1 minute").tag(60.0)
+                    Text("5 minutes").tag(300.0)
+                    Text("15 minutes").tag(900.0)
+                }
+                Defaults.Toggle(key: .clipboardClearOnSleep) {
+                    Text("When the Mac sleeps")
+                }
+                Defaults.Toggle(key: .clipboardClearOnDisplaySleep) {
+                    Text("When the display sleeps")
+                }
+                Defaults.Toggle(key: .clipboardClearOnLock) {
+                    Text("When the screen locks")
+                }
+            } header: {
+                Text("Clear the system clipboard")
+            } footer: {
+                Text("This empties the clipboard itself, so ⌘V will paste nothing. Your saved history is not affected.")
             }
 
             Section {
@@ -79,6 +115,7 @@ struct ClipboardSettings: View {
 
             Section {
                 KeyboardShortcuts.Recorder("Open clipboard history:", name: .clipboardHistoryPanel)
+                KeyboardShortcuts.Recorder("Paste as plain text:", name: .pasteAsPlainText)
             } header: {
                 Text("Shortcut")
             } footer: {
