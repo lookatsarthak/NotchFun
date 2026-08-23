@@ -41,29 +41,12 @@ class WebcamManager: NSObject, ObservableObject {
     
     // MARK: - Constants
     
-    enum WebcamError: Error, LocalizedError {
-        case deviceUnavailable
-        case accessDenied
-        case configurationFailed(String)
-        
-        var errorDescription: String? {
-            switch self {
-            case .deviceUnavailable:
-                return "No camera devices available"
-            case .accessDenied:
-                return "Camera access denied"
-            case .configurationFailed(let message):
-                return "Camera configuration failed: \(message)"
-            }
-        }
-    }
-    
     // MARK: - Properties
     
     private override init() {
         super.init()
-        NotificationCenter.default.addObserver(self, selector: #selector(deviceWasDisconnected), name: .AVCaptureDeviceWasDisconnected, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(deviceWasConnected), name: .AVCaptureDeviceWasConnected, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(deviceWasDisconnected), name: AVCaptureDevice.wasDisconnectedNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(deviceWasConnected), name: AVCaptureDevice.wasConnectedNotification, object: nil)
         checkCameraAvailability()
     }
     
