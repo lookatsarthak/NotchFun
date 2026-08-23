@@ -139,6 +139,62 @@ struct CaffeineManagerTests {
         #expect(!manager.isActive)
     }
 
+    @Test("A trigger the user enabled switches caffeine on")
+    func autoTriggerActivates() {
+        let (manager, assertion, _) = makeManager()
+        manager.configureAutoTriggers(isEnabled: { _ in true }, mode: { .displayAwake })
+
+        manager.handleAutoTrigger(.powerConnected, active: true)
+        #expect(manager.isActive)
+        #expect(assertion.isHeld)
+    }
+
+    @Test("A trigger the user did not enable does nothing")
+    func autoTriggerRespectsSetting() {
+        let (manager, assertion, _) = makeManager()
+        manager.configureAutoTriggers(isEnabled: { _ in false }, mode: { .displayAwake })
+
+        manager.handleAutoTrigger(.powerConnected, active: true)
+        #expect(!manager.isActive)
+        #expect(!assertion.isHeld)
+    }
+
+    @Test("Unplugging ends a session the trigger started")
+    func autoTriggerDeactivatesItsOwnSession() {
+        let (manager, assertion, _) = makeManager()
+        manager.configureAutoTriggers(isEnabled: { _ in true }, mode: { .displayAwake })
+
+        manager.handleAutoTrigger(.powerConnected, active: true)
+        manager.handleAutoTrigger(.powerConnected, active: false)
+        #expect(!manager.isActive)
+        #expect(!assertion.isHeld)
+    }
+
+    @Test("Unplugging never cancels a session the user started")
+    func autoTriggerLeavesManualSessionsAlone() {
+        // Having your Mac decide to stop staying awake because you moved to battery is a
+        // worse surprise than it staying on.
+        let (manager, assertion, _) = makeManager()
+        manager.configureAutoTriggers(isEnabled: { _ in true }, mode: { .displayAwake })
+
+        manager.activate(mode: .displayAwake, duration: .indefinite, now: testEpoch)
+        manager.handleAutoTrigger(.powerConnected, active: false)
+        #expect(manager.isActive)
+        #expect(assertion.isHeld)
+    }
+
+    @Test("A trigger firing while already on does not restart the session")
+    func autoTriggerDoesNotDisturbAnActiveSession() {
+        let (manager, assertion, _) = makeManager()
+        manager.configureAutoTriggers(isEnabled: { _ in true }, mode: { .displayAwake })
+        manager.activate(mode: .systemAwake, duration: .indefinite, now: testEpoch)
+        let holds = assertion.holdCount
+
+        manager.handleAutoTrigger(.externalDisplay, active: true)
+        #expect(assertion.holdCount == holds)
+        #expect(assertion.lastMode == .systemAwake)
+    }
+
     @Test("Quitting releases the assertion")
     func termination() {
         let (manager, assertion, _) = makeManager()

@@ -50,6 +50,7 @@ struct DynamicNotchApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var caffeineBatteryObserverID: Int?
     var statusItem: NSStatusItem?
     var windows: [String: NSWindow] = [:] // UUID -> NSWindow
     var viewModels: [String: BoringViewModel] = [:] // UUID -> BoringViewModel
@@ -392,11 +393,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // is on — bootstrap only installs the preference observers.
         ClipboardStateViewModel.shared.bootstrap()
 
+        // Clearing the system clipboard is independent of history: it works whether or
+        // not anything is being recorded. With every trigger off it installs a couple of
+        // observers and schedules nothing.
+        ClipboardAutoClearService.shared.start()
+
         // Caffeine. restore() resumes a session that survived a quit and drops one that
         // expired while we were not running; startObserving() wires sleep/wake and
         // app-termination handling.
         CaffeineManager.shared.restore()
         CaffeineManager.shared.startObserving()
+        CaffeineManager.shared.configureAutoTriggers(
+            isEnabled: { trigger in
+                switch trigger {
+                case .powerConnected: Defaults[.caffeineOnPowerConnected]
+                case .externalDisplay: Defaults[.caffeineOnExternalDisplay]
+                }
+            },
+            mode: { Defaults[.caffeineMode] }
+        )
+        caffeineBatteryObserverID = BatteryActivityManager.shared.addObserver { event in
+            guard case .powerSourceChanged(let isPluggedIn) = event else { return }
+            Task { @MainActor in
+                CaffeineManager.shared.handleAutoTrigger(.powerConnected, active: isPluggedIn)
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                CaffeineManager.shared.handleAutoTrigger(
+                    .externalDisplay, active: NSScreen.screens.count > 1
+                )
+            }
+        }
         if Defaults[.caffeineActivateOnLaunch], !CaffeineManager.shared.isActive {
             CaffeineManager.shared.activate(
                 mode: Defaults[.caffeineMode],
@@ -428,6 +458,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     mode: Defaults[.caffeineMode],
                     duration: Defaults[.caffeineDefaultDuration]
                 )
+            }
+        }
+
+        // Paste what is already on the clipboard, without its formatting. Reads the
+        // pasteboard rather than the history, so it works even with history switched off.
+        KeyboardShortcuts.onKeyDown(for: .pasteAsPlainText) { [weak self] in
+            guard self != nil else { return }
+            guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
+            guard ClipboardPasteService.ensureAuthorized(promptIfNeeded: true) else { return }
+
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(text, forType: .string)
+            pasteboard.setData(Data(), forType: .fromNotchFun)
+            ClipboardMonitor.shared.acknowledgeSelfCopy()
+            Task {
+                try? await Task.sleep(for: .milliseconds(60))
+                ClipboardPasteService.paste()
             }
         }
 

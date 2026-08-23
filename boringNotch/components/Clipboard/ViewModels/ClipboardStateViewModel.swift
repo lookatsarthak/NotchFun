@@ -43,8 +43,22 @@ final class ClipboardStateViewModel: ObservableObject {
     private let blobStore: ClipboardBlobStore
     private var preferenceTasks: [Task<Void, Never>] = []
 
+    /// Which apps entries were copied from, most frequent first.
+    ///
+    /// Read on demand by Settings rather than published: the notch never needs it, and
+    /// republishing on every copy is exactly what `visibleItems` exists to avoid.
+    var sourceAppFrequencies: [String] {
+        var counts: [String: Int] = [:]
+        for item in history.items {
+            guard let id = item.appBundleID else { continue }
+            counts[id, default: 0] += 1
+        }
+        return counts.sorted { $0.value > $1.value }.map(\.key)
+    }
+
     var isEmpty: Bool { history.items.isEmpty }
     var itemCount: Int { history.items.count }
+    var unpinnedCount: Int { history.unpinned.count }
 
     /// Default arguments are evaluated in a nonisolated context, so the shared
     /// dependencies are resolved in the body instead — referencing a `@MainActor`
@@ -68,6 +82,11 @@ final class ClipboardStateViewModel: ObservableObject {
     /// Called once at app launch.
     func bootstrap() {
         monitor.setHandler { [weak self] item in
+            // Restart the auto-clear countdown from the copy the user just made, rather
+            // than from whenever the setting last changed. Lives here, not in the
+            // monitor: the monitor is compiled into the test bundle and stays free of
+            // preferences and services.
+            ClipboardAutoClearService.shared.noteCopy()
             self?.capture(item)
         }
         observePreferences()
@@ -129,7 +148,9 @@ final class ClipboardStateViewModel: ObservableObject {
             pollInterval: max(0.1, Defaults[.clipboardCheckInterval]),
             maxHistorySize: max(1, Defaults[.clipboardHistorySize]),
             maxPayloadBytes: max(1, Defaults[.clipboardMaxPayloadMB]) * 1024 * 1024,
-            ignoreUniversalClipboard: Defaults[.clipboardIgnoreUniversalClipboard]
+            ignoreUniversalClipboard: Defaults[.clipboardIgnoreUniversalClipboard],
+            skipSensitiveText: Defaults[.clipboardSkipSensitiveText],
+            ignoredAppBundleIDs: Set(Defaults[.clipboardIgnoredApps])
         )
     }
 
@@ -226,6 +247,16 @@ final class ClipboardStateViewModel: ObservableObject {
         // Re-copying counts as a use: bump the entry to the top so the most recently
         // used clips stay reachable.
         promote(item)
+    }
+
+    /// Copies an entry with its formatting removed. Falls back to a normal copy when the
+    /// entry has no text - an image has no plain form, and doing nothing would look broken.
+    func copyToPasteboardAsPlainText(_ item: ClipboardItem) {
+        if ClipboardPasteboardWriter.writePlainText(item, blobStore: blobStore) {
+            ClipboardMonitor.shared.acknowledgeSelfCopy()
+        } else {
+            copyToPasteboard(item)
+        }
     }
 
     private func promote(id: UUID) {

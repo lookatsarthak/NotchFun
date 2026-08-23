@@ -32,7 +32,7 @@ struct CaffeineSettings: View {
             } header: {
                 Text("Caffeine")
             } footer: {
-                Text("Stops the Mac going to sleep on its own. Needs no permissions.")
+                Text("Stops the Mac going to sleep on its own. Needs no permissions. While it is on your Mac will not idle-sleep, so expect the battery to drain faster.")
             }
 
             Section {
@@ -65,10 +65,16 @@ struct CaffeineSettings: View {
                 Defaults.Toggle(key: .caffeineActivateOnLaunch) {
                     Text("Turn on when NotchFun launches")
                 }
+                Defaults.Toggle(key: .caffeineOnPowerConnected) {
+                    Text("Turn on when connected to power")
+                }
+                Defaults.Toggle(key: .caffeineOnExternalDisplay) {
+                    Text("Turn on when an external display is connected")
+                }
             } header: {
-                Text("Appearance")
+                Text("Appearance and automation")
             } footer: {
-                Text("The cup appears in the closed notch and steps aside for volume, brightness and battery indicators, returning when they disappear.")
+                Text("A session started automatically also ends automatically when you unplug or disconnect. One you started yourself is left alone. The cup appears in the closed notch and steps aside for volume, brightness and battery indicators, returning when they disappear.")
             }
 
             Section {

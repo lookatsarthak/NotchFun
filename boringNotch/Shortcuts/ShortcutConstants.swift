@@ -17,5 +17,11 @@ extension KeyboardShortcuts.Name {
     /// No default binding: every obvious combination is already taken by something, and
     /// silently stealing one from another app is worse than making the user pick.
     static let toggleCaffeine = Self("toggleCaffeine")
+    /// Paste whatever is on the clipboard without its formatting.
+    ///
+    /// No default, like toggleCaffeine: shipping a binding for this would squat on a
+    /// combination another app may already use, and ⌘⌥⇧V is popular precisely because
+    /// several apps claim it.
+    static let pasteAsPlainText = Self("pasteAsPlainText")
     static let toggleNotchOpen = Self("toggleNotchOpen", default: .init(.i, modifiers: [.command, .shift]))
 }

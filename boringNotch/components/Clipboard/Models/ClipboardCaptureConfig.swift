@@ -20,6 +20,11 @@ struct ClipboardCaptureConfig: Equatable, Sendable {
     var maxPayloadBytes: Int = 32 * 1024 * 1024
     /// Skip clips that arrived over Universal Clipboard from another device.
     var ignoreUniversalClipboard: Bool = false
+    /// Skip text that looks like a password or token even when the app that copied it
+    /// set no marker. A guess, so it is off unless the user turns it on.
+    var skipSensitiveText: Bool = false
+    /// Bundle identifiers whose copies are never recorded.
+    var ignoredAppBundleIDs: Set<String> = []
 
     static let `default` = ClipboardCaptureConfig()
 }

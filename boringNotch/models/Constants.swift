@@ -188,6 +188,10 @@ extension Defaults.Keys {
     static let caffeineDefaultDuration = Key<CaffeineDuration>("caffeineDefaultDuration", default: .indefinite)
     /// Turn caffeine on whenever the app launches.
     static let caffeineActivateOnLaunch = Key<Bool>("caffeineActivateOnLaunch", default: false)
+    /// Turn caffeine on by itself when the power adapter is connected.
+    static let caffeineOnPowerConnected = Key<Bool>("caffeineOnPowerConnected", default: false)
+    /// Turn caffeine on by itself when an external display is connected.
+    static let caffeineOnExternalDisplay = Key<Bool>("caffeineOnExternalDisplay", default: false)
 
     // MARK: Clipboard
     /// Master switch. Off by default: with this disabled there is no polling timer,
@@ -196,6 +200,21 @@ extension Defaults.Keys {
     static let clipboardHistorySize = Key<Int>("clipboardHistorySize", default: 200)
     static let clipboardCheckInterval = Key<Double>("clipboardCheckInterval", default: 0.5)
     static let clipboardIgnoreUniversalClipboard = Key<Bool>("clipboardIgnoreUniversalClipboard", default: false)
+    /// Skip text that looks like a credential even when the source app set no marker.
+    /// Off by default: it is a heuristic, and silently dropping a copy the user wanted
+    /// is worse than recording one they did not think about.
+    static let clipboardSkipSensitiveText = Key<Bool>("clipboardSkipSensitiveText", default: false)
+    /// Bundle identifiers whose copies are never recorded.
+    static let clipboardIgnoredApps = Key<[String]>("clipboardIgnoredApps", default: [])
+
+    /// Seconds after a copy before the system clipboard is emptied. Zero means never.
+    static let clipboardAutoClearDelay = Key<Double>("clipboardAutoClearDelay", default: 0)
+    /// Empty the system clipboard when the Mac sleeps.
+    static let clipboardClearOnSleep = Key<Bool>("clipboardClearOnSleep", default: false)
+    /// Empty the system clipboard when the display sleeps.
+    static let clipboardClearOnDisplaySleep = Key<Bool>("clipboardClearOnDisplaySleep", default: false)
+    /// Empty the system clipboard when the screen locks.
+    static let clipboardClearOnLock = Key<Bool>("clipboardClearOnLock", default: false)
     /// Paste into the frontmost app on select, rather than only copying.
     ///
     /// On by default: pasting is the point of the feature, and it degrades safely to

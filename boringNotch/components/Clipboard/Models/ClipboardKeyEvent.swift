@@ -21,6 +21,8 @@ enum ClipboardKeyEvent: Equatable, Sendable {
     case pageUp
     case pageDown
     case confirm
+    /// Paste the selection with its formatting stripped.
+    case confirmAsPlainText
     case cancel
     /// Command-1 through Command-9.
     case quickSelect(Int)

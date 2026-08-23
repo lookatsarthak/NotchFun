@@ -52,8 +52,19 @@ enum ClipboardCapture {
         sourceAppBundleID: String?,
         config: ClipboardCaptureConfig
     ) -> Snapshot? {
+        // An app the user has excluded is excluded whatever it copied.
+        if let sourceAppBundleID, config.ignoredAppBundleIDs.contains(sourceAppBundleID) {
+            return nil
+        }
+
         let allTypes = Set(pasteboard.types ?? [])
         guard !shouldIgnore(pasteboardTypes: allTypes) else { return nil }
+
+        if config.skipSensitiveText,
+           let text = pasteboard.string(forType: .string),
+           ClipboardSecretHeuristic.looksSensitive(text) {
+            return nil
+        }
 
         // Our own paste wrote this; recording it would duplicate the entry the user
         // just selected and, over time, degenerate the history.

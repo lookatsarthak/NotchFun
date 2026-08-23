@@ -7,6 +7,9 @@ import Defaults
 import SwiftUI
 
 struct ClipboardView: View {
+    @State private var confirmingClear = false
+    @State private var armedClearAt: Date?
+
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject private var clipboard = ClipboardStateViewModel.shared
 
@@ -37,6 +40,65 @@ struct ClipboardView: View {
         ClipboardSearchService.search(query, in: clipboard.visibleItems)
     }
 
+    /// Clears the history from inside the notch.
+    ///
+    /// Deletion here is unrecoverable, so a single tap only arms it: the button becomes a
+    /// labelled confirmation naming how many entries would go, and a second tap within a
+    /// few seconds does it. Option-click skips the confirmation once you know the button.
+    /// Pinned entries always survive - pinning is a deliberate act, and the count shown
+    /// excludes them.
+    @ViewBuilder
+    private var clearHistoryControl: some View {
+        let clearable = clipboard.unpinnedCount
+
+        Button {
+            if NSEvent.modifierFlags.contains(.option) {
+                performClear()
+            } else if confirmingClear {
+                performClear()
+            } else {
+                confirmingClear = true
+                armedClearAt = Date()
+            }
+        } label: {
+            if confirmingClear {
+                Text("Clear \(clearable)?")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.red)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .frame(height: 26)
+                    .background(Color.red.opacity(0.15), in: Capsule())
+            } else {
+                Image(systemName: "trash")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.gray)
+                    .frame(width: 26, height: 26)
+                    .background(Color.white.opacity(0.08), in: Circle())
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(clearable == 0)
+        .opacity(clearable == 0 ? 0.4 : 1)
+        .help(confirmingClear ? "Delete these entries" : "Clear history — pinned entries are kept")
+        .animation(.smooth(duration: 0.15), value: confirmingClear)
+        .onChange(of: armedClearAt) { _, armedAt in
+            guard let armedAt else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(3))
+                // Only disarm if nothing else re-armed it in the meantime.
+                if armedClearAt == armedAt { confirmingClear = false; armedClearAt = nil }
+            }
+        }
+    }
+
+    private func performClear() {
+        confirmingClear = false
+        armedClearAt = nil
+        clipboard.clearUnpinned()
+    }
+
     private var searchState: ClipboardSearchBar.State {
         if secureInputActive { return .secureInput }
         return keyboardActive ? .ready : .unavailable
@@ -47,11 +109,14 @@ struct ClipboardView: View {
 
         VStack(spacing: 4) {
             if !clipboard.visibleItems.isEmpty {
-                ClipboardSearchBar(
-                    query: query,
-                    matchCount: results.count,
-                    state: searchState
-                )
+                HStack(spacing: 6) {
+                    ClipboardSearchBar(
+                        query: query,
+                        matchCount: results.count,
+                        state: searchState
+                    )
+                    clearHistoryControl
+                }
             }
 
             if clipboard.visibleItems.isEmpty {
@@ -281,6 +346,11 @@ struct ClipboardView: View {
                 select(match.item)
             }
 
+        case .confirmAsPlainText:
+            if let id = selectedID, let match = results.first(where: { $0.item.id == id }) {
+                select(match.item, asPlainText: true)
+            }
+
         case .cancel:
             // Escape always exits. It is the escape hatch from a tab that is holding
             // onto the keyboard, so it must never take two presses to work. Use
@@ -310,7 +380,7 @@ struct ClipboardView: View {
     /// Ordering matters: the notch must be gone *before* Command-V is posted, so the
     /// keystroke lands in the app the user was actually working in and the pasteboard
     /// write has settled first.
-    private func select(_ item: ClipboardItem) {
+    private func select(_ item: ClipboardItem, asPlainText: Bool = false) {
         fireHaptic()
         deactivate()
         // Forced: the user made a deliberate choice, so the hold must not block it.
@@ -319,7 +389,11 @@ struct ClipboardView: View {
         // Copy unconditionally and first, so the entry is on the pasteboard even if
         // the permission check is pending or refused — the user can then paste it
         // themselves. Degrading beats doing nothing.
-        clipboard.copyToPasteboard(item)
+        if asPlainText {
+            clipboard.copyToPasteboardAsPlainText(item)
+        } else {
+            clipboard.copyToPasteboard(item)
+        }
 
         guard Defaults[.clipboardPasteOnSelect] else { return }
 

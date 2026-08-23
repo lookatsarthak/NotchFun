@@ -46,7 +46,10 @@ enum ClipboardKeyInterpreter {
         if option { return nil }
 
         switch keyCode {
-        case ClipboardKeyCodes.returnKey, ClipboardKeyCodes.keypadEnter: return .confirm
+        case ClipboardKeyCodes.returnKey, ClipboardKeyCodes.keypadEnter:
+            // Option pastes the text without its formatting. Option is otherwise
+            // reserved for the app underneath, but Return is ours while the panel is up.
+            return flags.contains(.maskAlternate) ? .confirmAsPlainText : .confirm
         case ClipboardKeyCodes.escape: return .cancel
         case ClipboardKeyCodes.delete: return .backspace
         case ClipboardKeyCodes.upArrow: return .moveUp
