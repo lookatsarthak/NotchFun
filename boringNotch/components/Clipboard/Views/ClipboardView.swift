@@ -7,8 +7,6 @@ import Defaults
 import SwiftUI
 
 struct ClipboardView: View {
-    @State private var confirmingClear = false
-    @State private var armedClearAt: Date?
 
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject private var clipboard = ClipboardStateViewModel.shared
@@ -49,53 +47,15 @@ struct ClipboardView: View {
     /// excludes them.
     @ViewBuilder
     private var clearHistoryControl: some View {
-        let clearable = clipboard.unpinnedCount
-
-        Button {
-            if NSEvent.modifierFlags.contains(.option) {
-                performClear()
-            } else if confirmingClear {
-                performClear()
-            } else {
-                confirmingClear = true
-                armedClearAt = Date()
-            }
-        } label: {
-            if confirmingClear {
-                Text("Clear \(clearable)?")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.red)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .padding(.horizontal, 8)
-                    .frame(height: 26)
-                    .background(Color.red.opacity(0.15), in: Capsule())
-            } else {
-                Image(systemName: "trash")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.gray)
-                    .frame(width: 26, height: 26)
-                    .background(Color.white.opacity(0.08), in: Circle())
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(clearable == 0)
-        .opacity(clearable == 0 ? 0.4 : 1)
-        .help(confirmingClear ? "Delete these entries" : "Clear history — pinned entries are kept")
-        .animation(.smooth(duration: 0.15), value: confirmingClear)
-        .onChange(of: armedClearAt) { _, armedAt in
-            guard let armedAt else { return }
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                // Only disarm if nothing else re-armed it in the meantime.
-                if armedClearAt == armedAt { confirmingClear = false; armedClearAt = nil }
-            }
-        }
+        ClearConfirmButton(
+            count: clipboard.unpinnedCount,
+            idleHelp: "Clear history — pinned entries are kept",
+            confirmHelp: "Delete these entries",
+            action: performClear
+        )
     }
 
     private func performClear() {
-        confirmingClear = false
-        armedClearAt = nil
         clipboard.clearUnpinned()
     }
 

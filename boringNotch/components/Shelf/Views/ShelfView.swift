@@ -73,6 +73,15 @@ struct ShelfView: View {
         }
     }
 
+    private var clearButton: some View {
+        ClearConfirmButton(
+            count: tvm.items.count,
+            idleHelp: "Clear the shelf — your files are not deleted",
+            confirmHelp: "Remove everything from the shelf",
+            action: tvm.clearAll
+        )
+    }
+
     var panel: some View {
         RoundedRectangle(cornerRadius: 16)
             .stroke(
@@ -84,6 +93,12 @@ struct ShelfView: View {
             .overlay {
                 content
                     .padding()
+            }
+            .overlay(alignment: .topTrailing) {
+                if !tvm.items.isEmpty {
+                    clearButton
+                        .padding(8)
+                }
             }
             .transaction { transaction in
                 transaction.animation = vm.animation

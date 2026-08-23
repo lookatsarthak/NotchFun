@@ -55,6 +55,17 @@ final class ShelfStateViewModel: ObservableObject {
         items.removeAll { $0.id == item.id }
     }
 
+    /// Empties the shelf.
+    ///
+    /// `cleanupStoredData` runs per item, which matters for the ones the shelf made
+    /// itself - dropped text and images live in temporary files that would otherwise be
+    /// left behind. Files you dropped in are only ever referenced by bookmark, so
+    /// clearing the shelf never touches the originals on disk.
+    func clearAll() {
+        for item in items { item.cleanupStoredData() }
+        items.removeAll()
+    }
+
     func updateBookmark(for item: ShelfItem, bookmark: Data) {
         guard let idx = items.firstIndex(where: { $0.id == item.id }) else { return }
         if case .file = items[idx].kind {

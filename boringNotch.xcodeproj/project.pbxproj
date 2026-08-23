@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CD82A3CCE1080D3B09FECBCE /* ClearConfirmButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */; };
 		03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */; };
 		0D0ACC5199355FAB6BF1B332 /* ClipboardAutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */; };
 		64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */; };
@@ -255,6 +256,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearConfirmButton.swift; sourceTree = "<group>"; };
 		79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardIgnoredAppsSection.swift; sourceTree = "<group>"; };
 		FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAutoClearService.swift; sourceTree = "<group>"; };
 		793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristicTests.swift; sourceTree = "<group>"; };
@@ -760,6 +762,7 @@
 				B10F84A22C6C9596009F3026 /* TestView.swift */,
 				507266DA2C908E2E00A2D00D /* HoverButton.swift */,
 				B1F747F82EC7E94000F841DB /* LottieView.swift */,
+				FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */,
 			);
 			path = components;
 			sourceTree = "<group>";
@@ -1306,6 +1309,7 @@
 				118EBE292E946B3F00D54B5A /* ShareServiceFinder.swift in Sources */,
 				B19424092CD0FF01003E5DC2 /* LottieAnimationView.swift in Sources */,
 				B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */,
+				CD82A3CCE1080D3B09FECBCE /* ClearConfirmButton.swift in Sources */,
 				B1C974342C642B6D0000E707 /* MarqueeTextView.swift in Sources */,
 				14288DE82C6E01C800B9F80C /* ProgressIndicator.swift in Sources */,
 				1113ABC52E80E27000EC13B2 /* ShelfItemView.swift in Sources */,
