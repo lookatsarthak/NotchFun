@@ -42,9 +42,12 @@ struct ClipboardSearchBar: View {
             case .ready:
                 HStack(spacing: 1) {
                     if query.isEmpty {
-                        Text("Type to search")
+                        // Doubles as the only place ⌥↩ is advertised; without it, pasting
+                        // as plain text is a feature nobody would find.
+                        Text("Type to search · ⌥↩ pastes plain text")
                             .font(.system(size: 11))
                             .foregroundStyle(.gray)
+                            .lineLimit(1)
                     } else {
                         Text(query)
                             .font(.system(size: 12))
