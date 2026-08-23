@@ -324,6 +324,7 @@ struct ClipboardView: View {
             let unpinned = results.filter { !$0.item.isPinned }
             guard number <= unpinned.count else { return }
             select(unpinned[number - 1].item)
+
         }
     }
 
@@ -374,7 +375,11 @@ struct ClipboardView: View {
         among results: [ClipboardSearchService.Match],
         at index: Int
     ) -> String? {
-        if let pin = item.pin { return "⌥\(pin.uppercased())" }
+        // No badge for pinned entries. This used to return "⌥\(pin)", naming a shortcut
+        // that has never existed and cannot: option-letter is how the Mac types accented
+        // characters, and the search field needs them. Pinned rows are already marked by
+        // the pin glyph in the row's leading icon.
+        if item.isPinned { return nil }
         let unpinnedIndex = results.prefix(index).filter { !$0.item.isPinned }.count
         guard unpinnedIndex < 9 else { return nil }
         return "⌘\(unpinnedIndex + 1)"

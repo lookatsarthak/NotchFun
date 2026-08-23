@@ -309,7 +309,6 @@ final class ShelfItemViewModel: ObservableObject {
             let quickLookItem = NSMenuItem(title: "Quick Look", action: nil, keyEquivalent: "")
             menu.addItem(quickLookItem)
             
-            // Add Slideshow as alternate menu item (shown when Option key is held)
             let slideshowItem = NSMenuItem(title: "Quick Look", action: nil, keyEquivalent: "")
             slideshowItem.isAlternate = true
             slideshowItem.keyEquivalentModifierMask = [.option]

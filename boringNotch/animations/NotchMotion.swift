@@ -95,7 +95,7 @@ enum NotchMotion {
     /// Multiplies every token's duration by five so animations can actually be watched.
     ///
     /// A 280 ms spring cannot be reviewed by eye or captured in a screenshot, which is
-    /// how inconsistencies survived this long. Toggled from the debug menu.
+    /// how inconsistencies survived this long.
     /// Read once at launch from `defaults write <bundle-id> NotchFunSlowMotion -bool true`
     /// rather than bound to a keystroke, because the point is to inspect animations from
     /// outside the app - a screenshot harness cannot press a shortcut, and a five-times

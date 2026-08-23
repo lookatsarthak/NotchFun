@@ -55,6 +55,11 @@ enum ClipboardKeyInterpreter {
         }
 
         // Every other option combo belongs to the app underneath.
+        //
+        // This is also why pinned entries cannot have an option shortcut: on a Mac
+        // option-A is how you type "å". Claiming option-letter here would take the
+        // accented characters away from the search field, which matters far more than
+        // a shortcut for jumping to a pin.
         if option { return nil }
 
         switch keyCode {

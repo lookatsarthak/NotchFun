@@ -215,3 +215,4 @@ struct ClipboardPasteboardWriterTests {
         #expect(pasteboard.string(forType: .string) == "existing contents")
     }
 }
+
