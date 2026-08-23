@@ -53,7 +53,10 @@ It's off by default. Turn it on in **Settings → Clipboard**.
 
 ## Install
 
-**Requires macOS 14 Sonoma or later.** Apple Silicon or Intel.
+**Requires macOS 15 Sequoia or later.** Apple Silicon or Intel.
+
+> Earlier versions claimed macOS 14. That was wrong: the bundled MediaRemoteAdapter
+> framework is built for macOS 15, so the app could not reliably launch on 14.
 
 **Homebrew**
 

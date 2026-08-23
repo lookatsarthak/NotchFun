@@ -11,7 +11,7 @@
       <pubDate>Sun, 23 Aug 2026 19:19:26 +0530</pubDate>
       <sparkle:version>9</sparkle:version>
       <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <description><![CDATA[ See the release notes on GitHub. ]]></description>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.2.0/NotchFun-1.2.0.dmg"
@@ -25,7 +25,7 @@
       <pubDate>Tue, 18 Aug 2026 11:38:15 +0530</pubDate>
       <sparkle:version>4</sparkle:version>
       <sparkle:shortVersionString>1.1.2</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <description><![CDATA[ See the release notes on GitHub. ]]></description>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.1.2/NotchFun-1.1.2.dmg"
@@ -39,7 +39,7 @@
       <pubDate>Tue, 18 Aug 2026 03:13:11 +0530</pubDate>
       <sparkle:version>3</sparkle:version>
       <sparkle:shortVersionString>1.1.1</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <description><![CDATA[ See the release notes on GitHub. ]]></description>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.1.1/NotchFun-1.1.1.dmg"
@@ -53,7 +53,7 @@
       <pubDate>Tue, 18 Aug 2026 00:59:52 +0530</pubDate>
       <sparkle:version>2</sparkle:version>
       <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <description><![CDATA[ See the release notes on GitHub. ]]></description>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.1.0/NotchFun-1.1.0.dmg"
@@ -67,7 +67,7 @@
       <pubDate>Sun, 17 Aug 2026 00:00:00 +0530</pubDate>
       <sparkle:version>1</sparkle:version>
       <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <description><![CDATA[
         <h3>First release</h3>
         <ul>

@@ -89,7 +89,10 @@ class BoringNotchSkyLightWindow: NSPanel {
         if Defaults[.hideFromScreenRecording] {
             sharingType = .none
         } else {
-            sharingType = .readWrite
+            // .readWrite is deprecated as of macOS 15 and read-only is its replacement.
+            // Nothing writes to this window through window sharing, so the capability was
+            // never used - only whether the notch appears in a screen recording matters.
+            sharingType = .readOnly
         }
     }
     

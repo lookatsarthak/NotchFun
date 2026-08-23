@@ -43,13 +43,21 @@ enum ClipboardKeyInterpreter {
             }
         }
 
+        // Return is handled before the option guard below, not inside the switch after
+        // it. Option pastes without formatting, and that guard returns nil for every
+        // option combo - so with the case sitting after it, option-Return was
+        // unreachable and the plain-text paste could never fire.
+        switch keyCode {
+        case ClipboardKeyCodes.returnKey, ClipboardKeyCodes.keypadEnter:
+            return option ? .confirmAsPlainText : .confirm
+        default:
+            break
+        }
+
+        // Every other option combo belongs to the app underneath.
         if option { return nil }
 
         switch keyCode {
-        case ClipboardKeyCodes.returnKey, ClipboardKeyCodes.keypadEnter:
-            // Option pastes the text without its formatting. Option is otherwise
-            // reserved for the app underneath, but Return is ours while the panel is up.
-            return flags.contains(.maskAlternate) ? .confirmAsPlainText : .confirm
         case ClipboardKeyCodes.escape: return .cancel
         case ClipboardKeyCodes.delete: return .backspace
         case ClipboardKeyCodes.upArrow: return .moveUp

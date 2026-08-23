@@ -71,6 +71,7 @@ struct Eye: View {
     }
 }
 
+#if DEBUG
 struct MinimalFaceFeatures_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
@@ -80,3 +81,4 @@ struct MinimalFaceFeatures_Previews: PreviewProvider {
         .previewLayout(.fixed(width: 60, height: 60)) // Adjusted preview size for better visibility
     }
 }
+#endif

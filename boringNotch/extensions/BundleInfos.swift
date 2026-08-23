@@ -28,13 +28,6 @@ extension Bundle {
     }
 }
 
-struct BundleAppIcon: View {
-    var body: some View {
-        Bundle.main.iconFileName
-            .flatMap { NSImage(named: $0) }
-            .map { Image(nsImage: $0) }
-    }
-}
 
 func isNewVersion() -> Bool {
     let defaults = UserDefaults.standard

@@ -30,16 +30,6 @@ public enum NotchViews {
     case clipboard
 }
 
-enum SettingsEnum {
-    case general
-    case about
-    case charge
-    case download
-    case mediaPlayback
-    case hud
-    case shelf
-    case extensions
-}
 
 enum DownloadIndicatorStyle: String, Defaults.Serializable {
     case progress = "Progress"

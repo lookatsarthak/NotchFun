@@ -103,8 +103,9 @@ struct ContentView: View {
         }
 
         if showsCaffeineIndicator {
-            // Music uses both slots, and the bare notch has none, so the cup needs its own.
-            chinWidth += notchSlotSize + 10
+            // Twice, not once: the cup on the left is matched by an empty slot on the
+            // right so the notch cut-out stays centred under the hardware.
+            chinWidth += 2 * (notchSlotSize + 10)
         }
 
         return chinWidth
@@ -331,12 +332,23 @@ struct ContentView: View {
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
                           HStack(spacing: 0) {
                               // Music owns both slots, so the cup gets its own on the far left.
+                              //
+                              // The empty slot on the right is not decoration. MusicLiveActivity
+                              // is [artwork][black rectangle][visualizer], and that black
+                              // rectangle is what covers the physical notch - it only stays
+                              // over the hardware because the artwork and the visualizer either
+                              // side of it are the same width. Adding the cup to one side alone
+                              // slid the whole row across and put the artwork over the notch.
                               if showsCaffeineIndicator {
                                   CaffeineNotchIndicator(size: notchSlotSize)
                                       .padding(.trailing, 10)
                                       .transition(.opacity.combined(with: .scale))
                               }
                               MusicLiveActivity()
+                              if showsCaffeineIndicator {
+                                  Color.clear
+                                      .frame(width: notchSlotSize + 10, height: notchSlotSize)
+                              }
                           }
                           .frame(alignment: .center)
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
@@ -350,6 +362,9 @@ struct ContentView: View {
                               Rectangle()
                                   .fill(.black)
                                   .frame(width: vm.closedNotchSize.width - 20)
+                              // Balances the cup, so the black area stays over the notch.
+                              Color.clear
+                                  .frame(width: notchSlotSize + 10, height: notchSlotSize)
                           }
                           .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
                           .transition(.opacity)
@@ -702,25 +717,6 @@ struct ContentView: View {
     }
 }
 
-struct FullScreenDropDelegate: DropDelegate {
-    @Binding var isTargeted: Bool
-    let onDrop: () -> Void
-
-    func dropEntered(info _: DropInfo) {
-        isTargeted = true
-    }
-
-    func dropExited(info _: DropInfo) {
-        isTargeted = false
-    }
-
-    func performDrop(info _: DropInfo) -> Bool {
-        isTargeted = false
-        onDrop()
-        return true
-    }
-
-}
 
 /// The drop target covering the whole notch.
 ///

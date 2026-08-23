@@ -24,6 +24,12 @@ VERSION=$(xcodebuild -scheme boringNotch -configuration Release -showBuildSettin
           | awk -F' = ' '/ MARKETING_VERSION = /{print $2; exit}')
 BUILD=$(xcodebuild -scheme boringNotch -configuration Release -showBuildSettings 2>/dev/null \
           | awk -F' = ' '/ CURRENT_PROJECT_VERSION = /{print $2; exit}')
+# Read from the project rather than hardcoded. Sparkle uses this to decide who gets
+# offered the update, so if it lags behind the deployment target, people on an older
+# macOS are offered a build that cannot launch on their Mac.
+MIN_OS=$(xcodebuild -scheme boringNotch -configuration Release -showBuildSettings 2>/dev/null \
+          | awk -F' = ' '/ MACOSX_DEPLOYMENT_TARGET = /{print $2; exit}')
+: "${MIN_OS:?could not read MACOSX_DEPLOYMENT_TARGET}"
 : "${VERSION:?could not read MARKETING_VERSION}"
 
 echo "==> Releasing NotchFun $VERSION (build $BUILD) to $REPO"
@@ -116,9 +122,9 @@ LENGTH=$(echo "$SIG_LINE" | sed -n 's/.*length="\([^"]*\)".*/\1/p')
 echo "    $SIG_LINE"
 
 echo "==> Writing docs/appcast.xml"
-python3 - "$VERSION" "$BUILD" "$SIGNATURE" "$LENGTH" <<'PY'
+python3 - "$VERSION" "$BUILD" "$SIGNATURE" "$LENGTH" "$MIN_OS" <<'PY'
 import sys, pathlib, re, subprocess
-version, build, signature, length = sys.argv[1:5]
+version, build, signature, length, min_os = sys.argv[1:6]
 p = pathlib.Path("docs/appcast.xml")
 s = p.read_text()
 pubdate = subprocess.check_output(["date", "-R"], text=True).strip()
@@ -127,7 +133,7 @@ item = f'''    <item>
       <pubDate>{pubdate}</pubDate>
       <sparkle:version>{build}</sparkle:version>
       <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>{min_os}</sparkle:minimumSystemVersion>
       <description><![CDATA[ See the release notes on GitHub. ]]></description>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v{version}/NotchFun-{version}.dmg"
