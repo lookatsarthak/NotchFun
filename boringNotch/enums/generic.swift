@@ -8,17 +8,6 @@
 import Foundation
 import Defaults
 
-public enum Style {
-    case notch
-    case floating
-}
-
-public enum ContentType: Int, Codable, Hashable, Equatable {
-    case normal
-    case menu
-    case settings
-}
-
 public enum NotchState {
     case closed
     case open
