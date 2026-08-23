@@ -106,7 +106,7 @@ struct BatteryView: View {
                     width: batteryWidth + 1
                 )
 
-            RoundedRectangle(cornerRadius: 2.5)
+            RoundedRectangle(cornerRadius: 2.5, style: .continuous)
                 .fill(batteryColor)
                 .frame(
                     width: fillWidth,

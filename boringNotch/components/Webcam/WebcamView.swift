@@ -22,17 +22,20 @@ struct CameraPreviewView: View {
                 if let previewLayer = webcamManager.previewLayer {
                     CameraPreviewLayerView(previewLayer: previewLayer)
                         .scaleEffect(x: -1, y: 1)
-                        .clipShape(RoundedRectangle(cornerRadius: Defaults[.mirrorShape] == .rectangle ? !Defaults[.cornerRadiusScaling] ? MusicPlayerImageSizes.cornerRadiusInset.closed : MusicPlayerImageSizes.cornerRadiusInset.opened : 100))
+                        .clipShape(
+                            mirrorShape(
+                                rectangleRadius: Defaults[.cornerRadiusScaling]
+                                    ? MusicPlayerImageSizes.cornerRadiusInset.opened
+                                    : MusicPlayerImageSizes.cornerRadiusInset.closed
+                            )
+                        )
                         .frame(width: geometry.size.width, height: geometry.size.width)
                         .opacity(webcamManager.isSessionRunning ? 1 : 0)
                 }
 
                 if !webcamManager.isSessionRunning {
                     ZStack {
-                        RoundedRectangle(cornerRadius: Defaults[.mirrorShape] == .rectangle ? !Defaults[.cornerRadiusScaling] ? MusicPlayerImageSizes.cornerRadiusInset.closed : 12 : 100)
-                            .fill(Color(red: 20/255, green: 20/255, blue: 20/255))
-                            .strokeBorder(.white.opacity(0.04), lineWidth: 1)
-                            .frame(width: geometry.size.width, height: geometry.size.width)
+                        placeholderBackground(size: geometry.size.width)
                         VStack(spacing: 8) {
                             Image(systemName: webcamManager.authorizationStatus == .denied ? "exclamationmark.triangle" : "web.camera")
                                 .foregroundStyle(.gray)
@@ -54,6 +57,36 @@ struct CameraPreviewView: View {
         .aspectRatio(1, contentMode: .fit)
     }
     
+    /// The round mirror stays a real circle rather than a rounded rectangle with a huge
+    /// radius: a continuous corner clamped to half the side is a squircle, not a circle,
+    /// so the shape has to switch where the radius used to.
+    private func mirrorShape(rectangleRadius: CGFloat) -> AnyShape {
+        Defaults[.mirrorShape] == .rectangle
+            ? AnyShape(RoundedRectangle(cornerRadius: rectangleRadius, style: .continuous))
+            : AnyShape(Circle())
+    }
+
+    @ViewBuilder
+    private func placeholderBackground(size: CGFloat) -> some View {
+        let fill = Color(red: 20/255, green: 20/255, blue: 20/255)
+        if Defaults[.mirrorShape] == .rectangle {
+            RoundedRectangle(
+                cornerRadius: Defaults[.cornerRadiusScaling]
+                    ? 12
+                    : MusicPlayerImageSizes.cornerRadiusInset.closed,
+                style: .continuous
+            )
+            .fill(fill)
+            .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+            .frame(width: size, height: size)
+        } else {
+            Circle()
+                .fill(fill)
+                .strokeBorder(.white.opacity(0.04), lineWidth: 1)
+                .frame(width: size, height: size)
+        }
+    }
+
     private func handleCameraTap() {
         if isRequestingAuthorization {
             return // Prevent multiple authorization requests

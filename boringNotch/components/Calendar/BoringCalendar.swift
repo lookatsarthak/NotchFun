@@ -96,7 +96,7 @@ struct WheelPicker: View {
             .padding(.vertical, 4)
             .padding(.horizontal, 4)
             .background(isSelected ? Color.effectiveAccentBackground : Color.clear)
-            .cornerRadius(8)
+            .clipShape(RoundedRectangle(cornerRadius: NotchRadius.control, style: .continuous))
         }
         .buttonStyle(PlainButtonStyle())
         .id(id)
@@ -400,7 +400,7 @@ struct EventListView: View {
                     Rectangle()
                         .fill(Color(event.calendar.color))
                         .frame(width: 3)
-                        .cornerRadius(1.5)
+                        .clipShape(RoundedRectangle(cornerRadius: 1.5, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(event.title)
