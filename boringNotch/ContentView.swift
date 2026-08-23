@@ -38,7 +38,6 @@ struct ContentView: View {
 
     @Default(.showNotHumanFace) var showNotHumanFace
 
-    // Shared interactive spring for movement/resizing to avoid conflicting animations
     private let animationSpring = NotchMotion.drag
 
     private let extendedHoverPadding: CGFloat = 30
@@ -156,7 +155,7 @@ struct ContentView: View {
                     // decisive on the way back.
                     .animation(vm.notchState == .open ? NotchMotion.shellOpen : NotchMotion.shellClose,
                                value: vm.notchState)
-                    .animation(NotchMotion.content, value: gestureProgress)
+                    .animation(NotchMotion.drag, value: gestureProgress)
                     .contentShape(Rectangle())
                     .onHover { hovering in
                         handleHover(hovering)
@@ -192,7 +191,7 @@ struct ContentView: View {
                     }
                     .onChange(of: vm.notchState) { _, newState in
                         if newState == .closed && isHovering {
-                            withAnimation {
+                            withAnimation(NotchMotion.content) {
                                 isHovering = false
                             }
                         }
@@ -240,7 +239,7 @@ struct ContentView: View {
             y: gestureScale,
             anchor: .top
         )
-        .animation(NotchMotion.content, value: gestureProgress)
+        .animation(NotchMotion.drag, value: gestureProgress)
         .background(dragDetector)
         .preferredColorScheme(.dark)
         .environmentObject(vm)

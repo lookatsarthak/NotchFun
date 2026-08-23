@@ -143,7 +143,7 @@ struct ClipboardView: View {
                 // scrolling on every one of those fights the gesture and stutters.
                 guard selectionViaKeyboard, let id else { return }
                 scrollingByProgram = true
-                withAnimation(NotchMotion.control) {
+                withAnimation(NotchMotion.content) {
                     proxy.scrollTo(id, anchor: .center)
                 }
             }

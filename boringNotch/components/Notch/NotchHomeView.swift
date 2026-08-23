@@ -384,7 +384,7 @@ struct VolumeControlView: View {
         }
         .onReceive(musicManager.$volumeControlSupported) { supported in
             if !supported {
-                withAnimation(NotchMotion.content) {
+                withAnimation(NotchMotion.control) {
                     showVolumeSlider = false
                 }
             }
@@ -563,7 +563,7 @@ struct CustomSlider: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { gesture in
-                        withAnimation {
+                        withAnimation(NotchMotion.content) {
                             dragging = true
                         }
                         let newValue = range.lowerBound + Double(gesture.location.x / width) * rangeSpan

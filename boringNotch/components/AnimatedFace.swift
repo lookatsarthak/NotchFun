@@ -47,11 +47,11 @@ struct MinimalFaceFeatures: View {
     
     func startBlinking() {
         Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
-            withAnimation(.spring(duration: 0.2)) {
+            withAnimation(NotchMotion.control) {
                 isBlinking = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.spring(duration: 0.2)) {
+                withAnimation(NotchMotion.control) {
                     isBlinking = false
                 }
             }
@@ -67,7 +67,7 @@ struct Eye: View {
             .fill(Color.white)
             .frame(width: 4, height: isBlinking ? 1 : 4)
             .frame(maxWidth: 15, maxHeight: 15) // Adjusted max size
-            .animation(.easeInOut(duration: 0.1), value: isBlinking)
+            .animation(NotchMotion.control, value: isBlinking)
     }
 }
 

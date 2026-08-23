@@ -44,7 +44,7 @@ struct WheelPicker: View {
                         dateButton(date: date, isSelected: isSelected, id: index) {
                             selectedDate = date
                             byClick = true
-                            withAnimation {
+                            withAnimation(NotchMotion.content) {
                                 scrollPosition = index
                             }
                             if Defaults[.enableHaptics] {
@@ -77,7 +77,7 @@ struct WheelPicker: View {
             let targetIndex = indexForDate(newValue)
             if scrollPosition != targetIndex {
                 byClick = true
-                withAnimation {
+                withAnimation(NotchMotion.content) {
                     scrollPosition = targetIndex
                 }
             }

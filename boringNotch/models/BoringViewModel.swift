@@ -14,7 +14,6 @@ class BoringViewModel: NSObject, ObservableObject {
     @ObservedObject var detector = FullscreenMediaDetector.shared
 
     let animationLibrary: BoringAnimations = .init()
-    let animation: Animation?
 
     @Published var contentType: ContentType = .normal
     @Published private(set) var notchState: NotchState = .closed
@@ -95,8 +94,6 @@ class BoringViewModel: NSObject, ObservableObject {
     }
 
     init(screenUUID: String? = nil) {
-        animation = animationLibrary.animation
-
         super.init()
         
         self.screenUUID = screenUUID
@@ -139,7 +136,7 @@ class BoringViewModel: NSObject, ObservableObject {
             .removeDuplicates()
             .receive(on: RunLoop.main)
             .sink { [weak self] shouldHide in
-                withAnimation(.smooth) {
+                withAnimation(NotchMotion.shellClose) {
                     self?.hideOnClosed = shouldHide
                 }
             }
@@ -267,7 +264,9 @@ class BoringViewModel: NSObject, ObservableObject {
 
     func closeHello() {
         Task { @MainActor in
-            withAnimation(animationLibrary.animation) {
+            // shellClose, not the library's open value: this collapses the notch, and
+            // the open token carries bounce that reads as a glitch on the way out.
+            withAnimation(NotchMotion.shellClose) {
                 coordinator.helloAnimationRunning = false
                 close()
             }

@@ -245,7 +245,7 @@ struct BoringBatteryView: View {
 
     var body: some View {
         Button(action: {
-            withAnimation {
+            withAnimation(NotchMotion.content) {
                 showPopupMenu.toggle()
             }
         }) {
@@ -298,7 +298,7 @@ struct BoringBatteryView: View {
         hideTask = Task {
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled else { return }
-            await MainActor.run { withAnimation { showPopupMenu = false } }
+            await MainActor.run { withAnimation(NotchMotion.content) { showPopupMenu = false } }
         }
     }
 }

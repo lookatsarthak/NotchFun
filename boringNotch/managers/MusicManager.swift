@@ -35,7 +35,6 @@ class MusicManager: ObservableObject {
     @Published var isPlaying = false
     @Published var album: String = "Self Love"
     @Published var isPlayerIdle: Bool = true
-    @Published var animations: BoringAnimations = .init()
     @Published var avgColor: NSColor = .white
     @Published var bundleIdentifier: String? = nil
     @Published var songDuration: TimeInterval = 0
@@ -184,7 +183,7 @@ class MusicManager: ObservableObject {
         // Check for playback state changes (playing/paused)
         if state.isPlaying != self.isPlaying {
             NSLog("Playback state changed: \(state.isPlaying ? "Playing" : "Paused")")
-            withAnimation(.smooth) {
+            withAnimation(NotchMotion.content) {
                 self.isPlaying = state.isPlaying
                 self.updateIdleState(state: state.isPlaying)
             }
@@ -544,7 +543,7 @@ class MusicManager: ObservableObject {
             debounceIdleTask = Task { [weak self] in
                 guard let self = self else { return }
                 try? await Task.sleep(for: .seconds(Defaults[.waitInterval]))
-                withAnimation {
+                withAnimation(NotchMotion.content) {
                     self.isPlayerIdle = !self.isPlaying
                 }
             }
@@ -555,7 +554,7 @@ class MusicManager: ObservableObject {
 
     func updateAlbumArt(newAlbumArt: NSImage) {
         workItem?.cancel()
-        withAnimation(.smooth) {
+        withAnimation(NotchMotion.content) {
             self.albumArt = newAlbumArt
             if Defaults[.coloredSpectrogram] {
                 self.calculateAverageColor()
@@ -575,7 +574,7 @@ class MusicManager: ObservableObject {
     func calculateAverageColor() {
         albumArt.averageColor { [weak self] color in
             DispatchQueue.main.async {
-                withAnimation(.smooth) {
+                withAnimation(NotchMotion.content) {
                     self?.avgColor = color ?? .white
                 }
             }

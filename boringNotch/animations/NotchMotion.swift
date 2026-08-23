@@ -56,7 +56,20 @@ enum NotchMotion {
     /// This is what makes the notch read as one object rather than a box with things in
     /// it: the container starts moving first and the content arrives a beat later. On
     /// close there is no delay — the content leaves first and the shell follows it down.
-    static let contentLead: TimeInterval = 0.06
+    static var contentLead: TimeInterval {
+        // Zero under Reduce Motion, or the nesting inverts. `resolve` collapses every
+        // token to 0.15s, so a fixed 60ms lead would put the content finishing at 0.21s
+        // against a 0.15s shell - the content still on screen after the notch has
+        // stopped, which is the exact thing the lead exists to prevent, handed to the
+        // people most likely to be bothered by it.
+        guard !isReduced else { return 0 }
+        #if DEBUG
+        // Scaled with the tokens. `.delay` is chained after `.speed`, so an unscaled
+        // lead shrinks from 18% of the motion to 4% in the one mode built to inspect it.
+        if slowMotion { return 0.06 / 0.2 }
+        #endif
+        return 0.06
+    }
 
     // MARK: - Accessibility
 

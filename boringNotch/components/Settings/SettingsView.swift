@@ -566,7 +566,7 @@ struct HUD: View {
                 }
                 .onChange(of: Defaults[.inlineHUD]) {
                     if Defaults[.inlineHUD] {
-                        withAnimation {
+                        withAnimation(NotchMotion.page) {
                             Defaults[.systemEventIndicatorShadow] = false
                             Defaults[.enableGradient] = false
                         }
@@ -860,7 +860,7 @@ struct About: View {
                             .foregroundStyle(.secondary)
                     }
                     .onTapGesture {
-                        withAnimation {
+                        withAnimation(NotchMotion.page) {
                             showBuildNumber.toggle()
                         }
                     }
@@ -1599,7 +1599,7 @@ struct Advanced: View {
                                 )
                         }
                         .onTapGesture {
-                            withAnimation {
+                            withAnimation(NotchMotion.page) {
                                 selectedIcon = icon
                             }
                             NSApp.applicationIconImage = NSImage(named: icon)

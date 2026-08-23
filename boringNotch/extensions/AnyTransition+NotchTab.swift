@@ -16,11 +16,16 @@ extension AnyTransition {
     ///
     /// Symmetric and deliberately small: the open notch is only ~140pt tall, so a
     /// full-edge move reads as a lurch at this size.
+    /// Resolved here rather than at the three call sites, so none of them can forget:
+    /// the 6pt offset below is movement, and under Reduce Motion this has to become a
+    /// plain cross-fade.
     static var notchTab: AnyTransition {
-        .opacity.combined(
-            with: .modifier(
-                active: NotchTabOffsetModifier(offset: -6),
-                identity: NotchTabOffsetModifier(offset: 0)
+        NotchMotion.transition(
+            .opacity.combined(
+                with: .modifier(
+                    active: NotchTabOffsetModifier(offset: -6),
+                    identity: NotchTabOffsetModifier(offset: 0)
+                )
             )
         )
     }
