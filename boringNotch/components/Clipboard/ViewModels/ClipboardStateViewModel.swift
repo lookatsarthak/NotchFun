@@ -127,11 +127,31 @@ final class ClipboardStateViewModel: ObservableObject {
         ]
     }
 
+    /// Whether what is on disk has actually been read into `history`.
+    ///
+    /// History loads lazily - only when the feature is switched on - but the terminate
+    /// handler writes `history.items` back unconditionally. So a session that started
+    /// with the setting off, or one that quit before the load finished, wrote an empty
+    /// array over a full file. Nothing is written until this is true.
+    private var didLoadHistory = false
+
+    /// Set when the index exists but could not be read. Suppresses every write for the
+    /// rest of the session, so a bad read can never become a bad write.
+    private var savingSuspended = false
+
     private func enable() {
         // Load lazily: a user who never turns this on never touches the disk.
-        if history.items.isEmpty {
-            history = ClipboardHistory(items: persistence.load())
-            blobStore.pruneOrphans(keeping: history.items)
+        if !didLoadHistory {
+            if let stored = persistence.load() {
+                history = ClipboardHistory(items: stored)
+                didLoadHistory = true
+                // Only ever prune against a history we actually read. Pruning against an
+                // empty one deletes every blob on disk.
+                blobStore.pruneOrphans(keeping: history.items)
+            } else {
+                savingSuspended = true
+                Self.logger.error("Clipboard index could not be read; not writing to it this session")
+            }
         }
         monitor.start(config: Self.currentConfig)
         needsRefresh = true
@@ -148,13 +168,18 @@ final class ClipboardStateViewModel: ObservableObject {
 
     /// Writes any pending changes immediately.
     func flush() async {
+        guard canPersist else { return }
         await persistence.flush(history.items)
     }
 
     /// Blocking variant for `applicationWillTerminate`.
     func flushSynchronously() {
+        guard canPersist else { return }
         persistence.flushSynchronously(history.items)
     }
+
+    /// Nothing is written unless the on-disk history was successfully read first.
+    private var canPersist: Bool { didLoadHistory && !savingSuspended }
 
     static var currentConfig: ClipboardCaptureConfig {
         ClipboardCaptureConfig(
@@ -195,7 +220,7 @@ final class ClipboardStateViewModel: ObservableObject {
             blobStore.delete(outcome.evicted.flatMap(\.contents))
         }
 
-        persistence.scheduleSave(history.items)
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }
@@ -204,7 +229,7 @@ final class ClipboardStateViewModel: ObservableObject {
 
     func togglePin(id: UUID) {
         guard history.togglePin(id: id) != nil else { return }
-        persistence.scheduleSave(history.items)
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }
@@ -212,7 +237,7 @@ final class ClipboardStateViewModel: ObservableObject {
     func delete(id: UUID) {
         guard let removed = history.remove(id: id) else { return }
         blobStore.delete(removed.contents)
-        persistence.scheduleSave(history.items)
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }
@@ -221,7 +246,7 @@ final class ClipboardStateViewModel: ObservableObject {
         let removed = history.clearUnpinned()
         guard !removed.isEmpty else { return }
         blobStore.delete(removed.flatMap(\.contents))
-        persistence.scheduleSave(history.items)
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }
@@ -237,7 +262,7 @@ final class ClipboardStateViewModel: ObservableObject {
         let evicted = history.enforceLimit(size)
         guard !evicted.isEmpty else { return }
         blobStore.delete(evicted.flatMap(\.contents))
-        persistence.scheduleSave(history.items)
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }
@@ -279,7 +304,7 @@ final class ClipboardStateViewModel: ObservableObject {
         var updated = existing
         updated.lastCopiedAt = .now
         history.add(updated, maxSize: max(1, Defaults[.clipboardHistorySize]))
-        persistence.scheduleSave(history.items)
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }

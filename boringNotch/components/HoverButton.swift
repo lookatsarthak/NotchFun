@@ -25,14 +25,21 @@ struct HoverButton: View {
                 .contentShape(Rectangle())
                 .frame(width: size, height: size)
                 .overlay {
-                    // Glass only while hovered, so the control appears to lift off the
-                    // notch rather than being cut into it. The notch surface underneath
-                    // stays opaque black — see ClearConfirmButton for why that matters.
+                    // Deliberately not glass, unlike ClearConfirmButton.
+                    //
+                    // Every use of this button is inside MusicControlsView, which is
+                    // wrapped in `.drawingGroup()` for the marquee and slider. That
+                    // rasterizes the subtree into an offscreen buffer that starts
+                    // transparent, so a backdrop-sampling effect has no backdrop to
+                    // sample - and the window itself is `isOpaque = false` over a clear
+                    // background, so the fallback backdrop is the desktop. Wallpaper
+                    // appearing inside a capsule in the middle of the black notch is
+                    // exactly the failure the whole design rule exists to prevent, and
+                    // it cannot be ruled out by building. An opaque fill cannot fail
+                    // that way.
                     Capsule()
-                        .fill(.clear)
+                        .fill(isHovering ? Color.white.opacity(0.12) : .clear)
                         .frame(width: size, height: size)
-                        .glassEffect(.regular.interactive(), in: .capsule)
-                        .opacity(isHovering ? 1 : 0)
                         .overlay {
                             Image(systemName: icon)
                                 .foregroundColor(iconColor)

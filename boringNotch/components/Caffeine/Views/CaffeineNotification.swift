@@ -54,7 +54,10 @@ struct CaffeineNotification: View {
             .foregroundStyle(isActive ? .white : .gray)
             .imageScale(.medium)
         if let namespace, isActive {
-            image.matchedGeometryEffect(id: CaffeineNotchIndicator.morphID, in: namespace)
+            // isSource: false — the standalone indicator owns the geometry. Both views
+            // are in the tree at once during the handover, which is how the morph works,
+            // and two sources in one group makes SwiftUI pick between them arbitrarily.
+            image.matchedGeometryEffect(id: CaffeineNotchIndicator.morphID, in: namespace, isSource: false)
         } else {
             image
         }

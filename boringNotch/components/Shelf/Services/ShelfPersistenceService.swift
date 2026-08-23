@@ -40,6 +40,7 @@ final class ShelfPersistenceService {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return [] }
         guard let data = try? Data(contentsOf: fileURL) else {
             NSLog("Shelf: items.json exists but could not be read; leaving it alone")
+            preserveUnreadableFile(reason: "unreadable")
             return nil
         }
 

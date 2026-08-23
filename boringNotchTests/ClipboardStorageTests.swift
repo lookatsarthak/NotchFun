@@ -184,7 +184,7 @@ struct ClipboardPersistenceTests {
 
         let service = ClipboardPersistenceService(blobStore: store)
         await service.flush(items)
-        let loaded = service.load()
+        let loaded = try #require(service.load())
 
         #expect(loaded.count == 3)
         #expect(loaded.map(\.id) == items.map(\.id))
@@ -236,7 +236,7 @@ struct ClipboardPersistenceTests {
         let corrupt = #"{"schemaVersion":1,"items":[{"totally":"broken"},\#(encoded)]}"#
         try Data(corrupt.utf8).write(to: directory.appendingPathComponent("index.json"))
 
-        let salvaged = service.load()
+        let salvaged = try #require(service.load())
         #expect(salvaged.count == 1)
         #expect(salvaged.first?.id == good.id)
     }

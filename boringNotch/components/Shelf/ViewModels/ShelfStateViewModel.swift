@@ -162,11 +162,19 @@ final class ShelfStateViewModel: ObservableObject {
                     keep.append(item)
                 }
             }
-            if unresolvable > 0 {
-                NSLog("Shelf: kept \(unresolvable) item(s) whose bookmark could not be resolved")
+            // Diff by id rather than writing the snapshot back. Every `status()` above
+            // suspends, and this runs from the shelf's own `onAppear` - the same view
+            // that owns the drop target - so a file dropped during the scan would be
+            // written out of existence by a wholesale assignment of a stale array.
+            let doomed = Set(self.items.map(\.id)).subtracting(keep.map(\.id))
+            let unresolvableCount = unresolvable
+            await MainActor.run {
+                guard !doomed.isEmpty else { return }
+                self.items.removeAll { doomed.contains($0.id) }
+                if unresolvableCount > 0 {
+                    NSLog("Shelf: kept \(unresolvableCount) item(s) whose bookmark could not be resolved")
+                }
             }
-            let result = keep
-            await MainActor.run { self.items = result }
         }
     }
 

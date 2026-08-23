@@ -106,10 +106,22 @@ struct Bookmark: Sendable, Equatable, Codable {
     func status() async -> Status {
         let (url, _) = resolve()
         guard let url else { return .unresolvable }
-        let exists = url.accessSecurityScopedResource { url in
-            FileManager.default.fileExists(atPath: url.path)
-        }
-        return exists == true ? .available : .fileMissing
+
+        // Deliberately not `accessSecurityScopedResource`: that helper throws away
+        // whether access actually started and runs its body regardless. This app is
+        // sandboxed, so a refused extension makes `fileExists` answer false for a file
+        // that is plainly there - and false, here, is the verdict that deletes it. The
+        // first version of this fix went through that helper and so never delivered the
+        // guarantee it was written for.
+        let started = url.startAccessingSecurityScopedResource()
+        defer { if started { url.stopAccessingSecurityScopedResource() } }
+
+        if FileManager.default.fileExists(atPath: url.path) { return .available }
+
+        // Absence only means something if we were actually allowed to look. `started`
+        // is also false for a bookmark that never needed a scope, which is why this
+        // checks existence first rather than bailing on `!started`.
+        return started ? .fileMissing : .unresolvable
     }
 
     func validate() async -> Bool {

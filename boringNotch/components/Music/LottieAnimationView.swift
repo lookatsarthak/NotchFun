@@ -10,6 +10,7 @@ import Defaults
 
 struct LottieAnimationContainer: View {
     @Default(.selectedVisualizer) var selectedVisualizer
+    @ObservedObject private var musicManager = MusicManager.shared
 
     var body: some View {
         if let selectedVisualizer {
@@ -23,9 +24,10 @@ struct LottieAnimationContainer: View {
             // failed - no network, asset moved - the callback simply handed back nil and
             // the view rendered nothing, with no way to tell that from "no music".
             //
-            // Always animating is right here: this branch only renders while something
-            // is playing, and it is decorative.
-            AudioSpectrumView(isPlaying: .constant(true))
+            AudioSpectrumView(isPlaying: .init(
+                get: { musicManager.isPlaying },
+                set: { _ in }
+            ))
         }
     }
 }
