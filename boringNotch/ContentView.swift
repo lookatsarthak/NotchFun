@@ -703,8 +703,21 @@ struct FullScreenDropDelegate: DropDelegate {
 
 }
 
+/// The drop target covering the whole notch.
+///
+/// This sits on the outermost container, and in this layout it wins the drop over the
+/// shelf's own targets inside it. It used to answer `dropUpdated` with `.cancel` and
+/// `performDrop` with `false`, so a file dragged onto the notch lit up the drop zones
+/// and was then refused: the shelf's handler never ran, nothing was recorded, and the
+/// file simply did not arrive. Dragging onto an already-open shelf worked, which is why
+/// it looked intermittent rather than broken.
+///
+/// It now accepts and hands the items to the shelf, so a drop anywhere on the notch
+/// lands. When the shelf is switched off it still cancels, which is what should happen.
 struct GeneralDropTargetDelegate: DropDelegate {
     @Binding var isTargeted: Bool
+
+    private static let acceptedTypes: [UTType] = [.fileURL, .url, .utf8PlainText, .plainText, .data]
 
     func dropEntered(info: DropInfo) {
         isTargeted = true
@@ -715,11 +728,16 @@ struct GeneralDropTargetDelegate: DropDelegate {
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .cancel)
+        DropProposal(operation: Defaults[.boringShelf] ? .copy : .cancel)
     }
 
     func performDrop(info: DropInfo) -> Bool {
-        return false
+        isTargeted = false
+        guard Defaults[.boringShelf] else { return false }
+        let providers = info.itemProviders(for: Self.acceptedTypes)
+        guard !providers.isEmpty else { return false }
+        ShelfStateViewModel.shared.load(providers)
+        return true
     }
 }
 
