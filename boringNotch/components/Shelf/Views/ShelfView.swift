@@ -100,9 +100,6 @@ struct ShelfView: View {
                         .padding(8)
                 }
             }
-            .transaction { transaction in
-                transaction.animation = vm.animation
-            }
             .contentShape(Rectangle())
             .onTapGesture { selection.clear() }
     }

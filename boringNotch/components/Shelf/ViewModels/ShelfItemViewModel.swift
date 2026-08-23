@@ -604,9 +604,7 @@ final class ShelfItemViewModel: ObservableObject {
             panel.canChooseFiles = true
             panel.canChooseDirectories = false
             panel.resolvesAliases = true
-            if #available(macOS 12.0, *) {
-                panel.allowedContentTypes = [.application]
-            }
+            panel.allowedContentTypes = [.application]
             panel.directoryURL = URL(fileURLWithPath: "/Applications")
 
             // Compute recommended applications for the selected target

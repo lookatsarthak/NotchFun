@@ -29,53 +29,69 @@ final class ShelfPersistenceService {
         encoder.dateEncodingStrategy = .iso8601
     }
 
-    func load() -> [ShelfItem] {
-        guard let data = try? Data(contentsOf: fileURL) else { return [] }
-        
-        // Try to decode as array first (normal case)
+    /// Reads the shelf back, or returns `nil` if the file exists but could not be read.
+    ///
+    /// The nil case matters more than it looks. This used to return `[]` for both "there
+    /// is nothing saved" and "I could not read what was saved", and since `items` writes
+    /// itself back on every change, one unreadable read was enough to overwrite the real
+    /// file with an empty array and destroy the shelf permanently. An empty shelf and an
+    /// unreadable shelf must never be the same value.
+    func load() -> [ShelfItem]? {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return [] }
+        guard let data = try? Data(contentsOf: fileURL) else {
+            NSLog("Shelf: items.json exists but could not be read; leaving it alone")
+            return nil
+        }
+
         if let items = try? decoder.decode([ShelfItem].self, from: data) {
             return items
         }
-        
-        // If array decoding fails, try to decode individual items
-        do {
-            // Parse as JSON array to get individual item data
-            guard let jsonArray = try JSONSerialization.jsonObject(with: data) as? [Any] else {
-                print("⚠️ Shelf persistence file is not a valid JSON array")
-                return []
-            }
-            
-            var validItems: [ShelfItem] = []
-            var failedCount = 0
-            
-            for (index, jsonItem) in jsonArray.enumerated() {
-                do {
-                    let itemData = try JSONSerialization.data(withJSONObject: jsonItem)
-                    let item = try decoder.decode(ShelfItem.self, from: itemData)
-                    validItems.append(item)
-                } catch {
-                    failedCount += 1
-                    print("⚠️ Failed to decode shelf item at index \(index): \(error.localizedDescription)")
-                }
-            }
-            
-            if failedCount > 0 {
-                print("📦 Successfully loaded \(validItems.count) shelf items, discarded \(failedCount) corrupted items")
-            }
-            
-            return validItems
-        } catch {
-            print("❌ Failed to parse shelf persistence file: \(error.localizedDescription)")
-            return []
+
+        // Decode per item, so one bad entry costs one entry rather than the shelf.
+        guard let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [Any] else {
+            preserveUnreadableFile(reason: "not a JSON array")
+            return nil
         }
+
+        var validItems: [ShelfItem] = []
+        var failed = 0
+        for jsonItem in jsonArray {
+            guard let itemData = try? JSONSerialization.data(withJSONObject: jsonItem),
+                  let item = try? decoder.decode(ShelfItem.self, from: itemData)
+            else { failed += 1; continue }
+            validItems.append(item)
+        }
+
+        if failed > 0 {
+            NSLog("Shelf: loaded \(validItems.count) item(s), \(failed) could not be decoded")
+            // Keep a copy before the good items get written back over the bad file.
+            preserveUnreadableFile(reason: "\(failed) undecodable item(s)")
+        }
+        return validItems
+    }
+
+    /// Copies the current file aside so a bad read is recoverable by hand.
+    private func preserveUnreadableFile(reason: String) {
+        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+        let copy = fileURL.deletingLastPathComponent()
+            .appendingPathComponent("items.unreadable-\(stamp).json")
+        try? FileManager.default.copyItem(at: fileURL, to: copy)
+        NSLog("Shelf: preserved unreadable items.json as \(copy.lastPathComponent) (\(reason))")
     }
 
     func save(_ items: [ShelfItem]) {
         do {
             let data = try encoder.encode(items)
+            // Keep the previous contents one step back. Clearing the shelf is a single
+            // click, and until now there was nothing behind it.
+            let backup = fileURL.deletingLastPathComponent().appendingPathComponent("items.previous.json")
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                try? FileManager.default.removeItem(at: backup)
+                try? FileManager.default.copyItem(at: fileURL, to: backup)
+            }
             try data.write(to: fileURL, options: Data.WritingOptions.atomic)
         } catch {
-            print("Failed to save shelf items: \(error.localizedDescription)")
+            NSLog("Shelf: failed to save items: \(error.localizedDescription)")
         }
     }
 }

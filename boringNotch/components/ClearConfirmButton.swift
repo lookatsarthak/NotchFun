@@ -78,7 +78,7 @@ struct ClearConfirmButton: View {
         .disabled(count == 0)
         .opacity(count == 0 ? 0.4 : 1)
         .help(confirming ? confirmHelp : idleHelp)
-        .animation(.smooth(duration: 0.28), value: confirming)
+        .animation(.smooth(duration: 2.5), value: confirming)   // TEMP-DIAGNOSTIC
         .onChange(of: armedAt) { _, armed in
             guard let armed else { return }
             Task {

@@ -31,7 +31,11 @@ final class ShelfStateViewModel: ObservableObject {
     private var updateTask: Task<Void, Never>?
 
     private init() {
-        items = ShelfPersistenceService.shared.load()
+        // nil means the file exists but could not be read. We still have to start from
+        // something, and the two safety nets that now sit under this - the preserved
+        // `items.unreadable-*.json` copy and the rolling `items.previous.json` - are what
+        // make starting empty recoverable rather than final.
+        items = ShelfPersistenceService.shared.load() ?? []
     }
 
 
@@ -124,24 +128,45 @@ final class ShelfStateViewModel: ObservableObject {
         }
     }
 
+    /// Drops shelf entries whose file has actually been deleted.
+    ///
+    /// Runs whenever the shelf appears, and used to drop anything whose bookmark failed
+    /// to *resolve* - which is a different and much broader condition than the file being
+    /// gone. Security-scoped bookmarks are bound to the signing identity of the app that
+    /// created them, so a change of identity makes every bookmark unresolvable at once
+    /// while every file is still on disk. Opening the shelf tab once was then enough to
+    /// erase the whole shelf and delete the backing files for anything the shelf had
+    /// made itself, with no warning and nothing to undo it.
+    ///
+    /// So an entry is only removed on positive evidence that the file is gone. If we
+    /// cannot resolve the bookmark we keep the entry: leaving a row the user has to
+    /// remove by hand is a trivial annoyance next to deleting their shelf.
     func cleanupInvalidItems() {
         Task { [weak self] in
             guard let self else { return }
             var keep: [ShelfItem] = []
+            var unresolvable = 0
             for item in self.items {
                 switch item.kind {
                 case .file(let data):
-                    let bookmark = Bookmark(data: data)
-                    if await bookmark.validate() {
+                    switch await Bookmark(data: data).status() {
+                    case .available:
                         keep.append(item)
-                    } else {
+                    case .unresolvable:
+                        unresolvable += 1
+                        keep.append(item)
+                    case .fileMissing:
                         item.cleanupStoredData()
                     }
                 default:
                     keep.append(item)
                 }
             }
-            await MainActor.run { self.items = keep }
+            if unresolvable > 0 {
+                NSLog("Shelf: kept \(unresolvable) item(s) whose bookmark could not be resolved")
+            }
+            let result = keep
+            await MainActor.run { self.items = result }
         }
     }
 

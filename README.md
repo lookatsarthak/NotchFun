@@ -53,10 +53,13 @@ It's off by default. Turn it on in **Settings → Clipboard**.
 
 ## Install
 
-**Requires macOS 15 Sequoia or later.** Apple Silicon or Intel.
+**Requires macOS 26 Tahoe or later.** Apple Silicon, or one of the four Intel Macs
+that run Tahoe (2019 Mac Pro, 2019 16-inch MacBook Pro, 2020 13-inch MacBook Pro with
+four Thunderbolt ports, 2020 27-inch iMac).
 
-> Earlier versions claimed macOS 14. That was wrong: the bundled MediaRemoteAdapter
-> framework is built for macOS 15, so the app could not reliably launch on 14.
+> NotchFun 1.2.1 was the last release for macOS 15 Sequoia. If you are on Sequoia the
+> updater will keep you there rather than offer you a build that cannot launch; 1.2.1
+> remains downloadable from [Releases](https://github.com/lookatsarthak/NotchFun/releases).
 
 **Homebrew**
 
@@ -74,7 +77,7 @@ NotchFun to your Applications folder.
 > app distributed outside the App Store without a paid Apple Developer account — it is
 > not a finding about this app.
 >
-> **To open it (macOS 15 Sequoia and later):**
+> **To open it:**
 > 1. Double-click NotchFun. You'll get the warning — click **Done**, *not* Move to Bin.
 > 2. Open **System Settings → Privacy & Security** and scroll to **Security**.
 > 3. Next to *"NotchFun was blocked to protect your Mac"*, click **Open Anyway**.

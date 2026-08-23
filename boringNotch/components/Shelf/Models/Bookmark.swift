@@ -87,12 +87,33 @@ struct Bookmark: Sendable, Equatable, Codable {
         items[idx].kind = ShelfItemKind.file(bookmark: newBookmark)
     }
 
-    func validate() async -> Bool {
+    /// What we can actually say about the file behind this bookmark.
+    ///
+    /// The distinction between the last two cases is the whole point. A bookmark that
+    /// cannot be resolved is not evidence that the file is gone - it is evidence that
+    /// *we* cannot see it. Security-scoped bookmarks are tied to the code signature of
+    /// the app that created them, so a change of signing identity makes every bookmark
+    /// in the shelf unresolvable while every file is still sitting exactly where it was.
+    enum Status: Sendable, Equatable {
+        /// Resolved, and the file is there.
+        case available
+        /// Resolved to a path with nothing at it. The file really is gone.
+        case fileMissing
+        /// Could not be resolved at all. Says nothing about the file.
+        case unresolvable
+    }
+
+    func status() async -> Status {
         let (url, _) = resolve()
-        guard let url = url else { return false }
-        return url.accessSecurityScopedResource { url in
+        guard let url else { return .unresolvable }
+        let exists = url.accessSecurityScopedResource { url in
             FileManager.default.fileExists(atPath: url.path)
         }
+        return exists == true ? .available : .fileMissing
+    }
+
+    func validate() async -> Bool {
+        await status() == .available
     }
 
     func withAccess<T: Sendable>(_ block: @Sendable (URL) async throws -> T) async rethrows -> T? {
