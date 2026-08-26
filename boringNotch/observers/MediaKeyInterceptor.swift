@@ -72,9 +72,22 @@ final class MediaKeyInterceptor {
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: mask,
-            callback: { _, _, cgEvent, userInfo in
+            callback: { _, type, cgEvent, userInfo in
                 guard let userInfo else { return Unmanaged.passRetained(cgEvent) }
                 let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
+
+                // macOS switches a tap off if its callback ever runs long, and says so by
+                // delivering one of these instead of a real event. Nothing here used to
+                // check for them, and nothing re-enabled the tap - so the first slow
+                // callback ended HUD replacement for the rest of the session. The app
+                // stays running for days at a time, so "eventually" was a matter of when,
+                // not whether, and the symptom is silent: volume keys quietly go back to
+                // drawing the system HUD.
+                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                    interceptor.reEnableTap()
+                    return nil
+                }
+
                 return interceptor.handleEvent(cgEvent)
             },
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
@@ -89,6 +102,20 @@ final class MediaKeyInterceptor {
         }
     }
     
+    /// Turns the tap back on after macOS has disabled it.
+    ///
+    /// ClipboardKeyCaptureService has handled this since it was written; this tap never
+    /// did, which is the whole bug. Re-enabling is deliberately hopped to the main actor
+    /// rather than done inline, to match that service and to keep the callback itself
+    /// short - a slow callback is what gets a tap disabled in the first place.
+    fileprivate func reEnableTap() {
+        Task { @MainActor [weak self] in
+            guard let self, let tap = self.eventTap else { return }
+            CGEvent.tapEnable(tap: tap, enable: true)
+            NSLog("MediaKeyInterceptor: the system disabled the event tap; re-enabled it")
+        }
+    }
+
     func stop() {
         if let eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
