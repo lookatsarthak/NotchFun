@@ -40,20 +40,26 @@ struct MinimalFaceFeatures: View {
             }
         }
         .frame(width: self.width, height: self.height) // Maximum size of face
-        .onAppear {
-            startBlinking()
-        }
-    }
-    
-    func startBlinking() {
-        Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
-            withAnimation(NotchMotion.control) {
-                isBlinking = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(NotchMotion.control) {
-                    isBlinking = false
-                }
+        // `.task`, not `.onAppear` plus a Timer.
+        //
+        // The previous version scheduled a repeating Timer and never kept a reference to
+        // it, so it could not be invalidated even in principle - and `.onAppear` runs
+        // every time the face returns, which is on every music play/pause. Each stranded
+        // timer went on calling `withAnimation` every three seconds forever, and unlike a
+        // no-op that is a real SwiftUI transaction: it invalidates views and wakes the
+        // render loop. The cost grew with uptime, which is exactly the shape of the
+        // heat reports.
+        //
+        // SwiftUI cancels a `.task` when the view goes away, so this cannot leak however
+        // many times the face appears.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled else { return }
+                withAnimation(NotchMotion.control) { isBlinking = true }
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled else { return }
+                withAnimation(NotchMotion.control) { isBlinking = false }
             }
         }
     }

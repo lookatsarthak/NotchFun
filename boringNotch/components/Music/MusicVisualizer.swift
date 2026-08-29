@@ -66,6 +66,15 @@ class AudioSpectrum: NSView {
         animationTimer = nil
         resetBars()
     }
+
+    deinit {
+        // The run loop owns the timer, not this view. `[weak self]` keeps the closure
+        // from retaining us - so we do get deallocated - but the timer survives and
+        // keeps waking the main thread every 0.3s to call a method on nothing, for the
+        // rest of the process's life. Nothing else invalidates it: `stopAnimating` is
+        // only reachable through `setPlaying`, which only runs from make/updateNSView.
+        animationTimer?.invalidate()
+    }
     
     private func updateBars() {
         for (i, barLayer) in barLayers.enumerated() {
@@ -113,6 +122,17 @@ struct AudioSpectrumView: NSViewRepresentable {
     
     func updateNSView(_ nsView: AudioSpectrum, context: Context) {
         nsView.setPlaying(isPlaying)
+    }
+
+    /// Stops the timer when SwiftUI removes the view.
+    ///
+    /// `deinit` covers this too, but only once the last reference goes. This runs at the
+    /// moment the view leaves the hierarchy, which is the point the animation stops being
+    /// worth anything - and the closed-notch ladder adds and removes this view on changes
+    /// to play state, idle state, notch state, fullscreen and the sneak peek, so it
+    /// happens often.
+    static func dismantleNSView(_ nsView: AudioSpectrum, coordinator: ()) {
+        nsView.setPlaying(false)
     }
 }
 
