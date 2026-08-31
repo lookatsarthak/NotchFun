@@ -8,15 +8,15 @@
 
     <item>
       <title>1.3.2</title>
-      <pubDate>Sun, 30 Aug 2026 00:07:04 +0530</pubDate>
+      <pubDate>Mon, 31 Aug 2026 12:53:17 +0530</pubDate>
       <sparkle:version>15</sparkle:version>
       <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
       <description><![CDATA[ See the release notes on GitHub. ]]></description>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.3.2/NotchFun-1.3.2.dmg"
-        sparkle:edSignature="kSWDZ/YzlvQ+wVD0YQcQHdLoUru5zK9n4zcQ88VLtebdD4tpMQBD43eG5DM//HFDwXZ8PE11QfaRLrfPd07XBA=="
-        length="4448533"
+        sparkle:edSignature="Nrd5mSUFNpQQDeS4IyMYRvY0GO9647alLHO3yPcuon7YALcbaxF7IcPYJQ24rIFsYg0D1hLdUxVxeHeM/Bj7Ag=="
+        length="4452098"
         type="application/octet-stream" />
     </item>
 
