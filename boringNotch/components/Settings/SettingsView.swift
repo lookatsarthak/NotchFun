@@ -1575,6 +1575,19 @@ struct Shortcuts: View {
             Section {
                 KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
             }
+            Section {
+                KeyboardShortcuts.Recorder("Keyboard backlight down:", name: .decreaseBacklight)
+                KeyboardShortcuts.Recorder("Keyboard backlight up:", name: .increaseBacklight)
+            } header: {
+                Text("Keyboard backlight")
+            } footer: {
+                Text(
+                    "Unset by default — ⌘F1 and ⌘F2 already toggle display mirroring on most Macs, so NotchFun will not take them without being asked."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            }
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Shortcuts")

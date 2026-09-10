@@ -110,20 +110,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// The notch view model for the display the pointer is currently on, falling back
-    /// to the primary one when multi-display mode is off.
-    @MainActor
-    func viewModelForMouseLocation() -> BoringViewModel {
-        guard Defaults[.showOnAllDisplays] else { return vm }
-        let mouseLocation = NSEvent.mouseLocation
-        for screen in NSScreen.screens where screen.frame.contains(mouseLocation) {
-            if let uuid = screen.displayUUID, let screenViewModel = viewModels[uuid] {
-                return screenViewModel
-            }
-        }
-        return vm
-    }
-
     @MainActor
     func onScreenLocked(_ notification: Notification) {
         isScreenLocked = true
@@ -452,115 +438,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
         }
 
+        // Every body here lives in NotchActions, so a hotkey and its matching Shortcuts
+        // action cannot drift apart. See Shortcuts/NotchActions.swift.
         KeyboardShortcuts.onKeyDown(for: .toggleCaffeine) {
+            Task { @MainActor in NotchActions.setCaffeine(.toggle) }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .pasteAsPlainText) {
+            Task { @MainActor in NotchActions.pasteAsPlainText() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) {
+            Task { @MainActor in NotchActions.toggleSneakPeek() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .clipboardHistoryPanel) {
+            Task { @MainActor in NotchActions.toggleClipboardPanel() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) {
+            Task { @MainActor in NotchActions.toggleNotchOpen() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .decreaseBacklight) {
             Task { @MainActor in
-                CaffeineManager.shared.toggle(
-                    mode: Defaults[.caffeineMode],
-                    duration: Defaults[.caffeineDefaultDuration]
-                )
+                NotchActions.changeKeyboardBacklight(by: -NotchActions.backlightStep)
             }
         }
 
-        // Paste what is already on the clipboard, without its formatting. Reads the
-        // pasteboard rather than the history, so it works even with history switched off.
-        KeyboardShortcuts.onKeyDown(for: .pasteAsPlainText) { [weak self] in
-            guard self != nil else { return }
-            guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
-            guard ClipboardPasteService.ensureAuthorized(promptIfNeeded: true) else { return }
-
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setString(text, forType: .string)
-            pasteboard.setData(Data(), forType: .fromNotchFun)
-            ClipboardMonitor.shared.acknowledgeSelfCopy()
-            Task {
-                try? await Task.sleep(for: .milliseconds(60))
-                ClipboardPasteService.paste()
-            }
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
-            guard let self = self else { return }
-            if Defaults[.sneakPeekStyles] == .inline {
-                let newStatus = !self.coordinator.expandingView.show
-                self.coordinator.toggleExpandingView(status: newStatus, type: .music)
-            } else {
-                self.coordinator.toggleSneakPeek(
-                    status: !self.coordinator.sneakPeek.show,
-                    type: .music,
-                    duration: 3.0
-                )
-            }
-        }
-
-        // Completes the `clipboardHistoryPanel` shortcut that was declared in
-        // Shortcuts/ShortcutConstants.swift but never had a handler.
-        // (`viewModelForMouseLocation` mirrors the display-picking logic in the
-        // toggleNotchOpen handler below.)
-        KeyboardShortcuts.onKeyDown(for: .clipboardHistoryPanel) { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self, Defaults[.clipboardHistoryEnabled] else { return }
-
-                let viewModel = self.viewModelForMouseLocation()
-
-                // Unlike the plain open shortcut, this must not auto-close after a few
-                // seconds — the user is about to read and pick from a list.
-                self.closeNotchTask?.cancel()
-                self.closeNotchTask = nil
-
-                if viewModel.notchState == .open && self.coordinator.currentView == .clipboard {
-                    viewModel.close(force: true)
-                } else {
-                    self.coordinator.currentView = .clipboard
-                    viewModel.open()
-                }
-            }
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) { [weak self] in
-            Task { [weak self] in
-                guard let self = self else { return }
-
-                let mouseLocation = NSEvent.mouseLocation
-
-                var viewModel = self.vm
-
-                if Defaults[.showOnAllDisplays] {
-                    for screen in NSScreen.screens {
-                        if screen.frame.contains(mouseLocation) {
-                            if let uuid = screen.displayUUID, let screenViewModel = self.viewModels[uuid] {
-                                viewModel = screenViewModel
-                                break
-                            }
-                        }
-                    }
-                }
-
-                self.closeNotchTask?.cancel()
-                self.closeNotchTask = nil
-
-                switch viewModel.notchState {
-                case .closed:
-                    await MainActor.run {
-                        viewModel.open()
-                    }
-
-                    let task = Task { [weak viewModel] in
-                        do {
-                            try await Task.sleep(for: .seconds(3))
-                            await MainActor.run {
-                                viewModel?.close()
-                            }
-                        } catch { }
-                    }
-                    self.closeNotchTask = task
-                case .open:
-                    await MainActor.run {
-                        // Forced: pressing the toggle shortcut is an explicit user
-                        // action and must win over any feature holding the notch open.
-                        viewModel.close(force: true)
-                    }
-                }
+        KeyboardShortcuts.onKeyDown(for: .increaseBacklight) {
+            Task { @MainActor in
+                NotchActions.changeKeyboardBacklight(by: NotchActions.backlightStep)
             }
         }
 
