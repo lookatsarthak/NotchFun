@@ -50,6 +50,15 @@ struct DynamicNotchApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    /// The live delegate instance.
+    ///
+    /// `NSApp.delegate as? AppDelegate` does **not** work here: SwiftUI's
+    /// `@NSApplicationDelegateAdaptor` puts something on `NSApp.delegate` that does not
+    /// cast back to this class, so anything reaching for the delegate that way silently
+    /// gets nil. NotchActions needs it — an App Intent has no delegate reference at all —
+    /// and a shortcut that quietly does nothing is worse than one that is missing.
+    static private(set) weak var shared: AppDelegate?
+
     private var caffeineBatteryObserverID: Int?
     var statusItem: NSStatusItem?
     var windows: [String: NSWindow] = [:] // UUID -> NSWindow
@@ -304,6 +313,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Self.shared = self
 
         NotificationCenter.default.addObserver(
             self,

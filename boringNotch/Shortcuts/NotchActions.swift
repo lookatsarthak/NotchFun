@@ -36,8 +36,11 @@ enum NotchActions {
         }
     }
 
+    /// Not `NSApp.delegate as? AppDelegate` — under SwiftUI's
+    /// `@NSApplicationDelegateAdaptor` that cast returns nil, which made every action
+    /// here a silent no-op.
     private static var appDelegate: AppDelegate? {
-        NSApp.delegate as? AppDelegate
+        AppDelegate.shared
     }
 
     // MARK: Notch
