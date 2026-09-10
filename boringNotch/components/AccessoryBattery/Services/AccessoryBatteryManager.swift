@@ -81,7 +81,12 @@ final class AccessoryBatteryManager: ObservableObject {
         guard isBluetoothOutput() else {
             // Switched back to speakers or a wired device: drop the reading rather than
             // leaving the last accessory's number in the header.
-            current = nil
+            //
+            // Guarded on inequality because assigning to a @Published fires
+            // objectWillChange even when the value is unchanged, and this view model is
+            // observed by ContentView - a no-op assignment is a free re-render of the
+            // whole notch.
+            if current != nil { current = nil }
             return
         }
         refresh(force: true, announce: true)
@@ -96,7 +101,8 @@ final class AccessoryBatteryManager: ObservableObject {
         // Nothing is connected over Bluetooth, so there is nothing to ask about and no
         // reason to spawn anything.
         guard isBluetoothOutput() else {
-            current = nil
+            // Same inequality guard as above: a redundant publish re-renders the notch.
+            if current != nil { current = nil }
             return
         }
 
