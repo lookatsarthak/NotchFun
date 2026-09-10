@@ -79,6 +79,20 @@ struct ContentView: View {
     /// One square slot beside the physical notch, the same size the face and album art use.
     private var notchSlotSize: CGFloat { max(0, vm.effectiveClosedNotchHeight - 12) }
 
+    /// The music row's own slot sizes. Deliberately separate from `notchSlotSize`: the
+    /// face and the caffeine cup keep the standard slot, and only the music row is
+    /// compactable. Read by both the view body and `computedChinWidth` so the invisible
+    /// hover chin cannot drift from the visible row.
+    private var musicMetrics: MusicLiveActivityMetrics.Metrics {
+        MusicLiveActivityMetrics.metrics(
+            .init(
+                closedNotchHeight: vm.effectiveClosedNotchHeight,
+                compact: Defaults[.compactMusicLiveActivity],
+                gestureProgress: gestureProgress
+            )
+        )
+    }
+
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
@@ -90,7 +104,7 @@ struct ContentView: View {
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
-            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
+            chinWidth += musicMetrics.addedWidth
         } else if !coordinator.expandingView.show && vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
@@ -506,7 +520,9 @@ struct ContentView: View {
 
     @ViewBuilder
     func MusicLiveActivity() -> some View {
-        HStack {
+        // Explicit spacing, not SwiftUI's default. `computedChinWidth` has to know this
+        // number to size the hover chin, and it used to guess it as a bare `+ 20`.
+        HStack(spacing: musicMetrics.spacing) {
             Image(nsImage: musicManager.albumArt)
                 .resizable()
                 .clipped()
@@ -517,8 +533,8 @@ struct ContentView: View {
                 )
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                 .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
+                    width: musicMetrics.artSize,
+                    height: musicMetrics.artSize
                 )
 
             Rectangle()
@@ -583,15 +599,8 @@ struct ContentView: View {
                     }
             }
             .frame(
-                width: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                        + gestureProgress / 2
-                ),
-                height: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                ),
+                width: musicMetrics.spectrumWidth,
+                height: musicMetrics.spectrumHeight,
                 alignment: .center
             )
         }

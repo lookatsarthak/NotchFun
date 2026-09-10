@@ -1197,8 +1197,18 @@ struct Appearance: View {
                         Text(option.rawValue)
                     }
                 }
+                Defaults.Toggle(key: .compactMusicLiveActivity) {
+                    Text("Compact music indicator")
+                }
             } header: {
                 Text("Media")
+            } footer: {
+                Text(
+                    "Compact shrinks the album art and spectrum beside the closed notch, so a playing track widens it by 40pt instead of 56pt."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
 
             Section {

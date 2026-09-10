@@ -119,6 +119,12 @@ extension Defaults.Keys {
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
+    /// Shrink the album art and spectrum beside the closed notch, so a playing track
+    /// widens it by 40pt instead of 56pt. Off by default: the larger slots are what
+    /// everyone has been looking at since 1.0, and this is a taste setting rather than a
+    /// fix — turning it on trades legible artwork for a resting notch closer to the
+    /// hardware cut-out.
+    static let compactMusicLiveActivity = Key<Bool>("compactMusicLiveActivity", default: false)
     static let musicControlSlots = Key<[MusicControlButton]>(
         "musicControlSlots",
         default: MusicControlButton.defaultLayout
