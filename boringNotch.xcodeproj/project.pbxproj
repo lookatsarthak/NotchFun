@@ -197,6 +197,7 @@
 		B172AAC02C95DA0B001623F1 /* InlineHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = B172AABF2C95DA0B001623F1 /* InlineHUD.swift */; };
 		B18654392C6F4990000B926A /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654382C6F4990000B926A /* KeyboardShortcuts */; };
 		B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B186543B2C6F49AE000B926A /* ShortcutConstants.swift */; };
+		7C1A9E4B2D6F81035E0A4432 /* NotchAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A9E4B2D6F81035E0A4431 /* NotchAppIntents.swift */; };
 		7C1A9E4B2D6F81035E0A4422 /* NotchActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A9E4B2D6F81035E0A4421 /* NotchActions.swift */; };
 		B19016222CC15B3D00E3F12E /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = B19016212CC15B3D00E3F12E /* Defaults */; };
 		B19016242CC15B5000E3F12E /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19016232CC15B4D00E3F12E /* Constants.swift */; };
@@ -410,6 +411,7 @@
 		B17266E02C6532560031BA0D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B172AABF2C95DA0B001623F1 /* InlineHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineHUD.swift; sourceTree = "<group>"; };
 		B186543B2C6F49AE000B926A /* ShortcutConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConstants.swift; sourceTree = "<group>"; };
+		7C1A9E4B2D6F81035E0A4431 /* NotchAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchAppIntents.swift; sourceTree = "<group>"; };
 		7C1A9E4B2D6F81035E0A4421 /* NotchActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchActions.swift; sourceTree = "<group>"; };
 		B19016232CC15B4D00E3F12E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		B1A78C812C8BA08100BD51B0 /* FullscreenMediaDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaDetection.swift; sourceTree = "<group>"; };
@@ -986,6 +988,7 @@
 			isa = PBXGroup;
 			children = (
 				B186543B2C6F49AE000B926A /* ShortcutConstants.swift */,
+				7C1A9E4B2D6F81035E0A4431 /* NotchAppIntents.swift */,
 				7C1A9E4B2D6F81035E0A4421 /* NotchActions.swift */,
 			);
 			path = Shortcuts;
@@ -1257,6 +1260,7 @@
 				147163982C5D35B70068B555 /* MusicVisualizer.swift in Sources */,
 				11CC44A22CEE614100C7244B /* BoringViewCoordinator.swift in Sources */,
 				B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */,
+				7C1A9E4B2D6F81035E0A4432 /* NotchAppIntents.swift in Sources */,
 				7C1A9E4B2D6F81035E0A4422 /* NotchActions.swift in Sources */,
 				11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */,
 				1113ABD02E80E6BB00EC13B2 /* ThumbnailService.swift in Sources */,
