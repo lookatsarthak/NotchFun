@@ -11,6 +11,7 @@ import SwiftUI
 struct BoringHeader: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
+    @ObservedObject var accessoryBattery = AccessoryBatteryManager.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
 
@@ -87,6 +88,15 @@ struct BoringHeader: View {
                                     }
                             }
                             .buttonStyle(PlainButtonStyle())
+                        }
+                        // Before the Mac's own battery, so the two read left-to-right
+                        // as "the thing you're wearing, then the thing you're using".
+                        // Safe to add here: both header HStacks carry
+                        // .frame(maxWidth: .infinity), so they split the remaining space
+                        // and the black notch rectangle between them stays centred no
+                        // matter what this side contains.
+                        if Defaults[.showAccessoryBattery], let accessory = accessoryBattery.current {
+                            AccessoryBatteryGlyph(accessory: accessory)
                         }
                         if Defaults[.showBatteryIndicator] {
                             BoringBatteryView(

@@ -367,8 +367,18 @@ struct Charge: View {
                 Defaults.Toggle(key: .showPowerStatusNotifications) {
                     Text("Show power status notifications")
                 }
+                Defaults.Toggle(key: .showAccessoryBattery) {
+                    Text("Show Bluetooth accessory battery")
+                }
             } header: {
                 Text("General")
+            } footer: {
+                Text(
+                    "Shows the battery of the headphones or earbuds you're listening through, when they connect and while the notch is open. macOS reports both earbuds at the same level even when one is in the case, so a single figure is shown."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
             Section {
                 Defaults.Toggle(key: .showBatteryPercentage) {

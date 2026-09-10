@@ -383,6 +383,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // not anything is being recorded. With every trigger off it installs a couple of
         // observers and schedules nothing.
         ClipboardAutoClearService.shared.start()
+        AccessoryBatteryManager.shared.start()
 
         // Caffeine. restore() resumes a session that survived a quit and drops one that
         // expired while we were not running; startObserving() wires sleep/wake and

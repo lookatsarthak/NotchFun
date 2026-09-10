@@ -175,6 +175,68 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         return nil
     }
 
+    // MARK: - Bluetooth accessory battery
+
+    /// AirPods battery is not in the IORegistry on macOS 26 — there is no
+    /// `BatteryPercent` key for them anywhere; the levels arrive over HID feature reports
+    /// on Apple's private vendor usage page. `system_profiler SPBluetoothDataType` does
+    /// have them, but the App Sandbox returns an empty result for it no matter what
+    /// entitlements are set (including `com.apple.security.device.bluetooth`, which was
+    /// tested and does not help). This helper is unsandboxed, which is the only reason
+    /// the feature can exist at all.
+    ///
+    /// Raw bytes go back to the app, which owns the parsing.
+    @objc func bluetoothProfileJSON(with reply: @escaping (NSData?) -> Void) {
+        Self.profileQueue.async {
+            reply(Self.runSystemProfiler())
+        }
+    }
+
+    /// Its own serial queue. `system_profiler` blocks on `bluetoothd`, and this process
+    /// also serves the accessibility poll and every brightness call — blocking a shared
+    /// queue here would wedge the media keys.
+    private static let profileQueue = DispatchQueue(label: "io.github.lookatsarthak.notchfun.btprofile")
+
+    private static func runSystemProfiler() -> NSData? {
+        let process = Process()
+        // Hardcoded argv. Never take a datatype from the app: that would turn an
+        // unsandboxed process into a general-purpose system_profiler gadget.
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
+        process.arguments = ["-json", "SPBluetoothDataType"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        // Armed *before* the blocking read, which is the whole point: terminating the
+        // child closes the pipe, and that is what unblocks `readDataToEndOfFile`. A
+        // watchdog placed after the read could never fire, because the read is the thing
+        // that hangs when bluetoothd is wedged.
+        let watchdog = DispatchWorkItem { [process] in
+            if process.isRunning { process.terminate() }
+        }
+        DispatchQueue.global().asyncAfter(deadline: .now() + .seconds(3), execute: watchdog)
+
+        // Read before waiting. The output passes the 64KB pipe buffer on Macs with many
+        // paired devices, and waiting first deadlocks against a full pipe.
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        watchdog.cancel()
+
+        // The reply is sent once, by the single caller above. The watchdog kills the
+        // child rather than replying itself — invoking an XPC reply block twice
+        // terminates this process, which would silently take brightness and the HUD
+        // down with it until the app's next lazy reconnect.
+        guard process.terminationStatus == 0, !data.isEmpty else { return nil }
+        return data as NSData
+    }
+
     // MARK: - Helper handle for private framework
     private enum DisplayServicesHandle {
         static let handle: UnsafeMutableRawPointer? = {

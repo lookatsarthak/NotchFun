@@ -25,26 +25,17 @@ struct CaffeineNotification: View {
     var namespace: Namespace.ID?
 
     var body: some View {
-        HStack(spacing: 0) {
-            HStack {
-                Text(isActive ? "Caffeine on" : "Caffeine off")
-                    .font(.subheadline)
-                    .foregroundStyle(.white)
+        NotchBannerRow(notchWidth: notchWidth) {
+            Text(isActive ? "Caffeine on" : "Caffeine off")
+                .font(.subheadline)
+                .foregroundStyle(.white)
+        } trailing: {
+            if let detail, isActive {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.gray)
             }
-
-            Rectangle()
-                .fill(.black)
-                .frame(width: notchWidth + 10)
-
-            HStack(spacing: 4) {
-                if let detail, isActive {
-                    Text(detail)
-                        .font(.caption2)
-                        .foregroundStyle(.gray)
-                }
-                cup
-            }
-            .frame(width: 76, alignment: .trailing)
+            cup
         }
     }
 

@@ -139,6 +139,11 @@ extension Defaults.Keys {
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
     static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
+    /// Show the battery of the Bluetooth accessory you are listening through. Off by
+    /// default: it is the only feature that costs a subprocess, because the App Sandbox
+    /// returns nothing for `system_profiler` and the reading has to come back through the
+    /// unsandboxed XPC helper. Something with a cost should be asked for.
+    static let showAccessoryBattery = Key<Bool>("showAccessoryBattery", default: false)
     
     // MARK: Downloads
     static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)
