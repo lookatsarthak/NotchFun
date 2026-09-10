@@ -83,6 +83,11 @@ extension Defaults.Keys {
     )
     static let nonNotchHeight = Key<CGFloat>("nonNotchHeight", default: 32)
     static let notchHeight = Key<CGFloat>("notchHeight", default: 32)
+    /// How wide the notch gets when it opens. 640 is what it has always been.
+    ///
+    /// Clamped on read rather than on write, so a value left behind by a future build
+    /// with different bounds cannot produce a notch wider than the drag detector expects.
+    static let openNotchWidth = Key<CGFloat>("openNotchWidth", default: OpenNotchWidth.default)
     //static let openLastTabByDefault = Key<Bool>("openLastTabByDefault", default: false)
     static let showOnLockScreen = Key<Bool>("showOnLockScreen", default: false)
     static let hideFromScreenRecording = Key<Bool>("hideFromScreenRecording", default: false)

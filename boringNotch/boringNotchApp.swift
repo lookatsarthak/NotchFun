@@ -229,8 +229,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let uuid = screen.displayUUID else { return }
         
         let screenFrame = screen.frame
-        let notchHeight = openNotchSize.height
-        let notchWidth = openNotchSize.width
+        let notchHeight = openNotchSize().height
+        let notchWidth = openNotchSize().width
         
         // Create notch region at the top-center of the screen where an open notch would occupy
         let notchRegion = CGRect(
@@ -265,7 +265,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func createBoringNotchWindow(for screen: NSScreen, with viewModel: BoringViewModel) -> NSWindow {
-        let rect = NSRect(x: 0, y: 0, width: windowSize.width, height: windowSize.height)
+        let rect = NSRect(x: 0, y: 0, width: windowSize().width, height: windowSize().height)
         let styleMask: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .utilityWindow, .hudWindow]
         
         let window = BoringNotchSkyLightWindow(contentRect: rect, styleMask: styleMask, backing: .buffered, defer: false)
@@ -337,6 +337,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 self?.adjustWindowPosition()
                 self?.setupDragDetectors()
+            }
+        }
+
+        // Teardown and recreate, not a live resize.
+        //
+        // createBoringNotchWindow sets the frame once and positionWindow only ever moves
+        // the origin, so the window keeps whatever width it was born with — a setting
+        // that only changed the constant would do nothing visible. Resizing in place is
+        // possible but these are NSPanels living in a CGSSpace with SkyLight enabled,
+        // which is exactly where obscure window bugs live. This path is the one
+        // showOnAllDisplays already uses and has been proven by every user who has
+        // toggled it. cleanupWindows removes them from NotchSpaceManager and
+        // createBoringNotchWindow puts them back, so space membership survives.
+        //
+        // The cost is a flicker on a setting a user changes a handful of times ever.
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name.openNotchWidthChanged, object: nil, queue: nil
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.cleanupWindows()
+                self.adjustWindowPosition(changeAlpha: true)
+                // Reads openNotchSize() live, so it picks up the new width by itself.
+                self.setupDragDetectors()
             }
         }
 
@@ -666,6 +690,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension Notification.Name {
     static let selectedScreenChanged = Notification.Name("SelectedScreenChanged")
     static let notchHeightChanged = Notification.Name("NotchHeightChanged")
+    static let openNotchWidthChanged = Notification.Name("OpenNotchWidthChanged")
     static let showOnAllDisplaysChanged = Notification.Name("showOnAllDisplaysChanged")
     static let automaticallySwitchDisplayChanged = Notification.Name("automaticallySwitchDisplayChanged")
     static let expandedDragDetectionChanged = Notification.Name("expandedDragDetectionChanged")

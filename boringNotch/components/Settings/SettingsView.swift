@@ -152,6 +152,7 @@ struct GeneralSettings: View {
     @Default(.nonNotchHeightMode) var nonNotchHeightMode
     @Default(.notchHeight) var notchHeight
     @Default(.notchHeightMode) var notchHeightMode
+    @Default(.openNotchWidth) var openNotchWidth
     @Default(.showOnAllDisplays) var showOnAllDisplays
     @Default(.automaticallySwitchDisplay) var automaticallySwitchDisplay
     @Default(.enableGestures) var enableGestures
@@ -264,8 +265,26 @@ struct GeneralSettings: View {
                             name: Notification.Name.notchHeightChanged, object: nil)
                     }
                 }
+                Slider(
+                    value: $openNotchWidth,
+                    in: OpenNotchWidth.minimum...OpenNotchWidth.maximum,
+                    step: 10
+                ) {
+                    Text("Width when open - \(openNotchWidth, specifier: "%.0f")")
+                }
+                .onChange(of: openNotchWidth) {
+                    NotificationCenter.default.post(
+                        name: Notification.Name.openNotchWidthChanged, object: nil)
+                }
             } header: {
                 Text("Notch sizing")
+            } footer: {
+                Text(
+                    "Changing the open width rebuilds the notch window, so it will blink once."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
 
             NotchBehaviour()
