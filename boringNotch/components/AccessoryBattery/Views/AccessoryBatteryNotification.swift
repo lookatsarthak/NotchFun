@@ -30,32 +30,44 @@ struct AccessoryBatteryNotification: View {
     }
 }
 
-/// A headphones icon and one number.
+/// An earbud icon labelling a battery glyph.
 ///
-/// One number because `system_profiler` reports both earbuds identically even when only
-/// one is in your ear, so a left/right split would be inventing a distinction the data
-/// does not carry. See `AccessoryBattery`.
+/// Deliberately the same `BatteryView` the Mac's own battery draws, at the same width.
+/// The first version put the number beside the icon as plain text with a percent sign,
+/// which put two differently-drawn readouts next to each other in the header — one set
+/// inside a battery, one floating beside an icon — and the eye could not tell which
+/// number belonged to which device. Same glyph for both, with the earbud saying which is
+/// which, is easier to read in less space.
+///
+/// No percent sign, because the Mac battery does not use one and the glyph already says
+/// it is a battery.
+///
+/// `BatteryView` rather than `BoringBatteryView`: that one is a button with a popover of
+/// charge details, and there are none to show for an accessory. Like the caffeine cup,
+/// this is status and must not be hoverable, or it competes with the gestures that own
+/// the notch.
 struct AccessoryBatteryGlyph: View {
     let accessory: AccessoryBattery
-    var showsLabel: Bool = true
-
-    /// Matches the thresholds the Mac's own battery glyph uses, so two batteries side by
-    /// side in the header do not disagree about what counts as low.
-    private var tint: Color {
-        accessory.level <= 20 ? .red : .white
-    }
+    /// Matches the Mac battery beside it. They must agree or the pair looks accidental.
+    var batteryWidth: CGFloat = 30
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 2) {
             Image(systemName: "airpods.gen3")
-                .imageScale(.medium)
-                .foregroundStyle(tint)
-            if showsLabel {
-                Text("\(accessory.level)%")
-                    .font(.caption2)
-                    .foregroundStyle(tint)
-                    .monospacedDigit()
-            }
+                .font(.system(size: batteryWidth * 0.42, weight: .medium))
+                .foregroundStyle(.white)
+            // Charging state is all false because it cannot be known: nothing in the
+            // system_profiler payload says whether an accessory is charging, and showing
+            // a bolt we cannot substantiate would be a lie. `batteryColor` still turns
+            // the fill red under 20%, which is the part that matters.
+            BatteryView(
+                levelBattery: Float(accessory.level),
+                isPluggedIn: false,
+                isCharging: false,
+                isInLowPowerMode: false,
+                batteryWidth: batteryWidth,
+                isForNotification: false
+            )
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(accessory.name) battery \(accessory.level) percent")

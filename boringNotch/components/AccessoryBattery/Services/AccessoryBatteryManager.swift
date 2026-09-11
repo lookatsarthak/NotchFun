@@ -45,8 +45,10 @@ final class AccessoryBatteryManager: ObservableObject {
     private var lastFetch: Date?
     private var inFlight: Task<Void, Never>?
     private var listenerInstalled = false
+    private var settingTask: Task<Void, Never>?
 
     private init() {}
+
 
     /// Called once at launch.
     func start() {
@@ -66,6 +68,22 @@ final class AccessoryBatteryManager: ObservableObject {
 
         // Catch the case where earbuds were already connected when the app launched.
         refresh(force: true, announce: false)
+
+        // And the case where they are already connected when the setting is switched on.
+        // Without this, turning it on in Settings appears to do nothing: there is no
+        // device change to listen for, so the first reading would not arrive until the
+        // next time the notch happened to be opened.
+        settingTask = Task { [weak self] in
+            for await enabled in Defaults.updates(.showAccessoryBattery, initial: false) {
+                guard let self else { return }
+                if enabled {
+                    self.refresh(force: true, announce: false)
+                } else {
+                    // Turned off: drop the reading so the header stops showing it at once.
+                    if self.current != nil { self.current = nil }
+                }
+            }
+        }
     }
 
     /// The notch is about to open — make sure the header is not showing a stale number.
