@@ -30,6 +30,31 @@ you need:
   straight back into whatever app you're in.
 - **HUD replacement** — volume and brightness indicators rendered in the notch instead
   of the giant square in the middle of your screen.
+- **AirPods battery** — shown when you connect them, and beside the Mac's own battery
+  while the notch is open.
+- **Shortcuts** — five actions in Shortcuts.app, so caffeine, the clipboard and the
+  notch itself can be driven from an automation or Spotlight.
+
+## Shortcuts
+
+NotchFun shows up in Shortcuts.app with five actions: **Set Caffeine** (with a duration,
+which a keyboard shortcut cannot express), **Open Notch** (optionally on a given tab),
+**Close Notch**, **Paste as Plain Text**, and **Set Clipboard History** — handy for
+switching recording off by itself before a screen share.
+
+Three of them also answer to Spotlight: *"Toggle caffeine in NotchFun"*, *"Open
+NotchFun"*, *"Paste plain text with NotchFun"*.
+
+## AirPods and Bluetooth battery
+
+Off by default; turn it on in **Settings → Battery**.
+
+One number per device, not a left/right split: macOS reports both earbuds at the same
+level even when one of them is sitting in the case, so a split would be showing a
+distinction the data does not actually contain. Where the two differ, you get the lower
+one. The case level is not shown at all, because macOS keeps reporting a last-known
+value long after the case is out of range and nothing in the data says whether it is
+still true.
 
 ## Clipboard history
 
