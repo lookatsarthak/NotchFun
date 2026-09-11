@@ -83,6 +83,11 @@ extension Defaults.Keys {
     )
     static let nonNotchHeight = Key<CGFloat>("nonNotchHeight", default: 32)
     static let notchHeight = Key<CGFloat>("notchHeight", default: 32)
+    /// How wide the notch gets when it opens. 640 is what it has always been.
+    ///
+    /// Clamped on read rather than on write, so a value left behind by a future build
+    /// with different bounds cannot produce a notch wider than the drag detector expects.
+    static let openNotchWidth = Key<CGFloat>("openNotchWidth", default: OpenNotchWidth.default)
     //static let openLastTabByDefault = Key<Bool>("openLastTabByDefault", default: false)
     static let showOnLockScreen = Key<Bool>("showOnLockScreen", default: false)
     static let hideFromScreenRecording = Key<Bool>("hideFromScreenRecording", default: false)
@@ -119,6 +124,12 @@ extension Defaults.Keys {
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
+    /// Shrink the album art and spectrum beside the closed notch, so a playing track
+    /// widens it by 40pt instead of 56pt. Off by default: the larger slots are what
+    /// everyone has been looking at since 1.0, and this is a taste setting rather than a
+    /// fix — turning it on trades legible artwork for a resting notch closer to the
+    /// hardware cut-out.
+    static let compactMusicLiveActivity = Key<Bool>("compactMusicLiveActivity", default: false)
     static let musicControlSlots = Key<[MusicControlButton]>(
         "musicControlSlots",
         default: MusicControlButton.defaultLayout
@@ -133,6 +144,11 @@ extension Defaults.Keys {
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
     static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
+    /// Show the battery of the Bluetooth accessory you are listening through. Off by
+    /// default: it is the only feature that costs a subprocess, because the App Sandbox
+    /// returns nothing for `system_profiler` and the reading has to come back through the
+    /// unsandboxed XPC helper. Something with a cost should be asked for.
+    static let showAccessoryBattery = Key<Bool>("showAccessoryBattery", default: false)
     
     // MARK: Downloads
     static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)

@@ -256,6 +256,29 @@ final class XPCHelperClient: NSObject {
             return false
         }
     }
+
+    // MARK: - Bluetooth accessory battery
+
+    /// Raw `system_profiler -json SPBluetoothDataType` output, fetched by the unsandboxed
+    /// helper because the sandbox returns an empty result for it.
+    ///
+    /// `nil` means "no answer" — the helper was unreachable, the tool failed, or it timed
+    /// out. It does not mean "no accessory connected"; that is an empty parse of real
+    /// bytes. Callers must keep the two apart, or a dropped connection reads as your
+    /// AirPods having no battery.
+    func bluetoothProfileJSON() async -> Data? {
+        do {
+            let service = ensureRemoteService()
+            let result: NSData? = try await service.withContinuation { service, continuation in
+                service.bluetoothProfileJSON { data in
+                    continuation.resume(returning: data)
+                }
+            }
+            return result as Data?
+        } catch {
+            return nil
+        }
+    }
 }
 
 extension Notification.Name {

@@ -50,6 +50,15 @@ struct DynamicNotchApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    /// The live delegate instance.
+    ///
+    /// `NSApp.delegate as? AppDelegate` does **not** work here: SwiftUI's
+    /// `@NSApplicationDelegateAdaptor` puts something on `NSApp.delegate` that does not
+    /// cast back to this class, so anything reaching for the delegate that way silently
+    /// gets nil. NotchActions needs it — an App Intent has no delegate reference at all —
+    /// and a shortcut that quietly does nothing is worse than one that is missing.
+    static private(set) weak var shared: AppDelegate?
+
     private var caffeineBatteryObserverID: Int?
     var statusItem: NSStatusItem?
     var windows: [String: NSWindow] = [:] // UUID -> NSWindow
@@ -108,20 +117,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, Defaults[.caffeineShowNotification] else { return }
             self.coordinator.toggleExpandingView(status: true, type: .caffeine)
         }
-    }
-
-    /// The notch view model for the display the pointer is currently on, falling back
-    /// to the primary one when multi-display mode is off.
-    @MainActor
-    func viewModelForMouseLocation() -> BoringViewModel {
-        guard Defaults[.showOnAllDisplays] else { return vm }
-        let mouseLocation = NSEvent.mouseLocation
-        for screen in NSScreen.screens where screen.frame.contains(mouseLocation) {
-            if let uuid = screen.displayUUID, let screenViewModel = viewModels[uuid] {
-                return screenViewModel
-            }
-        }
-        return vm
     }
 
     @MainActor
@@ -234,8 +229,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let uuid = screen.displayUUID else { return }
         
         let screenFrame = screen.frame
-        let notchHeight = openNotchSize.height
-        let notchWidth = openNotchSize.width
+        let notchHeight = openNotchSize().height
+        let notchWidth = openNotchSize().width
         
         // Create notch region at the top-center of the screen where an open notch would occupy
         let notchRegion = CGRect(
@@ -270,7 +265,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func createBoringNotchWindow(for screen: NSScreen, with viewModel: BoringViewModel) -> NSWindow {
-        let rect = NSRect(x: 0, y: 0, width: windowSize.width, height: windowSize.height)
+        let rect = NSRect(x: 0, y: 0, width: windowSize().width, height: windowSize().height)
         let styleMask: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .utilityWindow, .hudWindow]
         
         let window = BoringNotchSkyLightWindow(contentRect: rect, styleMask: styleMask, backing: .buffered, defer: false)
@@ -318,6 +313,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Self.shared = self
 
         NotificationCenter.default.addObserver(
             self,
@@ -341,6 +337,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 self?.adjustWindowPosition()
                 self?.setupDragDetectors()
+            }
+        }
+
+        // Teardown and recreate, not a live resize.
+        //
+        // createBoringNotchWindow sets the frame once and positionWindow only ever moves
+        // the origin, so the window keeps whatever width it was born with — a setting
+        // that only changed the constant would do nothing visible. Resizing in place is
+        // possible but these are NSPanels living in a CGSSpace with SkyLight enabled,
+        // which is exactly where obscure window bugs live. This path is the one
+        // showOnAllDisplays already uses and has been proven by every user who has
+        // toggled it. cleanupWindows removes them from NotchSpaceManager and
+        // createBoringNotchWindow puts them back, so space membership survives.
+        //
+        // The cost is a flicker on a setting a user changes a handful of times ever.
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name.openNotchWidthChanged, object: nil, queue: nil
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.cleanupWindows()
+                self.adjustWindowPosition(changeAlpha: true)
+                // Reads openNotchSize() live, so it picks up the new width by itself.
+                self.setupDragDetectors()
             }
         }
 
@@ -397,6 +417,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // not anything is being recorded. With every trigger off it installs a couple of
         // observers and schedules nothing.
         ClipboardAutoClearService.shared.start()
+        AccessoryBatteryManager.shared.start()
 
         // Caffeine. restore() resumes a session that survived a quit and drops one that
         // expired while we were not running; startObserving() wires sleep/wake and
@@ -452,115 +473,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
         }
 
+        // Every body here lives in NotchActions, so a hotkey and its matching Shortcuts
+        // action cannot drift apart. See Shortcuts/NotchActions.swift.
         KeyboardShortcuts.onKeyDown(for: .toggleCaffeine) {
+            Task { @MainActor in NotchActions.setCaffeine(.toggle) }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .pasteAsPlainText) {
+            Task { @MainActor in NotchActions.pasteAsPlainText() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) {
+            Task { @MainActor in NotchActions.toggleSneakPeek() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .clipboardHistoryPanel) {
+            Task { @MainActor in NotchActions.toggleClipboardPanel() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) {
+            Task { @MainActor in NotchActions.toggleNotchOpen() }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .decreaseBacklight) {
             Task { @MainActor in
-                CaffeineManager.shared.toggle(
-                    mode: Defaults[.caffeineMode],
-                    duration: Defaults[.caffeineDefaultDuration]
-                )
+                NotchActions.changeKeyboardBacklight(by: -NotchActions.backlightStep)
             }
         }
 
-        // Paste what is already on the clipboard, without its formatting. Reads the
-        // pasteboard rather than the history, so it works even with history switched off.
-        KeyboardShortcuts.onKeyDown(for: .pasteAsPlainText) { [weak self] in
-            guard self != nil else { return }
-            guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
-            guard ClipboardPasteService.ensureAuthorized(promptIfNeeded: true) else { return }
-
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setString(text, forType: .string)
-            pasteboard.setData(Data(), forType: .fromNotchFun)
-            ClipboardMonitor.shared.acknowledgeSelfCopy()
-            Task {
-                try? await Task.sleep(for: .milliseconds(60))
-                ClipboardPasteService.paste()
-            }
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
-            guard let self = self else { return }
-            if Defaults[.sneakPeekStyles] == .inline {
-                let newStatus = !self.coordinator.expandingView.show
-                self.coordinator.toggleExpandingView(status: newStatus, type: .music)
-            } else {
-                self.coordinator.toggleSneakPeek(
-                    status: !self.coordinator.sneakPeek.show,
-                    type: .music,
-                    duration: 3.0
-                )
-            }
-        }
-
-        // Completes the `clipboardHistoryPanel` shortcut that was declared in
-        // Shortcuts/ShortcutConstants.swift but never had a handler.
-        // (`viewModelForMouseLocation` mirrors the display-picking logic in the
-        // toggleNotchOpen handler below.)
-        KeyboardShortcuts.onKeyDown(for: .clipboardHistoryPanel) { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self, Defaults[.clipboardHistoryEnabled] else { return }
-
-                let viewModel = self.viewModelForMouseLocation()
-
-                // Unlike the plain open shortcut, this must not auto-close after a few
-                // seconds — the user is about to read and pick from a list.
-                self.closeNotchTask?.cancel()
-                self.closeNotchTask = nil
-
-                if viewModel.notchState == .open && self.coordinator.currentView == .clipboard {
-                    viewModel.close(force: true)
-                } else {
-                    self.coordinator.currentView = .clipboard
-                    viewModel.open()
-                }
-            }
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) { [weak self] in
-            Task { [weak self] in
-                guard let self = self else { return }
-
-                let mouseLocation = NSEvent.mouseLocation
-
-                var viewModel = self.vm
-
-                if Defaults[.showOnAllDisplays] {
-                    for screen in NSScreen.screens {
-                        if screen.frame.contains(mouseLocation) {
-                            if let uuid = screen.displayUUID, let screenViewModel = self.viewModels[uuid] {
-                                viewModel = screenViewModel
-                                break
-                            }
-                        }
-                    }
-                }
-
-                self.closeNotchTask?.cancel()
-                self.closeNotchTask = nil
-
-                switch viewModel.notchState {
-                case .closed:
-                    await MainActor.run {
-                        viewModel.open()
-                    }
-
-                    let task = Task { [weak viewModel] in
-                        do {
-                            try await Task.sleep(for: .seconds(3))
-                            await MainActor.run {
-                                viewModel?.close()
-                            }
-                        } catch { }
-                    }
-                    self.closeNotchTask = task
-                case .open:
-                    await MainActor.run {
-                        // Forced: pressing the toggle shortcut is an explicit user
-                        // action and must win over any feature holding the notch open.
-                        viewModel.close(force: true)
-                    }
-                }
+        KeyboardShortcuts.onKeyDown(for: .increaseBacklight) {
+            Task { @MainActor in
+                NotchActions.changeKeyboardBacklight(by: NotchActions.backlightStep)
             }
         }
 
@@ -747,6 +690,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension Notification.Name {
     static let selectedScreenChanged = Notification.Name("SelectedScreenChanged")
     static let notchHeightChanged = Notification.Name("NotchHeightChanged")
+    static let openNotchWidthChanged = Notification.Name("OpenNotchWidthChanged")
     static let showOnAllDisplaysChanged = Notification.Name("showOnAllDisplaysChanged")
     static let automaticallySwitchDisplayChanged = Notification.Name("automaticallySwitchDisplayChanged")
     static let expandedDragDetectionChanged = Notification.Name("expandedDragDetectionChanged")

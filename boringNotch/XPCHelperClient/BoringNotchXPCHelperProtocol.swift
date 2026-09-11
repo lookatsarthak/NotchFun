@@ -20,5 +20,15 @@ import Foundation
     func isScreenBrightnessAvailable(with reply: @escaping (Bool) -> Void)
     func currentScreenBrightness(with reply: @escaping (NSNumber?) -> Void)
     func setScreenBrightness(_ value: Float, with reply: @escaping (Bool) -> Void)
+    // Bluetooth accessory battery (performed by the helper)
+    //
+    // Returns raw `system_profiler -json SPBluetoothDataType` stdout, or nil when the
+    // tool could not be run, timed out, or produced nothing. The app parses it; the
+    // helper deliberately does not, so the parser can live in a testable file and this
+    // unsandboxed process keeps doing as little as possible.
+    //
+    // NSData rather than NSDictionary on purpose: a collection-typed reply argument
+    // needs NSXPCInterface.setClasses(_:for:argumentIndex:ofReply:), and forgetting it
+    // fails at runtime with an empty reply - indistinguishable from "nothing connected".
+    func bluetoothProfileJSON(with reply: @escaping (NSData?) -> Void)
 }
-

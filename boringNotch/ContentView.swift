@@ -21,6 +21,7 @@ struct ContentView: View {
     @ObservedObject var caffeine = CaffeineManager.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
+    @ObservedObject var accessoryBattery = AccessoryBatteryManager.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -76,21 +77,76 @@ struct ContentView: View {
         )
     }
 
+    /// Wide enough for any banner row, which is a different thing from the open notch's
+    /// width even though both happen to be 640. Naming it stops the two being conflated:
+    /// a banner's hover area has no business changing because the open notch was resized.
+    private static let bannerChinWidth: CGFloat = 640
+
+    /// Whether the closed notch is currently showing the Mac's own power banner.
+    private var showsPowerBanner: Bool {
+        coordinator.expandingView.type == .battery && coordinator.expandingView.show
+            && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
+    }
+
+    private var showsAccessoryBatteryBanner: Bool {
+        AccessoryBatteryPolicy.showsBanner(
+            .init(
+                hasReading: accessoryBattery.current != nil,
+                settingEnabled: Defaults[.showAccessoryBattery],
+                bannerRequested: coordinator.expandingView.show
+                    && coordinator.expandingView.type == .accessoryBattery,
+                notchIsClosed: vm.notchState == .closed,
+                hiddenForFullscreen: vm.hideOnClosed,
+                powerBannerIsShowing: showsPowerBanner,
+                inlineHUDIsShowing: coordinator.sneakPeek.show && Defaults[.inlineHUD]
+                    && coordinator.sneakPeek.type != .music
+                    && coordinator.sneakPeek.type != .battery
+            )
+        )
+    }
+
+    private var showsCaffeineBanner: Bool {
+        coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
+            && vm.notchState == .closed && Defaults[.caffeineShowNotification]
+    }
+
+    /// Any full-width banner row. All three need the same wide hover chin.
+    ///
+    /// The caffeine banner was missing from the width calculation entirely: it draws a
+    /// row around 354pt wide while the chin stayed at the bare notch width, because none
+    /// of the branches below matched it. Only visible with `hideTitleBar` on, which is
+    /// presumably why nobody reported it.
+    private var showsAnyBanner: Bool {
+        showsPowerBanner || showsAccessoryBatteryBanner || showsCaffeineBanner
+    }
+
     /// One square slot beside the physical notch, the same size the face and album art use.
     private var notchSlotSize: CGFloat { max(0, vm.effectiveClosedNotchHeight - 12) }
+
+    /// The music row's own slot sizes. Deliberately separate from `notchSlotSize`: the
+    /// face and the caffeine cup keep the standard slot, and only the music row is
+    /// compactable. Read by both the view body and `computedChinWidth` so the invisible
+    /// hover chin cannot drift from the visible row.
+    private var musicMetrics: MusicLiveActivityMetrics.Metrics {
+        MusicLiveActivityMetrics.metrics(
+            .init(
+                closedNotchHeight: vm.effectiveClosedNotchHeight,
+                compact: Defaults[.compactMusicLiveActivity],
+                gestureProgress: gestureProgress
+            )
+        )
+    }
 
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
-        if coordinator.expandingView.type == .battery && coordinator.expandingView.show
-            && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
-        {
-            chinWidth = 640
+        if showsAnyBanner {
+            chinWidth = Self.bannerChinWidth
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
-            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
+            chinWidth += musicMetrics.addedWidth
         } else if !coordinator.expandingView.show && vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
@@ -231,7 +287,7 @@ struct ContentView: View {
             }
         }
         .padding(.bottom, 8)
-        .frame(maxWidth: windowSize.width, maxHeight: windowSize.height, alignment: .top)
+        .frame(maxWidth: windowSize().width, maxHeight: windowSize().height, alignment: .top)
         .compositingGroup()
         .scaleEffect(
             x: gestureScale,
@@ -285,31 +341,20 @@ struct ContentView: View {
                     .padding(.top, 40)
                     Spacer()
                 } else {
-                    if coordinator.expandingView.type == .battery && coordinator.expandingView.show
-                        && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
-                    {
-                        HStack(spacing: 0) {
-                            HStack {
-                                Text(batteryModel.statusText)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white)
-                            }
-
-                            Rectangle()
-                                .fill(.black)
-                                .frame(width: vm.closedNotchSize.width + 10)
-
-                            HStack {
-                                BoringBatteryView(
-                                    batteryWidth: 30,
-                                    isCharging: batteryModel.isCharging,
-                                    isInLowPowerMode: batteryModel.isInLowPowerMode,
-                                    isPluggedIn: batteryModel.isPluggedIn,
-                                    levelBattery: batteryModel.levelBattery,
-                                    isForNotification: true
-                                )
-                            }
-                            .frame(width: 76, alignment: .trailing)
+                    if showsPowerBanner {
+                        NotchBannerRow(notchWidth: vm.closedNotchSize.width) {
+                            Text(batteryModel.statusText)
+                                .font(.subheadline)
+                                .foregroundStyle(.white)
+                        } trailing: {
+                            BoringBatteryView(
+                                batteryWidth: 30,
+                                isCharging: batteryModel.isCharging,
+                                isInLowPowerMode: batteryModel.isInLowPowerMode,
+                                isPluggedIn: batteryModel.isPluggedIn,
+                                levelBattery: batteryModel.levelBattery,
+                                isForNotification: true
+                            )
                         }
                         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
                       // A key the user just pressed outranks a caffeine banner. Battery stays
@@ -317,9 +362,16 @@ struct ContentView: View {
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
-                      } else if coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
-                                  && vm.notchState == .closed && Defaults[.caffeineShowNotification]
-                      {
+                      // Below the HUD deliberately: you connect earbuds and reach for the
+                      // volume keys a second later, and winning here would eat that feedback.
+                      } else if showsAccessoryBatteryBanner, let accessory = accessoryBattery.current {
+                          AccessoryBatteryNotification(
+                              accessory: accessory,
+                              notchWidth: vm.closedNotchSize.width
+                          )
+                          .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                          .transition(NotchMotion.transition(.opacity.combined(with: .scale)))
+                      } else if showsCaffeineBanner {
                           CaffeineNotification(
                               isActive: caffeine.isActive,
                               detail: caffeine.session?.duration.shortTitle,
@@ -506,7 +558,9 @@ struct ContentView: View {
 
     @ViewBuilder
     func MusicLiveActivity() -> some View {
-        HStack {
+        // Explicit spacing, not SwiftUI's default. `computedChinWidth` has to know this
+        // number to size the hover chin, and it used to guess it as a bare `+ 20`.
+        HStack(spacing: musicMetrics.spacing) {
             Image(nsImage: musicManager.albumArt)
                 .resizable()
                 .clipped()
@@ -517,8 +571,8 @@ struct ContentView: View {
                 )
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                 .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
+                    width: musicMetrics.artSize,
+                    height: musicMetrics.artSize
                 )
 
             Rectangle()
@@ -583,15 +637,8 @@ struct ContentView: View {
                     }
             }
             .frame(
-                width: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                        + gestureProgress / 2
-                ),
-                height: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                ),
+                width: musicMetrics.spectrumWidth,
+                height: musicMetrics.spectrumHeight,
                 alignment: .center
             )
         }

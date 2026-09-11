@@ -152,6 +152,7 @@ struct GeneralSettings: View {
     @Default(.nonNotchHeightMode) var nonNotchHeightMode
     @Default(.notchHeight) var notchHeight
     @Default(.notchHeightMode) var notchHeightMode
+    @Default(.openNotchWidth) var openNotchWidth
     @Default(.showOnAllDisplays) var showOnAllDisplays
     @Default(.automaticallySwitchDisplay) var automaticallySwitchDisplay
     @Default(.enableGestures) var enableGestures
@@ -264,8 +265,26 @@ struct GeneralSettings: View {
                             name: Notification.Name.notchHeightChanged, object: nil)
                     }
                 }
+                Slider(
+                    value: $openNotchWidth,
+                    in: OpenNotchWidth.minimum...OpenNotchWidth.maximum,
+                    step: 10
+                ) {
+                    Text("Width when open - \(openNotchWidth, specifier: "%.0f")")
+                }
+                .onChange(of: openNotchWidth) {
+                    NotificationCenter.default.post(
+                        name: Notification.Name.openNotchWidthChanged, object: nil)
+                }
             } header: {
                 Text("Notch sizing")
+            } footer: {
+                Text(
+                    "Changing the open width rebuilds the notch window, so it will blink once."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
 
             NotchBehaviour()
@@ -367,8 +386,18 @@ struct Charge: View {
                 Defaults.Toggle(key: .showPowerStatusNotifications) {
                     Text("Show power status notifications")
                 }
+                Defaults.Toggle(key: .showAccessoryBattery) {
+                    Text("Show Bluetooth accessory battery")
+                }
             } header: {
                 Text("General")
+            } footer: {
+                Text(
+                    "Shows the battery of the headphones or earbuds you're listening through, when they connect and while the notch is open. macOS reports both earbuds at the same level even when one is in the case, so a single figure is shown."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
             Section {
                 Defaults.Toggle(key: .showBatteryPercentage) {
@@ -1197,8 +1226,18 @@ struct Appearance: View {
                         Text(option.rawValue)
                     }
                 }
+                Defaults.Toggle(key: .compactMusicLiveActivity) {
+                    Text("Compact music indicator")
+                }
             } header: {
                 Text("Media")
+            } footer: {
+                Text(
+                    "Compact shrinks the album art and spectrum beside the closed notch, so a playing track widens it by 40pt instead of 56pt."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
 
             Section {
@@ -1564,6 +1603,19 @@ struct Shortcuts: View {
             }
             Section {
                 KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
+            }
+            Section {
+                KeyboardShortcuts.Recorder("Keyboard backlight down:", name: .decreaseBacklight)
+                KeyboardShortcuts.Recorder("Keyboard backlight up:", name: .increaseBacklight)
+            } header: {
+                Text("Keyboard backlight")
+            } footer: {
+                Text(
+                    "Unset by default — ⌘F1 and ⌘F2 already toggle display mirroring on most Macs, so NotchFun will not take them without being asked."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
         }
         .accentColor(.effectiveAccent)

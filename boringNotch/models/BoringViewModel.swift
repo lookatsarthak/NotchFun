@@ -229,11 +229,15 @@ class BoringViewModel: NSObject, ObservableObject {
     }
 
     func open() {
-        self.notchSize = openNotchSize
+        self.notchSize = openNotchSize()
         self.notchState = .open
         
         // Force music information update when notch is opened
         MusicManager.shared.forceUpdate()
+
+        // Opening is a hover, so this is guarded by a 60s cache and an in-flight check;
+        // sweeping the pointer across the notch must not spawn a subprocess per crossing.
+        AccessoryBatteryManager.shared.refreshForNotchOpen()
     }
 
     /// - Parameter force: Bypasses `preventNotchClose`. An action the user took

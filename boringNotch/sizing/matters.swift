@@ -13,8 +13,35 @@ let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
 let shadowPadding: CGFloat = 20
-let openNotchSize: CGSize = .init(width: 640, height: 190)
-let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
+
+/// The default and the bounds for the open notch's width.
+///
+/// The lower bound is where the home view's own content stops fitting; the upper one
+/// keeps the drag-to-open detector from becoming a screen-wide strip across the top of
+/// the display, which would hijack every drag near the menu bar.
+enum OpenNotchWidth {
+    static let `default`: CGFloat = 640
+    static let minimum: CGFloat = 500
+    static let maximum: CGFloat = 900
+}
+
+let openNotchHeight: CGFloat = 190
+
+/// Deliberately **not** `@MainActor`.
+///
+/// `BoringViewModel.open()` is not main-actor isolated and is called from mixed
+/// contexts, so annotating this cascades isolation errors through the view layer.
+/// `Defaults` is `UserDefaults`-backed and safe to read off the main thread.
+func openNotchSize() -> CGSize {
+    let stored = Defaults[.openNotchWidth]
+    let clamped = min(max(OpenNotchWidth.minimum, stored), OpenNotchWidth.maximum)
+    return .init(width: clamped, height: openNotchHeight)
+}
+
+func windowSize() -> CGSize {
+    let size = openNotchSize()
+    return .init(width: size.width, height: size.height + shadowPadding)
+}
 let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
 
 enum MusicPlayerImageSizes {
