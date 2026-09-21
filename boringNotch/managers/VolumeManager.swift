@@ -10,12 +10,13 @@ import Combine
 import CoreAudio
 import Foundation
 
-final class VolumeManager: NSObject, ObservableObject {
+@Observable
+final class VolumeManager: NSObject {
     static let shared = VolumeManager()
 
-    @Published private(set) var rawVolume: Float = 0
-    @Published private(set) var isMuted: Bool = false
-    @Published private(set) var lastChangeAt: Date = .distantPast
+    private(set) var rawVolume: Float = 0
+    private(set) var isMuted: Bool = false
+    private(set) var lastChangeAt: Date = .distantPast
 
     let visibleDuration: TimeInterval = 1.2
 

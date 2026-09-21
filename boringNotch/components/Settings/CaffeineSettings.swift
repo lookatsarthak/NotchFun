@@ -8,7 +8,7 @@ import KeyboardShortcuts
 import SwiftUI
 
 struct CaffeineSettings: View {
-    @ObservedObject private var caffeine = CaffeineManager.shared
+    private let caffeine = CaffeineManager.shared
     @Default(.caffeineMode) private var mode
     @Default(.caffeineDefaultDuration) private var defaultDuration
 

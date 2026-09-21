@@ -13,7 +13,7 @@ import SwiftUI
 /// there is no polling and no permission required; `CaffeineManager` ends the session
 /// when it sees that app terminate.
 struct CaffeineAppBoundMenu: View {
-    @ObservedObject private var caffeine = CaffeineManager.shared
+    private let caffeine = CaffeineManager.shared
     @Default(.caffeineMode) private var mode
 
     var body: some View {

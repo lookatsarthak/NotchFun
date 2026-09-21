@@ -5,22 +5,22 @@ import IOKit.ps
 import SwiftUI
 
 /// A view model that manages and monitors the battery status of the device
-class BatteryStatusViewModel: ObservableObject {
+@Observable
+class BatteryStatusViewModel {
 
     private var wasCharging: Bool = false
     private var powerSourceChangedCallback: IOPowerSourceCallbackType?
     private var runLoopSource: Unmanaged<CFRunLoopSource>?
 
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
 
-    @Published private(set) var levelBattery: Float = 0.0
-    @Published private(set) var maxCapacity: Float = 0.0
-    @Published private(set) var isPluggedIn: Bool = false
-    @Published private(set) var isCharging: Bool = false
-    @Published private(set) var isInLowPowerMode: Bool = false
-    @Published private(set) var isInitial: Bool = false
-    @Published private(set) var timeToFullCharge: Int = 0
-    @Published private(set) var statusText: String = ""
+    private(set) var levelBattery: Float = 0.0
+    private(set) var maxCapacity: Float = 0.0
+    private(set) var isPluggedIn: Bool = false
+    private(set) var isCharging: Bool = false
+    private(set) var isInLowPowerMode: Bool = false
+    private(set) var isInitial: Bool = false
+    private(set) var timeToFullCharge: Int = 0
+    private(set) var statusText: String = ""
 
     private let managerBattery = BatteryActivityManager.shared
     private var managerBatteryId: Int?
@@ -121,9 +121,14 @@ class BatteryStatusViewModel: ObservableObject {
     /// Notifies important changes in the battery status with an optional delay
     /// - Parameter delay: The delay before notifying the change, default is 0.0
     private func notifyImportanChangeStatus(delay: Double = 0.0) {
-        Task {
+        // Explicitly on the main actor, and the coordinator is reached here rather
+        // than held as a stored property: it is main-actor isolated, so a nonisolated
+        // class cannot capture it at init without tripping Swift 6 isolation checking.
+        // This was previously hidden behind an @ObservedObject wrapper that did nothing
+        // in a non-View type anyway.
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
-            self.coordinator.toggleExpandingView(status: true, type: .battery)
+            BoringViewCoordinator.shared.toggleExpandingView(status: true, type: .battery)
         }
     }
 

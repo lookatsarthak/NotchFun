@@ -5,12 +5,13 @@
 
 import AppKit
 
-final class BrightnessManager: ObservableObject {
+@Observable
+final class BrightnessManager {
 	static let shared = BrightnessManager()
 
-	@Published private(set) var rawBrightness: Float = 0
-	@Published private(set) var animatedBrightness: Float = 0
-	@Published private(set) var lastChangeAt: Date = .distantPast
+	private(set) var rawBrightness: Float = 0
+	private(set) var animatedBrightness: Float = 0
+	private(set) var lastChangeAt: Date = .distantPast
 
 	private let visibleDuration: TimeInterval = 1.2
 	private let client = XPCHelperClient.shared
@@ -67,11 +68,12 @@ final class BrightnessManager: ObservableObject {
 // (DisplayServices helpers moved into XPC helper)
 
 // MARK: - Keyboard Backlight Controller
-final class KeyboardBacklightManager: ObservableObject {
+@Observable
+final class KeyboardBacklightManager {
 	static let shared = KeyboardBacklightManager()
 
-	@Published private(set) var rawBrightness: Float = 0
-	@Published private(set) var lastChangeAt: Date = .distantPast
+	private(set) var rawBrightness: Float = 0
+	private(set) var lastChangeAt: Date = .distantPast
 
 	private let visibleDuration: TimeInterval = 1.2
 	private let client = XPCHelperClient.shared

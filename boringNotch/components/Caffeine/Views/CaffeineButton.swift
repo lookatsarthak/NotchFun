@@ -11,7 +11,7 @@ import SwiftUI
 /// Matches the 30×30 capsule shape of the mirror and settings buttons beside it. Plain
 /// click toggles using the configured defaults; right-click opens the duration menu.
 struct CaffeineButton: View {
-    @ObservedObject private var caffeine = CaffeineManager.shared
+    private let caffeine = CaffeineManager.shared
     @Default(.caffeineMode) private var mode
     @Default(.caffeineDefaultDuration) private var defaultDuration
 
@@ -55,7 +55,7 @@ struct CaffeineButton: View {
 
 /// Duration picker, shared by the button's context menu and the menu-bar item.
 struct CaffeineDurationMenu: View {
-    @ObservedObject private var caffeine = CaffeineManager.shared
+    private let caffeine = CaffeineManager.shared
     @Default(.caffeineMode) private var mode
 
     var body: some View {

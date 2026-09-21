@@ -10,8 +10,8 @@ import SwiftUI
 
 struct BoringHeader: View {
     @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var batteryModel = BatteryStatusViewModel.shared
-    @ObservedObject var accessoryBattery = AccessoryBatteryManager.shared
+    let batteryModel = BatteryStatusViewModel.shared
+    let accessoryBattery = AccessoryBatteryManager.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
 

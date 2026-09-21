@@ -28,7 +28,8 @@ import SwiftUI
 /// low-battery alert, and duplicating a system notification is worse than silence — it
 /// would also have meant the only repeating timer in the app.
 @MainActor
-final class AccessoryBatteryManager: ObservableObject {
+@Observable
+final class AccessoryBatteryManager {
     static let shared = AccessoryBatteryManager()
 
     /// The accessory currently being listened through, if it reports a battery.
@@ -36,7 +37,7 @@ final class AccessoryBatteryManager: ObservableObject {
     /// `nil` covers three different things on purpose — nothing connected, connected but
     /// reporting no battery, and the helper being unreachable. None of them should render
     /// a number, and distinguishing them in the UI would be noise.
-    @Published private(set) var current: AccessoryBattery?
+    private(set) var current: AccessoryBattery?
 
     /// How long a reading is treated as fresh. Battery moves by a percent every several
     /// minutes; a hover is not a reason to shell out again.
@@ -100,7 +101,7 @@ final class AccessoryBatteryManager: ObservableObject {
             // Switched back to speakers or a wired device: drop the reading rather than
             // leaving the last accessory's number in the header.
             //
-            // Guarded on inequality because assigning to a @Published fires
+            // Guarded on inequality because assigning to a fires
             // objectWillChange even when the value is unchanged, and this view model is
             // observed by ContentView - a no-op assignment is a free re-render of the
             // whole notch.

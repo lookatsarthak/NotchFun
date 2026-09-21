@@ -15,7 +15,8 @@ import os
 /// for no visible reason, which is the worst possible bug in a feature like this. Every
 /// mutation goes through `apply(_:)` so the two can never drift apart.
 @MainActor
-final class CaffeineManager: ObservableObject {
+@Observable
+final class CaffeineManager {
     static let shared = CaffeineManager()
 
     private static let logger = Logger(subsystem: "io.github.lookatsarthak.notchfun", category: "Caffeine")
@@ -34,7 +35,7 @@ final class CaffeineManager: ObservableObject {
         case failed
     }
 
-    @Published private(set) var session: CaffeineSession?
+    private(set) var session: CaffeineSession?
 
     /// How long is left, computed on read.
     ///
