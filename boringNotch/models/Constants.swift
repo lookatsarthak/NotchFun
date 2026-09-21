@@ -251,7 +251,15 @@ extension Defaults.Keys {
     static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)
     
     // MARK: Media Controller
-    static let mediaController = Key<MediaControllerType>("mediaController", default: defaultMediaController)
+    /// Plainly `.nowPlaying`.
+    ///
+    /// This was previously derived from a helper that asked MusicManager whether Now
+    /// Playing was deprecated - but a Key's default is evaluated when the key is first
+    /// touched, which is before MusicManager exists and long before its async probe
+    /// has answered, so it always resolved to `.nowPlaying` regardless. The real
+    /// handling lives in setActiveControllerBasedOnPreference, which substitutes Apple
+    /// Music at the point the controller is actually chosen.
+    static let mediaController = Key<MediaControllerType>("mediaController", default: .nowPlaying)
     
     // MARK: Advanced Settings
     static let useCustomAccentColor = Key<Bool>("useCustomAccentColor", default: false)
@@ -259,14 +267,6 @@ extension Defaults.Keys {
     // Show or hide the title bar
     static let hideTitleBar = Key<Bool>("hideTitleBar", default: true)
     
-    // Helper to determine the default media controller based on NowPlaying deprecation status
-    static var defaultMediaController: MediaControllerType {
-        if MusicManager.shared.isNowPlayingDeprecated {
-            return .appleMusic
-        } else {
-            return .nowPlaying
-        }
-    }
 
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCache_v1", default: false)
 }

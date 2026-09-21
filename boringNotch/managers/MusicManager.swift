@@ -14,7 +14,15 @@ let defaultImage: NSImage = .init(
     accessibilityDescription: "Album Art"
 )!
 
-class MusicManager: ObservableObject {
+/// Main-actor isolated, explicitly.
+///
+/// It always was in practice - every controller it drives conforms to the
+/// @MainActor MediaControllerProtocol, and all its state feeds SwiftUI - but the
+/// isolation was being inferred from an @ObservedObject stored property rather than
+/// stated. Removing that wrapper removed the inference, so it is written down now.
+@MainActor
+@Observable
+class MusicManager {
     // MARK: - Properties
     static let shared = MusicManager()
     private var cancellables = Set<AnyCancellable>()
@@ -29,29 +37,31 @@ class MusicManager: ObservableObject {
     private var activeController: (any MediaControllerProtocol)?
 
     // Published properties for UI
-    @Published var songTitle: String = "I'm Handsome"
-    @Published var artistName: String = "Me"
-    @Published var albumArt: NSImage = defaultImage
-    @Published var isPlaying = false
-    @Published var album: String = "Self Love"
-    @Published var isPlayerIdle: Bool = true
-    @Published var avgColor: NSColor = .white
-    @Published var bundleIdentifier: String? = nil
-    @Published var songDuration: TimeInterval = 0
-    @Published var elapsedTime: TimeInterval = 0
-    @Published var timestampDate: Date = .init()
-    @Published var playbackRate: Double = 1
-    @Published var isShuffled: Bool = false
-    @Published var repeatMode: RepeatMode = .off
-    @Published var volume: Double = 0.5
-    @Published var volumeControlSupported: Bool = true
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
-    @Published var usingAppIconForArtwork: Bool = false
-    @Published var currentLyrics: String = ""
-    @Published var isFetchingLyrics: Bool = false
-    @Published var syncedLyrics: [(time: Double, text: String)] = []
-    @Published var canFavoriteTrack: Bool = false
-    @Published var isFavoriteTrack: Bool = false
+    var songTitle: String = "I'm Handsome"
+    var artistName: String = "Me"
+    var albumArt: NSImage = defaultImage
+    var isPlaying = false
+    var album: String = "Self Love"
+    var isPlayerIdle: Bool = true
+    var avgColor: NSColor = .white
+    var bundleIdentifier: String? = nil
+    var songDuration: TimeInterval = 0
+    var elapsedTime: TimeInterval = 0
+    var timestampDate: Date = .init()
+    var playbackRate: Double = 1
+    var isShuffled: Bool = false
+    var repeatMode: RepeatMode = .off
+    var volume: Double = 0.5
+    var volumeControlSupported: Bool = true
+    /// Plain reference. @ObservedObject does nothing outside a View, and it collides
+    /// with the storage @Observable synthesises.
+    let coordinator = BoringViewCoordinator.shared
+    var usingAppIconForArtwork: Bool = false
+    var currentLyrics: String = ""
+    var isFetchingLyrics: Bool = false
+    var syncedLyrics: [(time: Double, text: String)] = []
+    var canFavoriteTrack: Bool = false
+    var isFavoriteTrack: Bool = false
 
     private var artworkData: Data? = nil
 
@@ -61,14 +71,14 @@ class MusicManager: ObservableObject {
     private var lastArtworkAlbum: String = "Self Love"
     private var lastArtworkBundleIdentifier: String? = nil
 
-    @Published var isFlipping: Bool = false
+    var isFlipping: Bool = false
     private var flipWorkItem: DispatchWorkItem?
 
-    @Published var isTransitioning: Bool = false
+    var isTransitioning: Bool = false
     private var transitionWorkItem: DispatchWorkItem?
 
     // MARK: - Initialization
-    init() {
+    private init() {
         // Listen for changes to the default controller preference
         NotificationCenter.default.publisher(for: Notification.Name.mediaControllerChanged)
             .sink { [weak self] _ in
@@ -99,9 +109,10 @@ class MusicManager: ObservableObject {
         }
     }
 
-    deinit {
-        destroy()
-    }
+    // No deinit. `destroy()` is main-actor work - it tears down controllers and
+    // observers - and deinit is nonisolated, so it cannot call it. That is not a loss:
+    // `init()` is private, so `shared` is the only instance and it lives for the whole
+    // process, and applicationWillTerminate already calls destroy() explicitly.
     
     public func destroy() {
         debounceIdleTask?.cancel()

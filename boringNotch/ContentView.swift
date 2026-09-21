@@ -19,7 +19,7 @@ struct ContentView: View {
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     let caffeine = CaffeineManager.shared
-    @ObservedObject var musicManager = MusicManager.shared
+    @Bindable var musicManager = MusicManager.shared
     let batteryModel = BatteryStatusViewModel.shared
     let accessoryBattery = AccessoryBatteryManager.shared
     let brightnessManager = BrightnessManager.shared

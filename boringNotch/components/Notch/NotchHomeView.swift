@@ -25,7 +25,7 @@ struct MusicPlayerView: View {
 }
 
 struct AlbumArtView: View {
-    @ObservedObject var musicManager = MusicManager.shared
+    @Bindable var musicManager = MusicManager.shared
     @ObservedObject var vm: BoringViewModel
     let albumArtNamespace: Namespace.ID
 
@@ -112,7 +112,7 @@ struct AlbumArtView: View {
 }
 
 struct MusicControlsView: View {
-    @ObservedObject var musicManager = MusicManager.shared
+    @Bindable var musicManager = MusicManager.shared
         @EnvironmentObject var vm: BoringViewModel
         @ObservedObject var webcamManager = WebcamManager.shared
     @State private var sliderValue: Double = 0
@@ -301,7 +301,7 @@ struct MusicControlsView: View {
 }
 
 struct FavoriteControlButton: View {
-    @ObservedObject var musicManager = MusicManager.shared
+    @Bindable var musicManager = MusicManager.shared
 
     var body: some View {
         HoverButton(icon: iconName, iconColor: iconColor, scale: .medium) {
@@ -330,7 +330,7 @@ private extension Array where Element == MusicControlButton {
 // MARK: - Volume Control View
 
 struct VolumeControlView: View {
-    @ObservedObject var musicManager = MusicManager.shared
+    @Bindable var musicManager = MusicManager.shared
     @State private var volumeSliderValue: Double = 0.5
     @State private var dragging: Bool = false
     @State private var showVolumeSlider: Bool = false
@@ -377,12 +377,14 @@ struct VolumeControlView: View {
             }
         }
         .clipped()
-        .onReceive(musicManager.$volume) { volume in
+        // onChange, not onReceive: @Observable publishes no Combine projections, and
+        // this only ever needed the new value.
+        .onChange(of: musicManager.volume) { _, volume in
             if !dragging {
                 volumeSliderValue = volume
             }
         }
-        .onReceive(musicManager.$volumeControlSupported) { supported in
+        .onChange(of: musicManager.volumeControlSupported) { _, supported in
             if !supported {
                 withAnimation(NotchMotion.control) {
                     showVolumeSlider = false
