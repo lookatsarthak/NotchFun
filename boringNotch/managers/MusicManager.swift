@@ -88,6 +88,7 @@ class MusicManager: ObservableObject {
             
             // Initialize the active controller after deprecation check
             self.setActiveControllerBasedOnPreference()
+            self.observeControllerAppLifecycle()
         }
     }
 
@@ -128,8 +129,6 @@ class MusicManager: ObservableObject {
             newController = AppleMusicController()
         case .spotify:
             newController = SpotifyController()
-        case .youtubeMusic:
-            newController = YouTubeMusicController()
         }
 
         // Set up state observation for the new controller
@@ -147,20 +146,69 @@ class MusicManager: ObservableObject {
         return newController
     }
 
+    /// The app a controller needs in order to report anything, or nil if it needs none.
+    ///
+    /// Now Playing reads from the system, so it works whatever is running. The others
+    /// drive a specific application and are inert without it.
+    private func requiredBundleID(for type: MediaControllerType) -> String? {
+        switch type {
+        case .nowPlaying: return nil
+        case .appleMusic: return "com.apple.Music"
+        case .spotify: return "com.spotify.client"
+        }
+    }
+
     private func setActiveControllerBasedOnPreference() {
         let preferredType = Defaults[.mediaController]
-        print("Preferred Media Controller: \(preferredType)")
 
         // If NowPlaying is deprecated but that's the preference, use Apple Music instead
         let controllerType = (self.isNowPlayingDeprecated && preferredType == .nowPlaying)
             ? .appleMusic
             : preferredType
 
-        if let controller = createController(for: controllerType) {
+        // A controller whose app is not running can never report anything, and the notch
+        // sits on its placeholder track forever with nothing to say why. Every controller
+        // has implemented `isActive()` all along; nothing consulted it when choosing one.
+        //
+        // The preference is deliberately not rewritten. The app may be launched later, and
+        // the observer below switches to it when that happens.
+        if let controller = createController(for: controllerType), controller.isActive() {
             setActiveController(controller)
-        } else if controllerType != .appleMusic, let fallbackController = createController(for: .appleMusic) {
-            // Fallback to Apple Music if preferred controller couldn't be created
-            setActiveController(fallbackController)
+            return
+        }
+
+        // Now Playing, not Apple Music, is the right place to land: it is the only source
+        // that works regardless of what is installed, and it covers browsers - which is
+        // where anyone who picked a per-app source for a web player was listening anyway.
+        if !isNowPlayingDeprecated, let fallback = createController(for: .nowPlaying) {
+            print("Media controller \(controllerType) is not running; using Now Playing")
+            setActiveController(fallback)
+        } else if let fallback = createController(for: .appleMusic) {
+            setActiveController(fallback)
+        }
+    }
+
+    /// Re-picks the controller when the app a preference depends on comes or goes.
+    ///
+    /// Without this the fallback above would be permanent for the session: launch Spotify
+    /// after the notch, and it would stay on Now Playing until the next restart.
+    private func observeControllerAppLifecycle() {
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification,
+                     NSWorkspace.didTerminateApplicationNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                guard
+                    let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                    let bundleID = app.bundleIdentifier
+                else { return }
+                Task { @MainActor in
+                    guard let self else { return }
+                    // Only the app the preference actually depends on, so an unrelated
+                    // launch does not rebuild the controller.
+                    guard bundleID == self.requiredBundleID(for: Defaults[.mediaController]) else { return }
+                    self.setActiveControllerBasedOnPreference()
+                }
+            }
         }
     }
 
@@ -682,11 +730,7 @@ class MusicManager: ObservableObject {
         // Request immediate update from the active controller
         Task { [weak self] in
             if self?.activeController?.isActive() == true {
-                if let youtubeController = self?.activeController as? YouTubeMusicController {
-                    await youtubeController.pollPlaybackState()
-                } else {
-                    await self?.activeController?.updatePlaybackInfo()
-                }
+                await self?.activeController?.updatePlaybackInfo()
             }
         }
     }

@@ -657,20 +657,14 @@ struct Media: View {
                 Text("Media Source")
             } footer: {
                 if MusicManager.shared.isNowPlayingDeprecated {
-                    HStack {
-                        Text("YouTube Music requires this third-party app to be installed: ")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                        Link(
-                            "https://github.com/pear-devs/pear-desktop",
-                            destination: URL(string: "https://github.com/pear-devs/pear-desktop")!
-                        )
-                        .font(.caption)
-                        .foregroundColor(.blue)  // Ensures it's visibly a link
-                    }
+                    Text(
+                        "'Now Playing' is unavailable on this Mac, so a source has to be picked per app."
+                    )
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
                 } else {
                     Text(
-                        "'Now Playing' was the only option on previous versions and works with all media apps."
+                        "'Now Playing' reads whatever macOS is playing, including music in a browser, and is the right choice for almost everyone. The other options drive one app directly and do nothing while that app is closed."
                     )
                     .foregroundStyle(.secondary)
                     .font(.caption)
