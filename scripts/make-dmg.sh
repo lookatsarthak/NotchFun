@@ -110,6 +110,21 @@ mkdir -p "$OUT_DIR"
 DMG="$OUT_DIR/$APP_NAME-$VERSION.dmg"
 rm -f "$DMG"
 
+# Built in two steps, deliberately.
+#
+# `hdiutil create` can leave large unreferenced regions inside the image: the 1.4.1
+# release shipped 1,088,360 bytes of slack - 98.8% zeroes - between two compressed
+# chunks, making the download 23% bigger than 1.4.0 despite the app itself having
+# shrunk. It mounted and ran fine, which is exactly why nobody noticed. It was not
+# reproducible either; it happened once, on the first build after a macOS update.
+#
+# `hdiutil convert` always rewrites the chunk table compactly, so a create-then-convert
+# pass cannot carry slack through. The assertion below is the part that matters: it
+# means a bloated image fails the build instead of reaching a release.
+#
+# ULFO (lzfse) rather than UDZO (zlib): ~12% smaller and faster to mount. Needs macOS
+# 10.11 to open, far below this app's own floor.
+RAW_DMG="$STAGING.raw.dmg"
 echo "==> Creating $DMG"
 hdiutil create \
   -volname "$APP_NAME" \
@@ -117,7 +132,38 @@ hdiutil create \
   -fs HFS+ \
   -format UDZO \
   -ov \
-  "$DMG" >/dev/null
+  "$RAW_DMG" >/dev/null
+
+hdiutil convert "$RAW_DMG" -format ULFO -o "$DMG" -quiet
+rm -f "$RAW_DMG"
+
+# Fail loudly on a bloated image rather than shipping it.
+python3 - "$DMG" <<'PYEOF'
+import plistlib, struct, sys, os
+
+path = sys.argv[1]
+with open(path, "rb") as f:
+    f.seek(-512, os.SEEK_END)
+    trailer = f.read(512)
+    if trailer[:4] != b"koly":
+        sys.exit("error: no koly trailer; not a UDIF image")
+    xml_off, xml_len = struct.unpack(">QQ", trailer[216:232])
+    f.seek(xml_off)
+    plist = plistlib.loads(f.read(xml_len))
+
+# Sum the bytes every block actually stores, and compare with where the data fork ends.
+stored = 0
+for blk in plist["resource-fork"]["blkx"]:
+    data = blk["Data"]
+    for i in range(struct.unpack(">I", data[200:204])[0]):
+        stored += struct.unpack(">IIQQQQ", data[204 + 40 * i:244 + 40 * i])[5]
+
+slack = xml_off - stored
+size = os.path.getsize(path)
+print(f"    {size:,} bytes, {slack:,} unreferenced")
+if slack > 65536:
+    sys.exit(f"error: {slack:,} bytes of slack in the disk image (limit 65,536)")
+PYEOF
 
 echo
 echo "Built: $DMG"

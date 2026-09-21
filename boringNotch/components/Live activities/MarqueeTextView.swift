@@ -72,16 +72,23 @@ struct MarqueeText: View {
                 .background(backgroundColor)
                 .modifier(MeasureSizeModifier())
                 .onPreferenceChange(SizePreferenceKey.self) { size in
-                    self.textSize = CGSize(width: size.width / 2, height: NSFont.preferredFont(forTextStyle: nsFont).pointSize)
-                    self.animate = false
-                    self.offset = 0
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.01){
-                        if needsScrolling {
-                            self.animate = true
-                            self.offset = -(textSize.width + 10)
-                            
-                        }
-                    }
+                    // The measured width counts the string twice - the HStack above
+                    // renders it twice so the scroll can wrap seamlessly - so halve it.
+                    let measured = CGSize(
+                        width: size.width / 2,
+                        height: NSFont.preferredFont(forTextStyle: nsFont).pointSize
+                    )
+                    let shouldScroll = measured.width > frameWidth
+
+                    // Restarting used to be `animate = false` followed by `animate = true`
+                    // on a 10ms `asyncAfter`, purely to force SwiftUI to observe a
+                    // false->true transition. That raced the view leaving the tree, and
+                    // left a dispatch in flight with nothing to update. Setting the final
+                    // state in one pass and keying the animation to the text (`.id(text)`
+                    // above) restarts it without the delay.
+                    self.textSize = measured
+                    self.animate = shouldScroll
+                    self.offset = shouldScroll ? -(measured.width + 10) : 0
                 }
             }
             .frame(width: frameWidth, alignment: .leading)

@@ -216,9 +216,12 @@ class BoringViewCoordinator: ObservableObject {
     }
     
     @objc func sneakPeekEvent(_ notification: Notification) {
+        // `as?`, not `as!`. This arrives on a distributed notification, so the payload
+        // is whatever the sender put there - any process on the machine can post one -
+        // and a forced cast turns a malformed message into a crash.
+        guard let payload = notification.userInfo?.first?.value as? Data else { return }
         let decoder = JSONDecoder()
-        if let decodedData = try? decoder.decode(
-            SharedSneakPeek.self, from: notification.userInfo?.first?.value as! Data)
+        if let decodedData = try? decoder.decode(SharedSneakPeek.self, from: payload)
         {
             let contentType =
                 decodedData.type == "brightness"
