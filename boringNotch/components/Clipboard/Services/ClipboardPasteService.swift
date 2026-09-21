@@ -1,6 +1,6 @@
 //
 //  ClipboardPasteService.swift
-//  boringNotch
+//  NotchFun
 //
 //  Adapted from Maccy (https://github.com/p0deje/Maccy), Maccy/Clipboard.swift,
 //  which credits Clipy for the original approach.

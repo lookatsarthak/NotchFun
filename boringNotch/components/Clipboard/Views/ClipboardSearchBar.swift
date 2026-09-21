@@ -1,6 +1,6 @@
 //
 //  ClipboardSearchBar.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

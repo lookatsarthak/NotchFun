@@ -1,6 +1,6 @@
 //
 //  AnyTransition+NotchTab.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

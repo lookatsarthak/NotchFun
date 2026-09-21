@@ -1,6 +1,6 @@
 //
 //  ClipboardPersistenceService.swift
-//  boringNotch
+//  NotchFun
 //
 //  Follows the pattern of ShelfPersistenceService, with two differences: writes are
 //  debounced and performed off the main actor (clipboard history changes far more

@@ -69,10 +69,6 @@ final class XPCHelperClient: NSObject {
         return service
     }
     
-    private func getRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol>? {
-        remoteService
-    }
-    
     @MainActor
     private func notifyAuthorizationChange(_ granted: Bool) {
         guard lastKnownAuthorization != granted else { return }

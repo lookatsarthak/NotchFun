@@ -1,6 +1,6 @@
 //
 //  TemporaryFileStorageService.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-09-24.
 //
@@ -117,15 +117,6 @@ class TemporaryFileStorageService {
         }
     }
     
-    private func createFile(at url: URL, data: Data) -> URL? {
-        do {
-            try data.write(to: url)
-            return url
-        } catch {
-            print("❌ Failed to create temp file at \(url.path): \(error)")
-            return nil
-        }
-    }
     func createZip(from urls: [URL], suggestedName: String? = nil) async -> URL? {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
         let uuid = UUID().uuidString

@@ -1,6 +1,6 @@
 //
 //  CaffeineManager.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

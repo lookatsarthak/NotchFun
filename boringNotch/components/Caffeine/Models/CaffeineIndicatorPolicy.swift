@@ -1,6 +1,6 @@
 //
 //  CaffeineIndicatorPolicy.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

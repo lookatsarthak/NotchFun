@@ -1,6 +1,6 @@
 //
 //  AccessoryBatteryNotification.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

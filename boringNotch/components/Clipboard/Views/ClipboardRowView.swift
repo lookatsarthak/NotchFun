@@ -1,6 +1,6 @@
 //
 //  ClipboardRowView.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

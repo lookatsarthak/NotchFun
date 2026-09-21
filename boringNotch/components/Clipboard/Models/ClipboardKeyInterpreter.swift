@@ -1,6 +1,6 @@
 //
 //  ClipboardKeyInterpreter.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Carbon.HIToolbox

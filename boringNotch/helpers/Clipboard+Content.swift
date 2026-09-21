@@ -19,7 +19,3 @@ func getAttributedString(content: Any, type: NSPasteboard.PasteboardType) -> NSA
     }
     return nil
 }
-
-func isText(type: NSPasteboard.PasteboardType) -> Bool {
-    return type == .string || type == .html || type == .rtf || type == .html || type == .string || type.rawValue == "public.utf8-plain-text" || type.rawValue == "public.utf16-external-plain-text" || type.rawValue == "com.apple.webarchive"
-}

@@ -1,6 +1,6 @@
 //
 //  VolumeManager.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by JeanLouis on 22/08/2025.
 //
@@ -54,7 +54,7 @@ final class VolumeManager: NSObject, ObservableObject {
 
     @MainActor func toggleMuteAction() {
         // Determine expected resulting state immediately and show HUD with that value
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         var willBeMuted = false
         var resultingVolume: Float32 = rawVolume
 
@@ -73,17 +73,6 @@ final class VolumeManager: NSObject, ObservableObject {
     
     func refresh() { fetchCurrentVolume() }
 
-    func adjustRelative(delta: Float32) {
-        if isMutedInternal() { toggleMuteInternal() }
-        guard let current = readVolumeInternal() else {
-            fetchCurrentVolume()
-            return
-        }
-        let target = max(0, min(1, current + delta))
-        writeVolumeInternal(target)  
-        publish(volume: target, muted: isMutedInternal(), touchDate: true)
-    }
-
     @MainActor func setAbsolute(_ value: Float32) {
         let clamped = max(0, min(1, value))
         let currentlyMuted = isMutedInternal()
@@ -101,28 +90,9 @@ final class VolumeManager: NSObject, ObservableObject {
     }
 
     // MARK: - CoreAudio Helpers
-    private func systemOutputDeviceID() -> AudioObjectID {
-        var defaultDeviceID = kAudioObjectUnknown
-        var propertyAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        var dataSize = UInt32(MemoryLayout<AudioObjectID>.size)
-        let status = AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject),
-            &propertyAddress,
-            0,
-            nil,
-            &dataSize,
-            &defaultDeviceID
-        )
-        if status != noErr { return kAudioObjectUnknown }
-        return defaultDeviceID
-    }
 
     private func fetchCurrentVolume() {
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         guard deviceID != kAudioObjectUnknown else { return }
         var volumes: [Float32] = []
         let candidateElements: [UInt32] = [kAudioObjectPropertyElementMain, 1, 2, 3, 4]
@@ -170,7 +140,7 @@ final class VolumeManager: NSObject, ObservableObject {
     }
 
     private func setupAudioListener() {
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         guard deviceID != kAudioObjectUnknown else { return }
 
         var defaultDevAddr = AudioObjectPropertyAddress(
@@ -222,7 +192,7 @@ final class VolumeManager: NSObject, ObservableObject {
     }
 
     private func readVolumeInternal() -> Float32? {
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         if deviceID == kAudioObjectUnknown { return nil }
         var collected: [Float32] = []
         for el in [kAudioObjectPropertyElementMain, 1, 2, 3, 4] {
@@ -233,7 +203,7 @@ final class VolumeManager: NSObject, ObservableObject {
     }
 
     private func writeVolumeInternal(_ value: Float32) {
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         if deviceID == kAudioObjectUnknown { return }
         let newVal = max(0, min(1, value))
 
@@ -257,7 +227,7 @@ final class VolumeManager: NSObject, ObservableObject {
     }
 
     private func isMutedInternal() -> Bool {
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         if deviceID == kAudioObjectUnknown { return softwareMuted }
         var muteAddr = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
@@ -278,7 +248,7 @@ final class VolumeManager: NSObject, ObservableObject {
     }
 
     private func toggleMuteInternal() {
-        let deviceID = systemOutputDeviceID()
+        let deviceID = SystemAudioOutput.deviceID()
         if deviceID == kAudioObjectUnknown {
             performSoftwareMuteToggle(currentVolume: rawVolume)
             return

@@ -1,6 +1,6 @@
 //
 //  CaffeineSession.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

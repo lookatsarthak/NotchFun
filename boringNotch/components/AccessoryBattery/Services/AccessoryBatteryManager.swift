@@ -1,6 +1,6 @@
 //
 //  AccessoryBatteryManager.swift
-//  boringNotch
+//  NotchFun
 //
 
 import CoreAudio
@@ -96,7 +96,7 @@ final class AccessoryBatteryManager: ObservableObject {
             current = nil
             return
         }
-        guard isBluetoothOutput() else {
+        guard SystemAudioOutput.isBluetooth() else {
             // Switched back to speakers or a wired device: drop the reading rather than
             // leaving the last accessory's number in the header.
             //
@@ -118,7 +118,7 @@ final class AccessoryBatteryManager: ObservableObject {
 
         // Nothing is connected over Bluetooth, so there is nothing to ask about and no
         // reason to spawn anything.
-        guard isBluetoothOutput() else {
+        guard SystemAudioOutput.isBluetooth() else {
             // Same inequality guard as above: a redundant publish re-renders the notch.
             if current != nil { current = nil }
             return
@@ -161,57 +161,8 @@ final class AccessoryBatteryManager: ObservableObject {
     /// Prefer the accessory that is actually the audio output, so a paired mouse or
     /// keyboard cannot claim the banner.
     private func matchOutputDevice(among readings: [AccessoryBattery]) -> AccessoryBattery? {
-        guard let name = outputDeviceName() else { return nil }
+        guard let name = SystemAudioOutput.name() else { return nil }
         return readings.first { $0.name == name }
     }
 
-    // MARK: - CoreAudio
-
-    private func systemOutputDeviceID() -> AudioObjectID {
-        var deviceID = kAudioObjectUnknown
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        var size = UInt32(MemoryLayout<AudioObjectID>.size)
-        let status = AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &deviceID
-        )
-        return status == noErr ? deviceID : kAudioObjectUnknown
-    }
-
-    private func isBluetoothOutput() -> Bool {
-        let deviceID = systemOutputDeviceID()
-        guard deviceID != kAudioObjectUnknown else { return false }
-
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyTransportType,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        var transport = UInt32(0)
-        var size = UInt32(MemoryLayout<UInt32>.size)
-        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &transport)
-        guard status == noErr else { return false }
-        return transport == kAudioDeviceTransportTypeBluetooth
-    }
-
-    private func outputDeviceName() -> String? {
-        let deviceID = systemOutputDeviceID()
-        guard deviceID != kAudioObjectUnknown else { return nil }
-
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioObjectPropertyName,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        var name: CFString = "" as CFString
-        var size = UInt32(MemoryLayout<CFString>.size)
-        let status = withUnsafeMutablePointer(to: &name) { pointer in
-            AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, pointer)
-        }
-        guard status == noErr else { return nil }
-        return name as String
-    }
 }

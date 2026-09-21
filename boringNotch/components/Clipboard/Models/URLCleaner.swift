@@ -1,6 +1,6 @@
 //
 //  URLCleaner.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

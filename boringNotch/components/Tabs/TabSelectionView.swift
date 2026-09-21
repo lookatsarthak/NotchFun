@@ -1,6 +1,6 @@
 //
 //  TabSelectionView.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Hugo Persson on 2024-08-25.
 //

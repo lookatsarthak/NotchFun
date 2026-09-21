@@ -1,6 +1,6 @@
 //
 //  CaffeineButton.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Defaults

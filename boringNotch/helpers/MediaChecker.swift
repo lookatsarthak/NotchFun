@@ -1,6 +1,6 @@
 //
 //  MediaChecker.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-07-26.
 //

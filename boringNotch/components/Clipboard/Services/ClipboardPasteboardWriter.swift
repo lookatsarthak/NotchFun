@@ -1,6 +1,6 @@
 //
 //  ClipboardPasteboardWriter.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

@@ -1,6 +1,6 @@
 //
 //  AppleScriptHelper.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-03-29.
 //

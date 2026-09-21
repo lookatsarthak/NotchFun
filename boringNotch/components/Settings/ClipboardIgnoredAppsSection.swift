@@ -1,6 +1,6 @@
 //
 //  ClipboardIgnoredAppsSection.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

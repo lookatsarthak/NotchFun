@@ -1,6 +1,6 @@
 //
 //  Bookmark.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-10-08.
 //
@@ -122,10 +122,6 @@ struct Bookmark: Sendable, Equatable, Codable {
         // is also false for a bookmark that never needed a scope, which is why this
         // checks existence first rather than bailing on `!started`.
         return started ? .fileMissing : .unresolvable
-    }
-
-    func validate() async -> Bool {
-        await status() == .available
     }
 
     func withAccess<T: Sendable>(_ block: @Sendable (URL) async throws -> T) async rethrows -> T? {

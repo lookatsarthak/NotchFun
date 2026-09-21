@@ -1,6 +1,6 @@
 //
 //  NotchRadius.swift
-//  boringNotch
+//  NotchFun
 //
 
 import CoreGraphics

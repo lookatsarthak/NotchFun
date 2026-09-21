@@ -1,6 +1,6 @@
 //
 //  NotchBannerRow.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

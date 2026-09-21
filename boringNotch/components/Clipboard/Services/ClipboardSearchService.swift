@@ -1,6 +1,6 @@
 //
 //  ClipboardSearchService.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

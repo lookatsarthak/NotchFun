@@ -1,6 +1,6 @@
 //
 //  ShelfSelectionModel.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-09-26.
 //
@@ -66,13 +66,6 @@ final class ShelfSelectionModel: ObservableObject {
     func clear() {
         selectedIDs.removeAll()
         lastAnchorID = nil
-    }
-
-    // Keep anchor sane if items array changed drastically (optional helper)
-    func ensureValidAnchor(in allItems: [ShelfItem]) {
-        if let anchor = lastAnchorID, !allItems.contains(where: { $0.id == anchor }) {
-            lastAnchorID = selectedIDs.first
-        }
     }
 
     @Published private(set) var isDragging: Bool = false

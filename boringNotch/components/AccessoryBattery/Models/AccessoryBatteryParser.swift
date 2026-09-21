@@ -1,6 +1,6 @@
 //
 //  AccessoryBatteryParser.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

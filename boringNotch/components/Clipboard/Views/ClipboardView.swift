@@ -1,6 +1,6 @@
 //
 //  ClipboardView.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Defaults

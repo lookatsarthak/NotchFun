@@ -1,6 +1,6 @@
 //
 //  ClipboardKeyCaptureService.swift
-//  boringNotch
+//  NotchFun
 //
 //  Modelled on observers/MediaKeyInterceptor.swift, which is the app's existing,
 //  proven CGEvent tap.

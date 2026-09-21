@@ -34,12 +34,6 @@ extension Date {
         return dateFormatter.string(from: self)
     }
     
-    func dayOfTheWeek(dayOfWeek: Int) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "EEE"
-        let date = Calendar.current.date(bySetting: .weekday, value: dayOfWeek, of: self) ?? self
-        return dateFormatter.string(from: date)
-    }
 }
 
 extension NSSize {
@@ -48,10 +42,6 @@ extension NSSize {
     var aspectRatio: Double {
         width / height
     }
-    func scaled(by factor: Double) -> CGSize {
-        CGSize(width: (width * factor).evenInt, height: (height * factor).evenInt)
-    }
-    
 }
 
 extension Int {

@@ -1,6 +1,6 @@
 //
 //  sizeMatters.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Harsh Vardhan  Goswami  on 05/08/24.
 //
@@ -9,7 +9,6 @@ import Defaults
 import Foundation
 import SwiftUI
 
-let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
 let shadowPadding: CGFloat = 20

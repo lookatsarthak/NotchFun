@@ -161,6 +161,7 @@
 		11F748842ECB27DC00F841DB /* MusicSlotConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */; };
 		14288DDC2C6E015000B9F80C /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14288DD62C6E015000B9F80C /* AudioPlayer.swift */; };
 		14288E0C2C6F8EC000B9F80C /* AppIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14288E0B2C6F8EC000B9F80C /* AppIcons.swift */; };
+		7C1A9E4B2D6F81035E0A4602 /* SystemAudioOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A9E4B2D6F81035E0A4601 /* SystemAudioOutput.swift */; };
 		1443E7F32C609DCE0027C1FC /* matters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1443E7F22C609DCE0027C1FC /* matters.swift */; };
 		9A9B3E6717644D26BDF08672 /* NotchRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4C317911AD456EB774EDA0 /* NotchRadius.swift */; };
 		147163982C5D35B70068B555 /* MusicVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163972C5D35B70068B555 /* MusicVisualizer.swift */; };
@@ -371,6 +372,7 @@
 		11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicSlotConfigurationView.swift; sourceTree = "<group>"; };
 		14288DD62C6E015000B9F80C /* AudioPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		14288E0B2C6F8EC000B9F80C /* AppIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIcons.swift; sourceTree = "<group>"; };
+		7C1A9E4B2D6F81035E0A4601 /* SystemAudioOutput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioOutput.swift; sourceTree = "<group>"; };
 		1443E7F22C609DCE0027C1FC /* matters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = matters.swift; sourceTree = "<group>"; };
 		5B4C317911AD456EB774EDA0 /* NotchRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchRadius.swift; sourceTree = "<group>"; };
 		7C1A9E4B2D6F81035E0A4511 /* AccessoryBattery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryBattery.swift; sourceTree = "<group>"; };
@@ -742,6 +744,7 @@
 				14288DD62C6E015000B9F80C /* AudioPlayer.swift */,
 				5955950C2E900ED800C66711 /* ApplicationRelauncher.swift */,
 				14288E0B2C6F8EC000B9F80C /* AppIcons.swift */,
+				7C1A9E4B2D6F81035E0A4601 /* SystemAudioOutput.swift */,
 			);
 			path = helpers;
 			sourceTree = "<group>";
@@ -773,7 +776,6 @@
 				7C1A9E4B2D6F81035E0A4501 /* AccessoryBattery */,
 				51E9F005BF71BBA56067DBE1 /* Clipboard */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
-				B1C448992C97375A001F0858 /* Tips */,
 				14C08BB72C8DE49E000F8AA0 /* Calendar */,
 				9A987A042C73CA66005CA465 /* Shelf */,
 				149E0B982C737D26006418B1 /* Webcam */,
@@ -1031,13 +1033,6 @@
 				7C1A9E4B2D6F81035E0A4421 /* NotchActions.swift */,
 			);
 			path = Shortcuts;
-			sourceTree = "<group>";
-		};
-		B1C448992C97375A001F0858 /* Tips */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Tips;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1401,6 +1396,7 @@
 				14288DDC2C6E015000B9F80C /* AudioPlayer.swift in Sources */,
 				149E0B972C737D00006418B1 /* WebcamManager.swift in Sources */,
 				14288E0C2C6F8EC000B9F80C /* AppIcons.swift in Sources */,
+				7C1A9E4B2D6F81035E0A4602 /* SystemAudioOutput.swift in Sources */,
 				B19016242CC15B5000E3F12E /* Constants.swift in Sources */,
 				1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */,
 				11CFC6632E09918400748C80 /* MusicControllerSelectionView.swift in Sources */,

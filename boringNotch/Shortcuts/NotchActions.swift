@@ -1,6 +1,6 @@
 //
 //  NotchActions.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

@@ -1,6 +1,6 @@
 //
 //  ClipboardMonitor.swift
-//  boringNotch
+//  NotchFun
 //
 //  Polling approach adapted from Maccy (https://github.com/p0deje/Maccy),
 //  Maccy/Clipboard.swift. MIT License © Alex Rodionov.

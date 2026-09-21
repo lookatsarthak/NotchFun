@@ -1,6 +1,6 @@
 //
 //  boringNotchApp.swift
-//  boringNotchApp
+//  NotchFun
 //
 //  Created by Harsh Vardhan  Goswami  on 02/08/24.
 //
@@ -538,10 +538,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func playWelcomeSound() {
         let audioPlayer = AudioPlayer()
         audioPlayer.play(fileName: "boring", fileExtension: "m4a")
-    }
-
-    func deviceHasNotch() -> Bool {
-        NSScreen.screens.contains { $0.safeAreaInsets.top > 0 }
     }
 
     @objc func screenConfigurationDidChange() {

@@ -1,6 +1,6 @@
 //
 //  CaffeineNotchIndicator.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  ClipboardItem.swift
-//  boringNotch
+//  NotchFun
 //
 //  Content accessors, title generation and the supersedes/dedupe rule are adapted
 //  from Maccy (https://github.com/p0deje/Maccy), Maccy/Models/HistoryItem.swift.

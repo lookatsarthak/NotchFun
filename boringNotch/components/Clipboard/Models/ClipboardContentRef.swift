@@ -1,6 +1,6 @@
 //
 //  ClipboardContentRef.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit.NSPasteboard

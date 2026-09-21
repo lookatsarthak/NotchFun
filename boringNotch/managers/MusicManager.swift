@@ -1,6 +1,6 @@
 //
 //  MusicManager.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Harsh Vardhan  Goswami  on 03/08/24.
 //
@@ -344,33 +344,6 @@ class MusicManager: ObservableObject {
         setFavorite(!isFavoriteTrack)
     }
 
-    @MainActor
-    private func toggleAppleMusicFavorite() async {
-        let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.Music")
-        guard !runningApps.isEmpty else { return }
-
-        let script = """
-        tell application \"Music\"
-            if it is running then
-                try
-                    set loved of current track to (not loved of current track)
-                    return loved of current track
-                on error
-                    return false
-                end try
-            else
-                return false
-            end if
-        end tell
-        """
-
-        if let result = try? await AppleScriptHelper.execute(script) {
-            let loved = result.booleanValue
-            self.isFavoriteTrack = loved
-            self.forceUpdate()
-        }
-    }
-
     func setFavorite(_ favorite: Bool) {
         guard canFavoriteTrack else { return }
         guard let controller = activeController else { return }
@@ -380,11 +353,6 @@ class MusicManager: ObservableObject {
             try? await Task.sleep(for: .milliseconds(150))
             await controller.updatePlaybackInfo()
         }
-    }
-
-    /// Placeholder dislike function
-    func dislikeCurrentTrack() {
-        setFavorite(false)
     }
 
     // MARK: - Lyrics

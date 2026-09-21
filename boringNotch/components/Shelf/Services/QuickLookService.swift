@@ -1,6 +1,6 @@
 //
 //  QuickLookService.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-10-07.
 //
@@ -74,10 +74,6 @@ final class QuickLookService: ObservableObject {
         }
     }
     
-    func showQuickLook(urls: [URL]) {
-        show(urls: urls, selectFirst: true, slideshow: false)
-    }
-
     func updateSelection(urls: [URL]) {
         guard isQuickLookOpen else { return }
     show(urls: urls, selectFirst: true)

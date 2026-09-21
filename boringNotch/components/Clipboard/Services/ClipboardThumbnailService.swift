@@ -1,6 +1,6 @@
 //
 //  ClipboardThumbnailService.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

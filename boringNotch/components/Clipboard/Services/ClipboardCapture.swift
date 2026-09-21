@@ -1,6 +1,6 @@
 //
 //  ClipboardCapture.swift
-//  boringNotch
+//  NotchFun
 //
 //  The filtering rules here are adapted from Maccy (https://github.com/p0deje/Maccy),
 //  Maccy/Clipboard.swift. MIT License © Alex Rodionov.

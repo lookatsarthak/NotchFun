@@ -1,6 +1,6 @@
 //
 //  MusicLiveActivityMetrics.swift
-//  boringNotch
+//  NotchFun
 //
 
 import CoreGraphics

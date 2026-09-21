@@ -1,6 +1,6 @@
 //
 //  ClipboardStateViewModel.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

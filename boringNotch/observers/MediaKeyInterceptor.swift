@@ -1,6 +1,6 @@
 //
 //  MediaKeyInterceptor.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-11-23.
 

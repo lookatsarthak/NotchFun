@@ -1,6 +1,6 @@
 //
 //  ClipboardBlobStore.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

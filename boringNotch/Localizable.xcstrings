@@ -21,26 +21,6 @@
         }
       }
     },
-    "'Now Playing' was the only option on previous versions and works with all media apps.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'Now Playing' was the only option on previous versions and works with all media apps."
-          }
-        }
-      }
-    },
-    "(%@)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "(%@)"
-          }
-        }
-      }
-    },
     "%.0f seconds": {
       "localizations": {
         "en": {
@@ -101,32 +81,22 @@
         }
       }
     },
-    "• Bug fixes": {
+    "'Now Playing' was the only option on previous versions and works with all media apps.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "• Bug fixes"
+            "value": "'Now Playing' was the only option on previous versions and works with all media apps."
           }
         }
       }
     },
-    "• Improved performance": {
+    "(%@)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "• Improved performance"
-          }
-        }
-      }
-    },
-    "• New feature 1": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• New feature 1"
+            "value": "(%@)"
           }
         }
       }
@@ -368,16 +338,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Boost your productivity with Clipboard Manager"
-          }
-        }
-      }
-    },
-    "NotchFun": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "NotchFun"
           }
         }
       }
@@ -658,16 +618,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Custom notch size - %.0f"
-          }
-        }
-      }
-    },
-    "Custom vizualizers (Lottie)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Custom vizualizers (Lottie)"
           }
         }
       }
@@ -1038,6 +988,26 @@
         }
       }
     },
+    "HUD style": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HUD style"
+          }
+        }
+      }
+    },
+    "HUDs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HUDs"
+          }
+        }
+      }
+    },
     "Hide all-day events": {
       "localizations": {
         "en": {
@@ -1128,36 +1098,6 @@
         }
       }
     },
-    "https://github.com/pear-devs/pear-desktop": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "https://github.com/pear-devs/pear-desktop"
-          }
-        }
-      }
-    },
-    "HUD style": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HUD style"
-          }
-        }
-      }
-    },
-    "HUDs": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HUDs"
-          }
-        }
-      }
-    },
     "In progress": {
       "localizations": {
         "en": {
@@ -1195,16 +1135,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Layout Preview"
-          }
-        }
-      }
-    },
-    "Lottie JSON URL": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lottie JSON URL"
           }
         }
       }
@@ -1309,6 +1239,16 @@
         }
       }
     },
+    "Media Source": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media Source"
+          }
+        }
+      }
+    },
     "Media controls": {
       "localizations": {
         "en": {
@@ -1335,16 +1275,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Media playback live activity"
-          }
-        }
-      }
-    },
-    "Media Source": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Media Source"
           }
         }
       }
@@ -1405,16 +1335,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Music Source"
-          }
-        }
-      }
-    },
-    "muted": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "muted"
           }
         }
       }
@@ -1550,6 +1470,16 @@
         }
       }
     },
+    "NotchFun": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NotchFun"
+          }
+        }
+      }
+    },
     "Open Calendar Settings": {
       "localizations": {
         "en": {
@@ -1570,22 +1500,22 @@
         }
       }
     },
-    "Open notch on hover": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open notch on hover"
-          }
-        }
-      }
-    },
     "Open Reminder Settings": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open Reminder Settings"
+          }
+        }
+      }
+    },
+    "Open notch on hover": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open notch on hover"
           }
         }
       }
@@ -1822,16 +1752,6 @@
         }
       }
     },
-    "selected": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "selected"
-          }
-        }
-      }
-    },
     "Selected animation": {
       "localizations": {
         "en": {
@@ -1872,6 +1792,16 @@
         }
       }
     },
+    "Show HUD in open notch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show HUD in open notch"
+          }
+        }
+      }
+    },
     "Show battery indicator": {
       "localizations": {
         "en": {
@@ -1908,16 +1838,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show cool face animation while inactive"
-          }
-        }
-      }
-    },
-    "Show HUD in open notch": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show HUD in open notch"
           }
         }
       }
@@ -2032,22 +1952,22 @@
         }
       }
     },
-    "Sneak Peek shows the media title and artist under the notch for a few seconds.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sneak Peek shows the media title and artist under the notch for a few seconds."
-          }
-        }
-      }
-    },
     "Sneak Peek Style": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sneak Peek Style"
+          }
+        }
+      }
+    },
+    "Sneak Peek shows the media title and artist under the notch for a few seconds.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sneak Peek shows the media title and artist under the notch for a few seconds."
           }
         }
       }
@@ -2195,32 +2115,12 @@
         }
       }
     },
-    "unmuted": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "unmuted"
-          }
-        }
-      }
-    },
     "Unmuted": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Unmuted"
-          }
-        }
-      }
-    },
-    "Upgrade to Pro": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upgrade to Pro"
           }
         }
       }
@@ -2271,16 +2171,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Version info"
-          }
-        }
-      }
-    },
-    "View on GitHub: pear-devs/pear-desktop": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "View on GitHub: pear-devs/pear-desktop"
           }
         }
       }
@@ -2355,12 +2245,62 @@
         }
       }
     },
-    "YouTube Music requires this third-party app to be installed: ": {
+    "muted": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "YouTube Music requires this third-party app to be installed: "
+            "value": "muted"
+          }
+        }
+      }
+    },
+    "selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "selected"
+          }
+        }
+      }
+    },
+    "unmuted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unmuted"
+          }
+        }
+      }
+    },
+    "• Bug fixes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Bug fixes"
+          }
+        }
+      }
+    },
+    "• Improved performance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Improved performance"
+          }
+        }
+      }
+    },
+    "• New feature 1": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• New feature 1"
           }
         }
       }

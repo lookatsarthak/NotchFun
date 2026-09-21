@@ -1,6 +1,6 @@
 //
 //  NotchAppIntents.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppIntents

@@ -1,6 +1,6 @@
 //
 //  ClipboardSecretHeuristic.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

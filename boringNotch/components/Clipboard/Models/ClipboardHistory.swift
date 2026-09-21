@@ -1,6 +1,6 @@
 //
 //  ClipboardHistory.swift
-//  boringNotch
+//  NotchFun
 //
 //  Deduplication semantics follow Maccy (https://github.com/p0deje/Maccy),
 //  Maccy/Observables/History.swift. MIT License © Alex Rodionov.

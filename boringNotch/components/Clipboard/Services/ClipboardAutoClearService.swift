@@ -1,6 +1,6 @@
 //
 //  ClipboardAutoClearService.swift
-//  boringNotch
+//  NotchFun
 //
 
 import AppKit

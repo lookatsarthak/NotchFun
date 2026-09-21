@@ -1,6 +1,6 @@
 //
 //  CaffeineNotification.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  Constants.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Richard Kunkli on 2024. 10. 17..
 //
@@ -41,6 +41,17 @@ enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializa
     case spotify = "Spotify"
     
     var id: String { self.rawValue }
+
+    /// The sources offerable on this Mac.
+    ///
+    /// One definition, because Settings and Onboarding each had their own copy and a
+    /// source added to one would silently not appear in the other.
+    @MainActor
+    static var available: [MediaControllerType] {
+        MusicManager.shared.isNowPlayingDeprecated
+            ? allCases.filter { $0 != .nowPlaying }
+            : allCases
+    }
 }
 
 // Sneak peek styles for selection in settings
@@ -65,7 +76,6 @@ extension Defaults.Keys {
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
-    static let releaseName = Key<String>("releaseName", default: "")
     
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)
@@ -102,7 +112,6 @@ extension Defaults.Keys {
     static let cornerRadiusScaling = Key<Bool>("cornerRadiusScaling", default: true)
 
     static let showNotHumanFace = Key<Bool>("showNotHumanFace", default: false)
-    static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
     static let sliderColor = Key<SliderColorEnum>(
@@ -121,7 +130,6 @@ extension Defaults.Keys {
     static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: false)
     static let sneakPeekStyles = Key<SneakPeekStyle>("sneakPeekStyles", default: .standard)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
-    static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
     /// Shrink the album art and spectrum beside the closed notch, so a playing track
     /// widens it by 40pt instead of 56pt. Off by default: the larger slots are what
@@ -148,12 +156,6 @@ extension Defaults.Keys {
     /// returns nothing for `system_profiler` and the reading has to come back through the
     /// unsandboxed XPC helper. Something with a cost should be asked for.
     static let showAccessoryBattery = Key<Bool>("showAccessoryBattery", default: false)
-    
-    // MARK: Downloads
-    static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)
-    static let enableSafariDownloads = Key<Bool>("enableSafariDownloads", default: true)
-    static let selectedDownloadIndicatorStyle = Key<DownloadIndicatorStyle>("selectedDownloadIndicatorStyle", default: DownloadIndicatorStyle.progress)
-    static let selectedDownloadIconStyle = Key<DownloadIconStyle>("selectedDownloadIconStyle", default: DownloadIconStyle.onlyAppIcon)
     
     // MARK: HUD
     static let hudReplacement = Key<Bool>("hudReplacement", default: false)

@@ -1,6 +1,6 @@
 //
 //  BoringViewCoordinator.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2024-11-20.
 //
@@ -17,7 +17,6 @@ enum SneakContentType {
     case music
     case mic
     case battery
-    case download
     case caffeine
     case accessoryBattery
 }
@@ -36,16 +35,10 @@ struct SharedSneakPeek: Codable {
     var icon: String
 }
 
-enum BrowserType {
-    case chromium
-    case safari
-}
-
 struct ExpandedItem {
     var show: Bool = false
     var type: SneakContentType = .battery
     var value: CGFloat = 0
-    var browser: BrowserType = .chromium
 }
 
 @MainActor
@@ -305,15 +298,13 @@ class BoringViewCoordinator: ObservableObject {
     func toggleExpandingView(
         status: Bool,
         type: SneakContentType,
-        value: CGFloat = 0,
-        browser: BrowserType = .chromium
+        value: CGFloat = 0
     ) {
         Task { @MainActor in
             withAnimation(NotchMotion.content) {
                 self.expandingView.show = status
                 self.expandingView.type = type
                 self.expandingView.value = value
-                self.expandingView.browser = browser
             }
         }
     }
@@ -324,7 +315,7 @@ class BoringViewCoordinator: ObservableObject {
         didSet {
             if expandingView.show {
                 expandingViewTask?.cancel()
-                let duration: TimeInterval = (expandingView.type == .download ? 2 : 3)
+                let duration: TimeInterval = 3
                 let currentType = expandingView.type
                 expandingViewTask = Task { [weak self] in
                     try? await Task.sleep(for: .seconds(duration))
@@ -337,7 +328,4 @@ class BoringViewCoordinator: ObservableObject {
         }
     }
     
-    func showEmpty() {
-        currentView = .home
-    }
 }

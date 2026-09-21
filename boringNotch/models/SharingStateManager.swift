@@ -1,6 +1,6 @@
 //
 //  SharingStateManager.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-10-10.
 //
@@ -35,12 +35,6 @@ final class SharingStateManager: ObservableObject {
 
 	private init() {}
 	
-	func requestCloseIfReady() {
-		if !preventNotchClose {
-			NotificationCenter.default.post(name: .sharingDidFinish, object: nil)
-		}
-	}
-
 	func beginInteraction() {
 		activeSessions += 1
 	}

@@ -1,6 +1,6 @@
 //
 //  NSItemProvider+LoadHelpers.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-09-24.
 //

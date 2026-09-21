@@ -1,6 +1,6 @@
 //
 //  ClipboardEmptyStateView.swift
-//  boringNotch
+//  NotchFun
 //
 
 import SwiftUI

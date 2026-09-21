@@ -1,6 +1,6 @@
 //
 //  ShelfActionService.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Alexander on 2025-10-07.
 //
@@ -30,14 +30,6 @@ enum ShelfActionService {
         guard case .file(let bookmark) = item.kind else { return }
         handleBookmarkedFile(bookmark) { url in
             NSWorkspace.shared.activateFileViewerSelecting([url])
-        }
-    }
-
-    static func copyPath(_ item: ShelfItem) {
-        guard case .file(let bookmark) = item.kind else { return }
-        handleBookmarkedFile(bookmark) { url in
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(url.path, forType: .string)
         }
     }
 

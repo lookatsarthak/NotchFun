@@ -1,6 +1,6 @@
 //
 //  ClipboardCaptureConfig.swift
-//  boringNotch
+//  NotchFun
 //
 
 import Foundation

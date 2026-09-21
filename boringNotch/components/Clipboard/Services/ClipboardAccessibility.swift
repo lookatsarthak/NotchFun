@@ -1,6 +1,6 @@
 //
 //  ClipboardAccessibility.swift
-//  boringNotch
+//  NotchFun
 //
 
 import ApplicationServices

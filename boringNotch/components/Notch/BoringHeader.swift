@@ -1,6 +1,6 @@
 //
 //  BoringHeader.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Harsh Vardhan  Goswami  on 04/08/24.
 //

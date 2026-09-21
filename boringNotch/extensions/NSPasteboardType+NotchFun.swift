@@ -1,6 +1,6 @@
 //
 //  NSPasteboardType+NotchFun.swift
-//  boringNotch
+//  NotchFun
 //
 //  Adapted from Maccy (https://github.com/p0deje/Maccy)
 //  Source: Maccy/Extensions/NSPasteboard.PasteboardType+Types.swift

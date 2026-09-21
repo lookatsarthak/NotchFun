@@ -1,6 +1,6 @@
 //
 //  generic.swift
-//  boringNotch
+//  NotchFun
 //
 //  Created by Harsh Vardhan  Goswami  on 04/08/24.
 //
@@ -19,17 +19,6 @@ public enum NotchViews {
     case clipboard
 }
 
-
-enum DownloadIndicatorStyle: String, Defaults.Serializable {
-    case progress = "Progress"
-    case percentage = "Percentage"
-}
-
-enum DownloadIconStyle: String, Defaults.Serializable {
-    case onlyAppIcon = "Only app icon"
-    case onlyIcon = "Only download icon"
-    case iconAndAppIcon = "Icon and app icon"
-}
 
 enum MirrorShapeEnum: String, Defaults.Serializable {
     case rectangle = "Rectangular"
