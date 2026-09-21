@@ -108,23 +108,60 @@ final class ClipboardMonitor {
 
     // MARK: - Polling
 
+    /// How long after the last copy the fast cadence is kept.
+    private static let activeWindow: TimeInterval = 60
+    /// Multiplier applied once that window lapses.
+    private static let idleMultiplier: Double = 4
+
+    /// When the last copy was seen, or nil if none this session.
+    private var lastChangeAt: Date?
+    /// Whether the timer currently scheduled is the slow one.
+    private var isIdleCadence = false
+
+    /// macOS has no pasteboard-change notification, so polling is the only option; the
+    /// question is how often. Copying is bursty — people copy several things in a minute
+    /// and then nothing for an hour — so this runs at the configured interval for a
+    /// minute after the last copy and at a quarter of that rate afterwards, snapping
+    /// back the moment anything is copied.
+    ///
+    /// At the 0.5s default that is 2 polls a second while you are working and one every
+    /// two seconds while you are not, against an app that otherwise rests at about 0.13
+    /// wakeups a second.
+    private var currentInterval: TimeInterval {
+        guard let lastChangeAt else { return config.pollInterval * Self.idleMultiplier }
+        let elapsed = Date().timeIntervalSince(lastChangeAt)
+        return elapsed < Self.activeWindow
+            ? config.pollInterval
+            : config.pollInterval * Self.idleMultiplier
+    }
+
     private func reschedule() {
         timer?.invalidate()
         guard isRunning, !isSuspended else { return }
 
-        let timer = Timer.scheduledTimer(withTimeInterval: config.pollInterval, repeats: true) { [weak self] _ in
+        let interval = currentInterval
+        isIdleCadence = interval > config.pollInterval
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
         // Lets the system align our wakeup with others instead of firing on its own.
-        timer.tolerance = config.pollInterval * 0.2
+        timer.tolerance = interval * 0.2
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
     private func tick() {
+        // Drop to the slow cadence once the active window lapses.
+        if !isIdleCadence, currentInterval > config.pollInterval {
+            reschedule()
+        }
+
         let current = pasteboard.changeCount
         guard current != changeCount else { return }
         changeCount = current
+        lastChangeAt = Date()
+        // Back to the fast cadence: a copy usually means more are coming.
+        if isIdleCadence { reschedule() }
 
         // Reading the pasteboard has to happen here, synchronously, before the user's
         // next copy replaces it. Everything expensive — hashing, blob writes, title

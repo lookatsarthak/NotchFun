@@ -48,55 +48,83 @@ final class DragDetector {
         return dragPasteboard.types?.contains(where: validTypes.contains) ?? false
     }
 
+    /// Only the mouse-down monitor stays registered.
+    ///
+    /// All three used to be installed for the life of the app, once per display. The
+    /// `leftMouseDragged` one fires for every pointer sample while any button is held —
+    /// moving a window, selecting text, dragging a scrollbar, anywhere on the Mac, 60 to
+    /// 120 times a second — and each of those did a pasteboard `changeCount` read, which
+    /// is an IPC to the pasteboard server. None of that has anything to do with the notch.
+    ///
+    /// Now the expensive monitors exist only for the duration of a gesture, and a gesture
+    /// that turns out not to be carrying content drops them immediately.
     func startMonitoring() {
         stopMonitoring()
 
-        // Track pasteboard to detect content drag
         mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
-            guard let self = self else { return }
+            guard let self else { return }
             self.pasteboardChangeCount = self.dragPasteboard.changeCount
             self.isDragging = true
             self.isContentDragging = false
             self.hasEnteredNotchRegion = false
+            self.beginGestureMonitors()
         }
+    }
 
-        // Track drag movement and notch region intersection
-        mouseDraggedMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] event in
-            guard let self = self else { return }
-            guard self.isDragging else { return }
+    /// Installed on mouse-down, torn down on mouse-up.
+    private func beginGestureMonitors() {
+        endGestureMonitors()
 
-            let newContent = self.dragPasteboard.changeCount != self.pasteboardChangeCount
-            
-            // Detect if actual content is being dragged AND it's valid content
-            if newContent && !self.isContentDragging && self.hasValidDragContent() {
+        mouseDraggedMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] _ in
+            guard let self, self.isDragging else { return }
+
+            if !self.isContentDragging {
+                // A drag puts its payload on the drag pasteboard before the first
+                // dragged event, so if the count has not moved by now this gesture is
+                // not carrying anything and never will be. Stop watching it: that turns
+                // "every pointer sample for the rest of this drag" into a single check.
+                guard self.dragPasteboard.changeCount != self.pasteboardChangeCount else {
+                    self.endGestureMonitors(keepingMouseUp: true)
+                    return
+                }
+                guard self.hasValidDragContent() else {
+                    self.endGestureMonitors(keepingMouseUp: true)
+                    return
+                }
                 self.isContentDragging = true
             }
 
-            // Only process position when content is being dragged
-            if self.isContentDragging {
-                let mouseLocation = NSEvent.mouseLocation
-                self.onDragMove?(mouseLocation)
-                
-                // Track notch region entry/exit
-                let containsMouse = self.notchRegion.contains(mouseLocation)
-                if containsMouse && !self.hasEnteredNotchRegion {
-                    self.hasEnteredNotchRegion = true
-                    self.onDragEntersNotchRegion?()
-                } else if !containsMouse && self.hasEnteredNotchRegion {
-                    self.hasEnteredNotchRegion = false
-                    self.onDragExitsNotchRegion?()
-                }
+            let mouseLocation = NSEvent.mouseLocation
+            self.onDragMove?(mouseLocation)
+
+            let containsMouse = self.notchRegion.contains(mouseLocation)
+            if containsMouse && !self.hasEnteredNotchRegion {
+                self.hasEnteredNotchRegion = true
+                self.onDragEntersNotchRegion?()
+            } else if !containsMouse && self.hasEnteredNotchRegion {
+                self.hasEnteredNotchRegion = false
+                self.onDragExitsNotchRegion?()
             }
         }
 
         mouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
-            guard let self = self else { return }
-            guard self.isDragging else { return }
-            
+            guard let self else { return }
             self.isDragging = false
             self.isContentDragging = false
             self.hasEnteredNotchRegion = false
             self.pasteboardChangeCount = -1
+            self.endGestureMonitors()
+        }
+    }
+
+    /// - Parameter keepingMouseUp: true when abandoning a gesture that is not carrying
+    ///   content — the mouse-up monitor stays so the flags still get reset.
+    private func endGestureMonitors(keepingMouseUp: Bool = false) {
+        if let monitor = mouseDraggedMonitor { NSEvent.removeMonitor(monitor) }
+        mouseDraggedMonitor = nil
+        if !keepingMouseUp {
+            if let monitor = mouseUpMonitor { NSEvent.removeMonitor(monitor) }
+            mouseUpMonitor = nil
         }
     }
 

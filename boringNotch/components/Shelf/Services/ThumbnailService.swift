@@ -13,7 +13,14 @@ import UniformTypeIdentifiers
 actor ThumbnailService {
     static let shared = ThumbnailService()
 
-    private var cache: [String: NSImage] = [:]
+    /// Bounded. This was a plain dictionary that only ever grew - drop a few hundred
+    /// files on the shelf over a session and every thumbnail stayed resident for the
+    /// life of the process. NSCache also sheds entries under memory pressure.
+    private let cache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 200
+        return cache
+    }()
     private var pendingRequests: [String: Task<NSImage?, Never>] = [:]
     private let thumbnailGenerator = QLThumbnailGenerator.shared
 
@@ -22,7 +29,7 @@ actor ThumbnailService {
     func thumbnail(for url: URL, size: CGSize) async -> NSImage? {
         let cacheKey = "\(url.path)_\(size.width)x\(size.height)"
         
-        if let cached = cache[cacheKey] {
+        if let cached = cache.object(forKey: cacheKey as NSString) {
             return cached
         }
         
@@ -33,7 +40,7 @@ actor ThumbnailService {
         let task = Task<NSImage?, Never> {
             let thumbnail = await generateQuickLookThumbnail(for: url, size: size)
             if let thumbnail = thumbnail {
-                cache[cacheKey] = thumbnail
+                cache.setObject(thumbnail, forKey: cacheKey as NSString)
             }
             pendingRequests[cacheKey] = nil
             return thumbnail
@@ -44,11 +51,13 @@ actor ThumbnailService {
     }
     
     func clearCache() {
-        cache.removeAll()
+        cache.removeAllObjects()
     }
     
     func clearCache(for url: URL) {
-        cache = cache.filter { !$0.key.starts(with: url.path) }
+        // NSCache has no key enumeration, so a path-scoped purge is not possible;
+        // dropping everything is correct and cheap, and this runs on file removal only.
+        cache.removeAllObjects()
     }
     
     // MARK: - Private Methods

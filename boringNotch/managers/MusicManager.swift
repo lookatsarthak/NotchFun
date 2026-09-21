@@ -79,8 +79,15 @@ class MusicManager: ObservableObject {
         // Initialize deprecation check asynchronously
         Task { @MainActor in
             do {
-                self.isNowPlayingDeprecated = try await self.mediaChecker.checkDeprecationStatus()
-                print("Deprecation check completed: \(self.isNowPlayingDeprecated)")
+                // Only probe when the cache cannot answer. See MediaChecker for why the
+                // key is the OS build plus this app's build.
+                if let cached = self.mediaChecker.cachedDeprecationStatus() {
+                    self.isNowPlayingDeprecated = cached
+                } else {
+                    let result = try await self.mediaChecker.checkDeprecationStatus()
+                    self.mediaChecker.cacheDeprecationStatus(result)
+                    self.isNowPlayingDeprecated = result
+                }
             } catch {
                 print("Failed to check deprecation status: \(error). Defaulting to false.")
                 self.isNowPlayingDeprecated = false

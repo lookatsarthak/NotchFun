@@ -113,7 +113,11 @@ final class ShelfItemViewModel: ObservableObject {
     }
 
     func shareItem(from view: NSView?) {
-        Task {
+        // `[weak self]` on the Task, not just on the delegate closure inside it: the
+        // Task already captured self strongly, so the inner weak capture could not
+        // actually shorten anything.
+        Task { [weak self] in
+            guard let self else { return }
             var itemsToShare: [Any] = []
             var fileURLs: [URL] = []
             if case .text(let text) = item.kind {

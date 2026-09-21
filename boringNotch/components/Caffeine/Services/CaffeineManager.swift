@@ -35,8 +35,17 @@ final class CaffeineManager: ObservableObject {
     }
 
     @Published private(set) var session: CaffeineSession?
-    /// Ticks while a timed session is running, so a countdown can redraw.
-    @Published private(set) var remainingLabel: String?
+
+    /// How long is left, computed on read.
+    ///
+    /// This used to be `@Published`, written by a 1Hz `Timer` for the whole of a timed
+    /// session. Because Combine invalidates per *object*, not per property, that
+    /// re-rendered every view observing this manager once a second — including the
+    /// closed notch, for two hours on a two-hour session — to keep a tooltip and one
+    /// row in Settings current. Deriving it on read costs nothing and publishes nothing.
+    /// The Settings row drives its own `TimelineView`, so it stays live while that pane
+    /// is open and costs nothing while it is not.
+    var remainingLabel: String? { session?.remainingLabel(at: .now) }
 
     let changes = PassthroughSubject<Change, Never>()
 
@@ -44,7 +53,7 @@ final class CaffeineManager: ObservableObject {
 
     private let assertion: PowerAssertionHolding
     private let store: CaffeineSessionStoring
-    private var countdown: Timer?
+    private var expiryTimer: Timer?
     private var observers: [Any] = []
     private var batteryObserverID: Int?
     private var autoTriggerEnabled: (@Sendable (AutoTrigger) -> Bool)?
@@ -149,8 +158,7 @@ final class CaffeineManager: ObservableObject {
         assertion.release()
         session = nil
         startedAutomatically = false
-        remainingLabel = nil
-        stopCountdown()
+        stopExpiryTimer()
         store.save(nil)
         Self.logger.notice("Caffeine off (\(String(describing: reason), privacy: .public))")
         changes.send(.deactivated(reason: reason))
@@ -190,7 +198,7 @@ final class CaffeineManager: ObservableObject {
             return
         }
         Self.logger.notice("Re-took power assertion after wake")
-        refreshCountdown(now: now)
+        scheduleExpiry(now: now)
     }
 
     func handleAppTerminated(bundleID: String, name: String) {
@@ -198,14 +206,14 @@ final class CaffeineManager: ObservableObject {
         deactivate(reason: .boundAppQuit(name: name))
     }
 
-    /// Called by the countdown timer; also safe to call directly in tests.
+    /// Called when the expiry timer fires; also safe to call directly in tests.
+    ///
+    /// No longer updates a stored label — it exists purely to end an expired session.
     func tick(now: Date = .now) {
         guard let current = session else { return }
         if current.isExpired(at: now) {
             deactivate(reason: .expired)
-            return
         }
-        remainingLabel = current.remainingLabel(at: now)
     }
 
     // MARK: - Internals
@@ -227,8 +235,7 @@ final class CaffeineManager: ObservableObject {
             Self.logger.error("Could not take the power assertion")
             // Leave no half state behind.
             session = nil
-            remainingLabel = nil
-            stopCountdown()
+            stopExpiryTimer()
             store.save(nil)
             changes.send(.deactivated(reason: .failed))
             return false
@@ -236,31 +243,35 @@ final class CaffeineManager: ObservableObject {
 
         session = new
         store.save(new)
-        refreshCountdown(now: new.startedAt)
+        scheduleExpiry(now: new.startedAt)
         Self.logger.notice("Caffeine on — \(new.mode.rawValue, privacy: .public), \(new.duration.title, privacy: .public)")
         if announce { changes.send(.activated(new)) }
         return true
     }
 
-    private func refreshCountdown(now: Date) {
-        stopCountdown()
-        guard let current = session else { return }
-        remainingLabel = current.remainingLabel(at: now)
-        guard current.expiresAt != nil else { return }
+    /// One shot, at the deadline — not one tick a second until it.
+    ///
+    /// An indefinite session schedules nothing at all.
+    private func scheduleExpiry(now: Date) {
+        stopExpiryTimer()
+        guard let current = session, let expiresAt = current.expiresAt else { return }
 
-        // weak self, and self rather than .shared: an injected instance must tick
-        // itself, not the singleton.
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+        // weak self, and self rather than .shared: an injected instance must fire for
+        // itself, not for the singleton.
+        let timer = Timer(fire: expiresAt, interval: 0, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
-        timer.tolerance = 0.5
+        // Generous, because nothing is being displayed off the back of it: the session
+        // ending a second late is invisible, and a loose tolerance lets the system
+        // coalesce this with other wake-ups.
+        timer.tolerance = 5
         RunLoop.main.add(timer, forMode: .common)
-        countdown = timer
+        expiryTimer = timer
     }
 
-    private func stopCountdown() {
-        countdown?.invalidate()
-        countdown = nil
+    private func stopExpiryTimer() {
+        expiryTimer?.invalidate()
+        expiryTimer = nil
     }
 
     private static func isAppRunning(bundleID: String) -> Bool {

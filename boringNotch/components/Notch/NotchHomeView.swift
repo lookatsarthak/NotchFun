@@ -459,14 +459,14 @@ struct NotchHomeView: View {
                 CameraPreviewView(webcamManager: webcamManager)
                     .scaledToFit()
                     .opacity(vm.notchState == .closed ? 0 : 1)
-                    .blur(radius: vm.notchState == .closed ? 20 : 0)
+                    .blur(radius: vm.notchState == .closed ? 8 : 0)
                     .animation(NotchMotion.content, value: shouldShowCamera)
             }
         }
         // Tab-switch animation now lives on the switch branches in ContentView, so all
         // tabs behave the same. This view previously carried its own asymmetric
         // slide-from-top, which made Home the only tab that moved on entry.
-        .blur(radius: vm.notchState == .closed ? 30 : 0)
+        .blur(radius: vm.notchState == .closed ? 8 : 0)
     }
 }
 

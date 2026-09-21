@@ -12,7 +12,7 @@ class AudioSpectrum: NSView {
     private var barLayers: [CAShapeLayer] = []
     private var barScales: [CGFloat] = []
     private var isPlaying: Bool = true
-    private var animationTimer: Timer?
+    private var isAnimating = false
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -54,45 +54,48 @@ class AudioSpectrum: NSView {
         }
     }
     
+    /// One repeating keyframe animation per bar, handed to the render server once.
+    ///
+    /// This used to be a 0.3s `Timer` that added four `CABasicAnimation`s on every tick —
+    /// so while music played, the main thread woke ~3.3 times a second and submitted 13
+    /// animations a second, for the entire length of a track, with the notch closed.
+    /// A repeating keyframe animation is submitted once and then owned entirely by the
+    /// render server; the app does no per-frame work at all.
+    ///
+    /// Each bar gets its own duration and its own random keyframes so the four never
+    /// march in step, which is what made the timer version look alive.
     private func startAnimating() {
-        guard animationTimer == nil else { return }
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
-            self?.updateBars()
-        }
-    }
-    
-    private func stopAnimating() {
-        animationTimer?.invalidate()
-        animationTimer = nil
-        resetBars()
-    }
+        guard !isAnimating else { return }
+        isAnimating = true
 
-    deinit {
-        // The run loop owns the timer, not this view. `[weak self]` keeps the closure
-        // from retaining us - so we do get deallocated - but the timer survives and
-        // keeps waking the main thread every 0.3s to call a method on nothing, for the
-        // rest of the process's life. Nothing else invalidates it: `stopAnimating` is
-        // only reachable through `setPlaying`, which only runs from make/updateNSView.
-        animationTimer?.invalidate()
-    }
-    
-    private func updateBars() {
         for (i, barLayer) in barLayers.enumerated() {
-            let currentScale = barScales[i]
-            let targetScale = CGFloat.random(in: 0.35 ... 1.0)
-            barScales[i] = targetScale
-            let animation = CABasicAnimation(keyPath: "transform.scale.y")
-            animation.fromValue = currentScale
-            animation.toValue = targetScale
-            animation.duration = 0.3
-            animation.autoreverses = true
-            animation.fillMode = .forwards
+            let animation = CAKeyframeAnimation(keyPath: "transform.scale.y")
+            animation.values = [0.35] + (0..<9).map { _ in CGFloat.random(in: 0.35 ... 1.0) } + [0.35]
+            animation.calculationMode = .cubic
+            // Prime numbers either side of 3s, so the four bars drift apart instead of
+            // re-synchronising on a common multiple.
+            animation.duration = [2.9, 3.1, 3.7, 4.3][i % 4]
+            animation.repeatCount = .infinity
             animation.isRemovedOnCompletion = false
+            // Unchanged from the timer version: the bars are 2pt wide, so there is
+            // nothing to gain from asking for more than 24fps.
             animation.preferredFrameRateRange = CAFrameRateRange(minimum: 24, maximum: 24, preferred: 24)
             barLayer.add(animation, forKey: "scaleY")
         }
     }
-    
+
+    private func stopAnimating() {
+        isAnimating = false
+        resetBars()
+    }
+
+    deinit {
+        // Nothing to invalidate any more. The previous version kept a Timer that the run
+        // loop owned, so `[weak self]` let the view deallocate while the timer carried on
+        // waking the main thread every 0.3s to call a method on nothing. There is no
+        // timer now, and layer animations die with the layer.
+    }
+
     private func resetBars() {
         for (i, barLayer) in barLayers.enumerated() {
             barLayer.removeAllAnimations()
@@ -100,7 +103,7 @@ class AudioSpectrum: NSView {
             barScales[i] = 0.35
         }
     }
-    
+
     func setPlaying(_ playing: Bool) {
         isPlaying = playing
         if isPlaying {

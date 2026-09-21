@@ -18,9 +18,14 @@ struct CaffeineSettings: View {
                 HStack {
                     Text("Status")
                     Spacer()
-                    if let session = caffeine.session {
-                        Text(caffeine.remainingLabel.map { "On — \($0) left" }
-                             ?? "On — \(session.duration.phrase)")
+                    if caffeine.isActive {
+                        // Ticks only while this pane is on screen. The manager no
+                        // longer publishes a countdown, so nothing outside this view
+                        // pays for it.
+                        TimelineView(.periodic(from: .now, by: 1)) { _ in
+                            Text(caffeine.remainingLabel.map { "On — \($0) left" }
+                                ?? "On")
+                        }
                             .foregroundStyle(Color.effectiveAccent)
                     } else {
                         Text("Off").foregroundStyle(.secondary)

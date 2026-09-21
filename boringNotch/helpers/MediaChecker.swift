@@ -15,6 +15,35 @@ final class MediaChecker: Sendable {
         case timeout
     }
 
+    /// Cached across launches.
+    ///
+    /// The probe spawns perl plus a test client and waits up to ten seconds for it, on
+    /// every single launch, to answer a question whose answer only changes when macOS or
+    /// this app does. Keying the cache on both build strings means it re-runs exactly
+    /// when it could have changed and never otherwise.
+    private static var cacheKey: String {
+        let os = ProcessInfo.processInfo.operatingSystemVersionString
+        let app = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(os)|\(app)"
+    }
+
+    private static let cacheKeyDefault = "mediaCheckerCacheKey"
+    private static let cacheValueDefault = "mediaCheckerCachedResult"
+
+    func cachedDeprecationStatus() -> Bool? {
+        let defaults = UserDefaults.standard
+        guard defaults.string(forKey: Self.cacheKeyDefault) == Self.cacheKey,
+              defaults.object(forKey: Self.cacheValueDefault) != nil
+        else { return nil }
+        return defaults.bool(forKey: Self.cacheValueDefault)
+    }
+
+    func cacheDeprecationStatus(_ value: Bool) {
+        let defaults = UserDefaults.standard
+        defaults.set(Self.cacheKey, forKey: Self.cacheKeyDefault)
+        defaults.set(value, forKey: Self.cacheValueDefault)
+    }
+
     func checkDeprecationStatus() async throws -> Bool {
         try await Task.detached(priority: .userInitiated) {
             guard let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl"),

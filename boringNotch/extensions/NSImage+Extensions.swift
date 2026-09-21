@@ -25,8 +25,11 @@ extension NSImage {
                 return
             }
             
-            let width = cgImage.width
-            let height = cgImage.height
+            // Averaging is scale-invariant, so there is no reason to read every pixel of
+            // a 600x600 cover. Letting CoreGraphics box-filter it down to 8x8 first is
+            // the same answer for ~5600x less work, and it happens on every track change.
+            let width = 8
+            let height = 8
             let totalPixels = width * height
             
             guard let context = CGContext(data: nil,
@@ -42,6 +45,7 @@ extension NSImage {
                 return
             }
             
+            context.interpolationQuality = .medium
             context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
             
             guard let data = context.data else {
