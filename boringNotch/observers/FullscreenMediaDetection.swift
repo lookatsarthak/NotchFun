@@ -10,11 +10,21 @@ import Combine
 import Defaults
 import MacroVisionKit
 
+extension Notification.Name {
+    /// Posted whenever the set of fullscreen spaces changes.
+    ///
+    /// Each notch has its own view model and each needs to re-evaluate, so this is a
+    /// broadcast rather than a binding. It replaces a `@Published` dictionary that
+    /// every view model reached into through a Combine projection.
+    static let fullscreenStatusChanged = Notification.Name("fullscreenStatusChanged")
+}
+
 @MainActor
-final class FullscreenMediaDetector: ObservableObject {
+@Observable
+final class FullscreenMediaDetector {
     static let shared = FullscreenMediaDetector()
     
-    @Published var fullscreenStatus: [String: Bool] = [:]
+    private(set) var fullscreenStatus: [String: Bool] = [:]
     
     private var monitorTask: Task<Void, Never>?
     
@@ -22,9 +32,9 @@ final class FullscreenMediaDetector: ObservableObject {
         startMonitoring()
     }
     
-    deinit {
-        monitorTask?.cancel()
-    }
+    // No deinit. `init()` is private and `shared` is the only instance, so this lives
+    // for the whole process; and under @Observable a mutable stored property cannot be
+    // made nonisolated, which a deinit would need in order to touch it.
     
     private func startMonitoring() {
         monitorTask = Task { @MainActor in
@@ -50,7 +60,9 @@ final class FullscreenMediaDetector: ObservableObject {
             }
         }
         
+        guard newStatus != fullscreenStatus else { return }
         self.fullscreenStatus = newStatus
+        NotificationCenter.default.post(name: .fullscreenStatusChanged, object: nil)
     }
 }
 

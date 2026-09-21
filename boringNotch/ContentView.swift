@@ -15,7 +15,7 @@ import SwiftUI
 @MainActor
 struct ContentView: View {
     @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var webcamManager = WebcamManager.shared
+    let webcamManager = WebcamManager.shared
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     let caffeine = CaffeineManager.shared

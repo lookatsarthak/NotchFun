@@ -5,13 +5,24 @@
 //  Created by Harsh Vardhan  Goswami  on 04/08/24.
 //
 
-import Combine
 import Defaults
 import SwiftUI
 
+/// Main-actor isolated, explicitly.
+///
+/// It always was: it reads NSScreen, drives notch geometry and feeds SwiftUI. But the
+/// isolation was being inferred from an `@ObservedObject` stored property - a wrapper
+/// that does nothing outside a View - rather than stated. Removing that wrapper removed
+/// the inference, so it is written down now.
+///
+/// Still an ObservableObject rather than @Observable: this type is injected into about
+/// twenty views through @EnvironmentObject, and converting it means changing every one
+/// of those to @Environment. A missed injection traps at runtime rather than failing to
+/// compile, so that step wants a running app to verify, not just a build.
+@MainActor
 class BoringViewModel: NSObject, ObservableObject {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
-    @ObservedObject var detector = FullscreenMediaDetector.shared
+    let coordinator = BoringViewCoordinator.shared
+    let detector = FullscreenMediaDetector.shared
 
 
     @Published private(set) var notchState: NotchState = .closed
@@ -60,10 +71,29 @@ class BoringViewModel: NSObject, ObservableObject {
         if dropZoneTargeting { dropZoneTargeting = false }
         if dragDetectorTargeting { dragDetectorTargeting = false }
     }
-    @Published var anyDropZoneTargeting: Bool = false
-    var cancellables: Set<AnyCancellable> = []
+    /// Computed, not stored.
+    ///
+    /// This was a stored property kept in sync by a CombineLatest3 over the three
+    /// targeting flags below. It is simply their disjunction, so the pipeline and the
+    /// duplicate state both go; each flag is @Published, so a change still redraws.
+    var anyDropZoneTargeting: Bool {
+        dropZoneTargeting || dragDetectorTargeting || generalDropTargeting
+    }
+    /// `nonisolated(unsafe)` so `deinit` can tear them down. Unlike the singletons,
+    /// these really are created and destroyed per screen. Cancelling a Task and
+    /// removing a NotificationCenter observer are each safe from any thread.
+    private nonisolated(unsafe) var notificationObservers: [Any] = []
+    private nonisolated(unsafe) var settingTask: Task<Void, Never>?
     
-    @Published var hideOnClosed: Bool = true
+    /// Whether the closed notch is suppressed for a fullscreen app.
+    ///
+    /// Starts false, deliberately. It used to start `true` and rely on an async
+    /// pipeline to correct it - and that pipeline could not emit until `screenUUID`
+    /// had been assigned, which happens well after init, so until then the notch's
+    /// entire closed-state content was suppressed. If the assignment never happened
+    /// there was no way back. Showing the notch briefly over a fullscreen app is a much
+    /// smaller failure than hiding it indefinitely.
+    @Published private(set) var hideOnClosed: Bool = false
 
     @Published var edgeAutoOpenActive: Bool = false
     @Published var isHoveringCalendar: Bool = false
@@ -73,7 +103,12 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published var isHoveringScrollableContent: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
 
-    @Published var screenUUID: String?
+    @Published var screenUUID: String? {
+        didSet {
+            guard oldValue != screenUUID else { return }
+            Task { @MainActor [weak self] in self?.recomputeHideOnClosed() }
+        }
+    }
 
     @Published var notchSize: CGSize = getClosedNotchSize()
     @Published var closedNotchSize: CGSize = getClosedNotchSize()
@@ -86,9 +121,11 @@ class BoringViewModel: NSObject, ObservableObject {
         destroy()
     }
 
-    func destroy() {
-        cancellables.forEach { $0.cancel() }
-        cancellables.removeAll()
+    nonisolated func destroy() {
+        notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
+        notificationObservers.removeAll()
+        settingTask?.cancel()
+        settingTask = nil
     }
 
     init(screenUUID: String? = nil) {
@@ -98,47 +135,42 @@ class BoringViewModel: NSObject, ObservableObject {
         notchSize = getClosedNotchSize(screenUUID: screenUUID)
         closedNotchSize = notchSize
 
-        Publishers.CombineLatest3($dropZoneTargeting, $dragDetectorTargeting, $generalDropTargeting)
-            .map { shelf, drag, general in
-                shelf || drag || general
-            }
-            .assign(to: \.anyDropZoneTargeting, on: self)
-            .store(in: &cancellables)
-        
         setupDetectorObserver()
     }
     
+    /// Recompute on change, rather than combining three publishers.
+    ///
+    /// This was a `CombineLatest3` over `$screenUUID`, the detector's published
+    /// dictionary and a Defaults publisher. CombineLatest emits nothing until *every*
+    /// input has produced a value, and `$screenUUID` produces nothing while the
+    /// property is nil - which it is until `adjustWindowPosition` assigns it. So the
+    /// notch sat on whatever `hideOnClosed` was initialised to for an unbounded time,
+    /// and that initial value was `true`. Three plain reads, re-evaluated whenever any
+    /// of them changes, has no ordering requirement and no unreachable state.
     private func setupDetectorObserver() {
-        // Publisher for the user’s fullscreen detection setting
-        let enabledPublisher = Defaults
-            .publisher(.hideNotchOption)
-            .map(\.newValue)
-            .map { $0 != .never }
-            .removeDuplicates()
+        let fullscreenObserver = NotificationCenter.default.addObserver(
+            forName: Notification.Name.fullscreenStatusChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.recomputeHideOnClosed() }
+        }
+        notificationObservers.append(fullscreenObserver)
 
-        // Publisher for the current screen UUID (non-nil, distinct)
-        let screenPublisher = $screenUUID
-            .compactMap { $0 }
-            .removeDuplicates()
-
-        // Publisher for fullscreen status dictionary
-        let fullscreenStatusPublisher = detector.$fullscreenStatus
-            .removeDuplicates()
-
-        // Combine all three: screen UUID, fullscreen status, and enabled setting
-        Publishers.CombineLatest3(screenPublisher, fullscreenStatusPublisher, enabledPublisher)
-            .map { screenUUID, fullscreenStatus, enabled in
-                let isFullscreen = fullscreenStatus[screenUUID] ?? false
-                return enabled && isFullscreen
+        settingTask = Task { @MainActor [weak self] in
+            for await _ in Defaults.updates(.hideNotchOption, initial: false) {
+                self?.recomputeHideOnClosed()
             }
-            .removeDuplicates()
-            .receive(on: RunLoop.main)
-            .sink { [weak self] shouldHide in
-                withAnimation(NotchMotion.shellClose) {
-                    self?.hideOnClosed = shouldHide
-                }
-            }
-            .store(in: &cancellables)
+        }
+
+        Task { @MainActor [weak self] in self?.recomputeHideOnClosed() }
+    }
+
+    @MainActor
+    private func recomputeHideOnClosed() {
+        let enabled = Defaults[.hideNotchOption] != .never
+        let isFullscreen = screenUUID.map { detector.fullscreenStatus[$0] ?? false } ?? false
+        let shouldHide = enabled && isFullscreen
+        guard shouldHide != hideOnClosed else { return }
+        withAnimation(NotchMotion.shellClose) { hideOnClosed = shouldHide }
     }
 
     // Computed property for effective notch height

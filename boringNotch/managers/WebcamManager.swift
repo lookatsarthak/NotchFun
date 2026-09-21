@@ -7,33 +7,18 @@
 import AVFoundation
 import SwiftUI
 
-class WebcamManager: NSObject, ObservableObject {
+@Observable
+class WebcamManager: NSObject {
     static let shared = WebcamManager()
     
-    @Published var previewLayer: AVCaptureVideoPreviewLayer? {
-        didSet {
-            objectWillChange.send()
-        }
-    }
+    var previewLayer: AVCaptureVideoPreviewLayer?
     
     private var captureSession: AVCaptureSession?
-    @Published var isSessionRunning: Bool = false {
-        didSet {
-            objectWillChange.send()
-        }
-    }
+    var isSessionRunning: Bool = false
     
-    @Published var authorizationStatus: AVAuthorizationStatus = .notDetermined {
-        didSet {
-            objectWillChange.send()
-        }
-    }
+    var authorizationStatus: AVAuthorizationStatus = .notDetermined
     
-    @Published var cameraAvailable: Bool = false {
-        didSet {
-            objectWillChange.send()
-        }
-    }
+    var cameraAvailable: Bool = false
 
     private let sessionQueue = DispatchQueue(label: "BoringNotch.WebcamManager.SessionQueue", qos: .userInitiated)
     

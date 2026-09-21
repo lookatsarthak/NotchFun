@@ -114,7 +114,7 @@ struct AlbumArtView: View {
 struct MusicControlsView: View {
     @Bindable var musicManager = MusicManager.shared
         @EnvironmentObject var vm: BoringViewModel
-        @ObservedObject var webcamManager = WebcamManager.shared
+        let webcamManager = WebcamManager.shared
     @State private var sliderValue: Double = 0
     @State private var dragging: Bool = false
     @State private var lastDragged: Date = .distantPast
@@ -424,7 +424,7 @@ struct VolumeControlView: View {
 
 struct NotchHomeView: View {
     @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var webcamManager = WebcamManager.shared
+    let webcamManager = WebcamManager.shared
     let batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     let albumArtNamespace: Namespace.ID
