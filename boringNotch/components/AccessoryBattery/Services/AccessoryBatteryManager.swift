@@ -101,10 +101,10 @@ final class AccessoryBatteryManager {
             // Switched back to speakers or a wired device: drop the reading rather than
             // leaving the last accessory's number in the header.
             //
-            // Guarded on inequality because assigning to a fires
-            // objectWillChange even when the value is unchanged, and this view model is
-            // observed by ContentView - a no-op assignment is a free re-render of the
-            // whole notch.
+            // Guarded on inequality so an unchanged value is never written. Whether an
+            // equal assignment notifies observers depends on the Observation runtime,
+            // and the header and banner that read this should not redraw for a nil that
+            // was already nil.
             if current != nil { current = nil }
             return
         }
