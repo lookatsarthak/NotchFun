@@ -694,7 +694,8 @@ struct ContentView: View {
     // MARK: - Hover Management
 
     private func handleHover(_ hovering: Bool) {
-        if coordinator.firstLaunch { return }
+        // Also while the "hello" plays when setup is run again, as on the first launch.
+        if coordinator.firstLaunch || coordinator.helloAnimationRunning { return }
         hoverTask?.cancel()
         
         if hovering {

@@ -16,6 +16,7 @@ struct OnboardingView: View {
     @State private var step: OnboardingStep
     @State private var hudChoice: Bool
     @StateObject private var tryIt = OnboardingTryIt()
+    @State private var helloShown = false
 
     @Default(.boringShelf) private var shelf
     @Default(.clipboardHistoryEnabled) private var clipboard
@@ -76,7 +77,8 @@ struct OnboardingView: View {
     private var stepContent: some View {
         switch step {
         case .hello:
-            HelloStep()
+            HelloStep(firstShow: !helloShown) { helloShown = true }
+                .modifier(HeroPlacement())
         case .features:
             FeaturesStep(hudChoice: $hudChoice)
         case .permissions:
@@ -92,6 +94,7 @@ struct OnboardingView: View {
             TryItStep(tasks: OnboardingPlan.tasks(for: choices), opensOnHover: opensOnHover, state: tryIt)
         case .done:
             DoneStep()
+                .modifier(HeroPlacement())
         }
     }
 
@@ -118,9 +121,17 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(OnboardingSecondaryButtonStyle())
             }
-            Button(primaryTitle, action: advance)
-                .buttonStyle(OnboardingPrimaryButtonStyle())
-                .keyboardShortcut(.defaultAction)
+            if step == .tryIt && !tryIt.isComplete(OnboardingPlan.tasks(for: choices)) {
+                // Not the white button: skipping is allowed, not what the screen is for.
+                // It becomes the white Continue once every task is ticked.
+                Button("Skip", action: advance)
+                    .buttonStyle(OnboardingSecondaryButtonStyle())
+                    .keyboardShortcut(.defaultAction)
+            } else {
+                Button(primaryTitle, action: advance)
+                    .buttonStyle(OnboardingPrimaryButtonStyle())
+                    .keyboardShortcut(.defaultAction)
+            }
         }
     }
 
@@ -141,7 +152,6 @@ struct OnboardingView: View {
     private var primaryTitle: String {
         switch step {
         case .hello: return "Set up my notch"
-        case .tryIt: return tryIt.isComplete(OnboardingPlan.tasks(for: choices)) ? "Continue" : "Skip"
         case .done: return "Done"
         default: return "Continue"
         }
@@ -224,26 +234,74 @@ struct OnboardingStepHeader: View {
     }
 }
 
+/// Hello and Done are short. Centred, slightly above the middle, rather than leaving
+/// the bottom half of the window empty; the task steps stay top-aligned so their
+/// titles line up with each other.
+private struct HeroPlacement: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.bottom, 48)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+}
+
+/// Buttons answer the pointer before the click, as native ones do. A style cannot hold
+/// state itself, so each one draws through this.
+private struct HoverAware<Content: View>: View {
+    @ViewBuilder let content: (_ hovering: Bool) -> Content
+    @State private var hovering = false
+
+    var body: some View {
+        content(hovering)
+            .onHover { hovering = $0 }
+            .animation(NotchMotion.control, value: hovering)
+    }
+}
+
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .foregroundStyle(.black)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
-            .background(Capsule().fill(.white.opacity(configuration.isPressed ? 0.75 : 1)))
-            .contentShape(Capsule())
+        HoverAware { hovering in
+            configuration.label
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(.white.opacity(configuration.isPressed ? 0.75 : 1)))
+                .shadow(color: .white.opacity(hovering ? 0.25 : 0), radius: 8)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .contentShape(Capsule())
+        }
     }
 }
 
 struct OnboardingSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .medium, design: .rounded))
-            .foregroundStyle(.white.opacity(configuration.isPressed ? 0.45 : 0.7))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
+        HoverAware { hovering in
+            configuration.label
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(configuration.isPressed ? 0.45 : (hovering ? 0.95 : 0.7)))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+        }
+    }
+}
+
+/// An action inside a row, like Copy: clearly a button, but quieter than the footer's
+/// white one, so each screen has a single obvious next step.
+struct OnboardingChipButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HoverAware { hovering in
+            configuration.label
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(.white.opacity(configuration.isPressed ? 0.08 : (hovering ? 0.2 : 0.13))))
+                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .contentShape(Capsule())
+        }
     }
 }
 
@@ -256,18 +314,20 @@ struct DrawnCheckmark: View {
     /// replaces a button the moment something is granted; not for one that was already
     /// granted before the screen appeared, where there is no news to deliver.
     var drawsInOnAppear = false
+    /// The tick's own size; the ring around it scales with it.
+    var size: CGFloat = 16
     @State private var progress: CGFloat = 0
 
     var body: some View {
         CheckmarkShape()
             .trim(from: 0, to: progress)
-            .stroke(Color.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-            .frame(width: 16, height: 16)
-            .padding(6)
+            .stroke(Color.green, style: StrokeStyle(lineWidth: 2.5 * size / 16, lineCap: .round, lineJoin: .round))
+            .frame(width: size, height: size)
+            .padding(6 * size / 16)
             // An empty ring until done, so an unfinished task reads as a checkbox
             // rather than a blank space.
             .background(Circle().fill(Color.green.opacity(progress > 0 ? 0.15 : 0)))
-            .overlay(Circle().strokeBorder(Color.white.opacity(progress > 0 ? 0 : 0.3), lineWidth: 1.5))
+            .overlay(Circle().strokeBorder(Color.white.opacity(progress > 0 ? 0 : 0.3), lineWidth: 1.5 * size / 16))
             .onAppear {
                 if drawsInOnAppear && granted && !NotchMotion.isReduced {
                     withAnimation(.easeOut(duration: 0.35)) { progress = 1 }
@@ -293,11 +353,12 @@ private struct CheckmarkShape: Shape {
     }
 }
 
-/// A one-off burst of dots. Kept, once, for the file landing on the shelf: it confirms
-/// the single thing the tutorial asked for. Runs for 0.7s when `trigger` changes and
-/// costs nothing otherwise.
+/// A one-off burst of dots. Used twice: for the file landing on the shelf, which confirms
+/// the single thing the tutorial asked for, and once as setup finishes. Runs for 0.7s
+/// when `trigger` changes and costs nothing otherwise.
 struct OnboardingBurst: View {
     let trigger: Int
+    var radius: CGFloat = 46
     @State private var fired = false
 
     var body: some View {
@@ -307,7 +368,7 @@ struct OnboardingBurst: View {
                 Circle()
                     .fill(index.isMultiple(of: 3) ? Color(hex: 0xB9A8FF) : .white)
                     .frame(width: 5, height: 5)
-                    .offset(x: fired ? cos(angle) * 46 : 0, y: fired ? sin(angle) * 46 : 0)
+                    .offset(x: fired ? cos(angle) * radius : 0, y: fired ? sin(angle) * radius : 0)
                     .opacity(fired ? 0 : 1)
             }
         }

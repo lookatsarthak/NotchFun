@@ -56,7 +56,22 @@ class BoringViewCoordinator: ObservableObject {
     /// transition in ContentView; not published, because it only ever changes together
     /// with currentView, which already triggers the render that reads it.
     private(set) var tabDirection: CGFloat = 1
-    @Published var helloAnimationRunning: Bool = false
+    @Published var helloAnimationRunning: Bool = false {
+        didSet {
+            guard helloAnimationRunning, !oldValue else { return }
+            // Hovering is ignored while this is true, and only the notch's hello view
+            // clears it, when it finishes. If that view never got to run - the notch
+            // hidden in full screen, say - hovering would stay off until a relaunch.
+            // The animation takes under five seconds.
+            helloFailsafe?.cancel()
+            helloFailsafe = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(10))
+                guard !Task.isCancelled else { return }
+                self?.helloAnimationRunning = false
+            }
+        }
+    }
+    private var helloFailsafe: Task<Void, Never>?
     private var sneakPeekDispatch: DispatchWorkItem?
     private var expandingViewDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?

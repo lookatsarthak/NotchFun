@@ -747,6 +747,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.title = "Set up NotchFun"
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
+            // A fixed-size window that is only ever closed: greyed minimise and zoom
+            // buttons are just clutter beside the close button.
+            window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            window.standardWindowButton(.zoomButton)?.isHidden = true
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(
                 rootView: OnboardingView(

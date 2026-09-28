@@ -14,23 +14,65 @@ import SwiftUI
 // MARK: - Hello
 
 struct HelloStep: View {
+    /// True the first time this window shows the step; coming back to it with Back
+    /// should not replay the entrance or the greeting.
+    let firstShow: Bool
+    let onShown: () -> Void
+
+    @State private var shown: Bool
+    @State private var pointUp = 0
+
+    init(firstShow: Bool, onShown: @escaping () -> Void) {
+        self.firstShow = firstShow
+        self.onShown = onShown
+        _shown = State(initialValue: !firstShow || NotchMotion.isReduced)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .frame(width: 88, height: 88)
+                .modifier(Entrance(index: 0, shown: shown))
 
             OnboardingStepHeader(
                 title: "Hi. I live in your notch.",
                 subtitle: "NotchFun turns the notch into a small, quiet place for what's playing, files you're moving around, what you've copied, and more."
             )
+            .modifier(Entrance(index: 1, shown: shown))
 
             VStack(alignment: .leading, spacing: 12) {
                 hint("arrow.up", "Look at the top of your screen: the notch is the app.")
+                    .modifier(Entrance(index: 2, shown: shown))
                 hint("slider.horizontal.3", "Pick what it does, and it changes as you choose.")
+                    .modifier(Entrance(index: 3, shown: shown))
                 hint("clock", "About a minute. Everything can be changed later in Settings.")
+                    .modifier(Entrance(index: 4, shown: shown))
             }
             .padding(.top, 6)
+        }
+        .task {
+            guard firstShow else { return }
+            onShown()
+            greetFromNotch()
+            // A beat for the window to come on screen before anything moves.
+            try? await Task.sleep(for: .seconds(0.12))
+            shown = true
+            // The notch starts writing "hello" 0.6s after it opens; point at it then.
+            guard !NotchMotion.isReduced else { return }
+            try? await Task.sleep(for: .seconds(0.5))
+            pointUp += 1
+        }
+    }
+
+    /// The first launch already has the notch write "hello" as this screen appears.
+    /// Running setup again gets the same greeting, so "look at the top of your screen"
+    /// always has something there to look at.
+    private func greetFromNotch() {
+        let coordinator = BoringViewCoordinator.shared
+        guard !coordinator.firstLaunch, !coordinator.helloAnimationRunning, !NotchMotion.isReduced else { return }
+        withAnimation(NotchMotion.shellOpen) {
+            coordinator.helloAnimationRunning = true
         }
     }
 
@@ -39,11 +81,26 @@ struct HelloStep: View {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
+                .symbolEffect(.bounce.up, options: .repeat(2), value: symbol == "arrow.up" ? pointUp : 0)
                 .frame(width: 20)
             Text(text)
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.8))
         }
+    }
+}
+
+/// The first screen arrives in reading order rather than all at once. Once, on the
+/// first screen only; later steps just fade in, since by then there is a task at hand.
+private struct Entrance: ViewModifier {
+    let index: Int
+    let shown: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 10)
+            .animation(.spring(duration: 0.5, bounce: 0).delay(Double(index) * 0.07), value: shown)
     }
 }
 
@@ -109,12 +166,16 @@ private struct FeatureCard: View {
     let detail: String
     var note: String? = nil
     @Binding var isOn: Bool
+    @State private var bounces = 0
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white.opacity(isOn ? 1 : 0.6))
+                // A small hop when switched on, to say the choice took. Only on: turning
+                // something off doesn't need celebrating.
+                .symbolEffect(.bounce, value: bounces)
                 .frame(width: 22, height: 22)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -157,6 +218,9 @@ private struct FeatureCard: View {
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onTapGesture { isOn.toggle() }
         .animation(NotchMotion.control, value: isOn)
+        .onChange(of: isOn) { _, on in
+            if on && !NotchMotion.isReduced { bounces += 1 }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isToggle)
     }
@@ -482,7 +546,7 @@ struct TryItStep: View {
                 SampleFileTile(state: state)
             case .copyText:
                 Button(done ? "Copied" : "Copy") { state.copySample() }
-                    .buttonStyle(OnboardingPrimaryButtonStyle())
+                    .buttonStyle(OnboardingChipButtonStyle())
                     .disabled(done)
             }
         }
@@ -515,6 +579,13 @@ struct TryItStep: View {
 /// so the notch would not open by itself. Starting the drag opens it on the shelf.
 private struct SampleFileTile: View {
     @ObservedObject var state: OnboardingTryIt
+    @State private var hovering = false
+
+    /// Lifts under the pointer, with a grab cursor, to say it can be picked up. Not once
+    /// it is on the shelf: the task is done and the tile has dimmed.
+    private var lifted: Bool {
+        hovering && !state.done.contains(.dragToShelf) && !NotchMotion.isReduced
+    }
 
     var body: some View {
         ZStack {
@@ -528,6 +599,12 @@ private struct SampleFileTile: View {
             }
             .frame(width: 58, height: 52)
             .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(state.done.contains(.dragToShelf) ? 0.04 : 0.12)))
+            .scaleEffect(lifted ? 1.06 : 1)
+            .offset(y: lifted ? -2 : 0)
+            .shadow(color: .black.opacity(lifted ? 0.35 : 0), radius: 6, y: 3)
+            .animation(NotchMotion.control, value: lifted)
+            .onHover { hovering = $0 }
+            .pointerStyle(.grabIdle)
             .onDrag {
                 state.beginDrag()
                 guard let url = state.sampleFileURL() else { return NSItemProvider() }
@@ -654,12 +731,20 @@ final class OnboardingTryIt: ObservableObject {
 // MARK: - Done
 
 struct DoneStep: View {
+    @State private var burst = 0
+
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 54))
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, Color.green)
+            // The same tick that confirmed each permission, drawn once more for the whole
+            // setup, with the burst the shelf used. The one celebration setup has.
+            ZStack {
+                DrawnCheckmark(granted: true, drawsInOnAppear: true, size: 30)
+                OnboardingBurst(trigger: burst, radius: 64)
+            }
+            .task {
+                try? await Task.sleep(for: .seconds(0.3))
+                burst += 1
+            }
 
             OnboardingStepHeader(
                 title: "Your notch is ready.",
