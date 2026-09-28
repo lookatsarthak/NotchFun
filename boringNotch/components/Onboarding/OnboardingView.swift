@@ -264,7 +264,10 @@ struct DrawnCheckmark: View {
             .stroke(Color.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
             .frame(width: 16, height: 16)
             .padding(6)
-            .background(Circle().fill(Color.green.opacity(0.15)))
+            // An empty ring until done, so an unfinished task reads as a checkbox
+            // rather than a blank space.
+            .background(Circle().fill(Color.green.opacity(progress > 0 ? 0.15 : 0)))
+            .overlay(Circle().strokeBorder(Color.white.opacity(progress > 0 ? 0 : 0.3), lineWidth: 1.5))
             .onAppear {
                 if drawsInOnAppear && granted && !NotchMotion.isReduced {
                     withAnimation(.easeOut(duration: 0.35)) { progress = 1 }

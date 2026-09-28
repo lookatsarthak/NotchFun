@@ -77,7 +77,7 @@ struct FeaturesStep: View {
                             isOn: $shelf)
                 FeatureCard(icon: "doc.on.clipboard", title: "Clipboard history",
                             detail: "What you copy, searchable. Stays on this Mac.",
-                            note: "Pasting needs Accessibility",
+                            note: "Paste needs Accessibility",
                             isOn: $clipboard)
                 FeatureCard(icon: "cup.and.saucer.fill", title: "Caffeine",
                             detail: "Keep the Mac awake with one click.",
@@ -94,7 +94,7 @@ struct FeaturesStep: View {
                             detail: "Battery level when they connect.",
                             isOn: $accessoryBattery)
                 FeatureCard(icon: "speaker.wave.2.fill", title: "Volume & brightness",
-                            detail: "Show them in the notch instead of the system popup.",
+                            detail: "In the notch, instead of the system popup.",
                             note: "Needs Accessibility",
                             isOn: $hudChoice)
             }
@@ -123,13 +123,14 @@ private struct FeatureCard: View {
                 Text(detail)
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.6))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
                 // Said up front, on the card that causes it, rather than as a surprise
                 // on the next screen.
                 if isOn, let note {
                     Text(note)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Color.orange.opacity(0.9))
+                        .lineLimit(1)
                 }
             }
 
@@ -141,7 +142,9 @@ private struct FeatureCard: View {
                 .controlSize(.mini)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
+        // One height for every card, so the two in a row line up; grid rows otherwise
+        // size to the taller card and centre the shorter one.
+        .frame(maxWidth: .infinity, minHeight: 82, maxHeight: 82, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.white.opacity(isOn ? 0.10 : 0.05))
@@ -437,7 +440,6 @@ struct TryItStep: View {
         let done = state.done.contains(task)
         HStack(spacing: 12) {
             DrawnCheckmark(granted: done)
-                .opacity(done ? 1 : 0.35)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title(task))
