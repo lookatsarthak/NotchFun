@@ -85,8 +85,15 @@ final class FullscreenMediaDetector {
         for space in lastSpaces {
             if let uuid = space.screenUUID {
                 let shouldDetect: Bool
-                if Defaults[.hideNotchOption] == .nowPlayingOnly, let musicSourceBundle = MusicManager.shared.bundleIdentifier  {
-                    shouldDetect = space.runningApps.contains(musicSourceBundle)
+                if Defaults[.hideNotchOption] == .nowPlayingOnly {
+                    // "Hide for media app only". Before anything has played there is no
+                    // media app, so there is nothing to hide for. This used to fall
+                    // through to hiding for every full-screen app until the first track.
+                    if let source = MusicManager.shared.bundleIdentifier, !source.isEmpty {
+                        shouldDetect = space.runningApps.contains(source)
+                    } else {
+                        shouldDetect = false
+                    }
                 } else {
                     shouldDetect = true
                 }
