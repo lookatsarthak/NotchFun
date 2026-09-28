@@ -223,7 +223,20 @@ final class ClipboardStateViewModel: ObservableObject {
         if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
+        // For anything that needs to know about a copy while the clipboard tab is not
+        // on screen (setup's "Try it"), since visibleItems only moves while presenting.
+        // Nothing observes it otherwise, so it costs nothing.
+        NotificationCenter.default.post(name: .clipboardHistoryDidCapture, object: nil)
     }
+
+    /// Entries with exactly this title, read from the full history rather than
+    /// `visibleItems`, which is empty unless the clipboard tab is showing.
+    func items(withTitle title: String) -> [ClipboardItem] {
+        history.items.filter { $0.title == title }
+    }
+
+    /// The most recent entry, read on demand.
+    var newestItem: ClipboardItem? { history.items.first }
 
     // MARK: - Mutation
 
@@ -317,4 +330,9 @@ final class ClipboardStateViewModel: ObservableObject {
     func text(of item: ClipboardItem) -> String? { item.text(using: blobStore) }
     func imageData(of item: ClipboardItem) -> Data? { item.imageData(using: blobStore) }
     func fileURLs(of item: ClipboardItem) -> [URL] { item.fileURLs(using: blobStore) }
+}
+
+extension Notification.Name {
+    /// Posted after clipboard history records a copy.
+    static let clipboardHistoryDidCapture = Notification.Name("clipboardHistoryDidCapture")
 }

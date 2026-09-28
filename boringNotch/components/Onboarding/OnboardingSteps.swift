@@ -144,7 +144,7 @@ private struct FeatureCard: View {
         .padding(10)
         // One height for every card, so the two in a row line up; grid rows otherwise
         // size to the taller card and centre the shorter one.
-        .frame(maxWidth: .infinity, minHeight: 82, maxHeight: 82, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 92, maxHeight: 92, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.white.opacity(isOn ? 0.10 : 0.05))
@@ -554,9 +554,12 @@ final class OnboardingTryIt: ObservableObject {
             }
             .store(in: &cancellables)
 
-        ClipboardStateViewModel.shared.$visibleItems
-            .sink { [weak self] items in
-                if items.first?.title == Self.sampleText { self?.mark(.copyText) }
+        // Not visibleItems: that list only updates while the clipboard tab is showing.
+        NotificationCenter.default.publisher(for: .clipboardHistoryDidCapture)
+            .sink { [weak self] _ in
+                if ClipboardStateViewModel.shared.newestItem?.title == Self.sampleText {
+                    self?.mark(.copyText)
+                }
             }
             .store(in: &cancellables)
     }
@@ -606,7 +609,7 @@ final class OnboardingTryIt: ObservableObject {
         }
         if let fileURL { try? FileManager.default.removeItem(at: fileURL) }
         let clipboard = ClipboardStateViewModel.shared
-        for item in clipboard.visibleItems where item.title == Self.sampleText {
+        for item in clipboard.items(withTitle: Self.sampleText) {
             clipboard.delete(id: item.id)
         }
     }

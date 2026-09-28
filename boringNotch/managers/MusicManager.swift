@@ -32,6 +32,8 @@ class MusicManager {
     // Helper to check if macOS has removed support for NowPlayingController
     public private(set) var isNowPlayingDeprecated: Bool = false
     private let mediaChecker = MediaChecker()
+    /// The launch-time deprecation check, kept so callers can wait for its answer.
+    @ObservationIgnored private var deprecationCheck: Task<Bool, Never>?
 
     // Active controller
     private var activeController: (any MediaControllerProtocol)?
@@ -87,7 +89,7 @@ class MusicManager {
             .store(in: &cancellables)
 
         // Initialize deprecation check asynchronously
-        Task { @MainActor in
+        deprecationCheck = Task { @MainActor in
             do {
                 // Only probe when the cache cannot answer. See MediaChecker for why the
                 // key is the OS build plus this app's build.
@@ -106,7 +108,18 @@ class MusicManager {
             // Initialize the active controller after deprecation check
             self.setActiveControllerBasedOnPreference()
             self.observeControllerAppLifecycle()
+            return self.isNowPlayingDeprecated
         }
+    }
+
+    /// Whether Now Playing is deprecated, once the launch-time check has answered.
+    ///
+    /// `isNowPlayingDeprecated` reads false until then, and the check runs in a Task,
+    /// so it cannot have answered by the time applicationDidFinishLaunching reads it.
+    /// That is how the "choose a media source" prompt, which launch gated on it, could
+    /// never appear. Anything deciding at launch must wait on this instead.
+    func nowPlayingDeprecation() async -> Bool {
+        await deprecationCheck?.value ?? isNowPlayingDeprecated
     }
 
     // No deinit. `destroy()` is main-actor work - it tears down controllers and

@@ -552,8 +552,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if Defaults[.onboardingCompletedVersion] == 0 {
                 Defaults[.onboardingCompletedVersion] = OnboardingPlan.version
             }
-            if MusicManager.shared.isNowPlayingDeprecated && Defaults[.mediaController] == .nowPlaying {
-                DispatchQueue.main.async {
+            Task { @MainActor in
+                // Waits for the check; reading isNowPlayingDeprecated here directly
+                // always saw false. See MusicManager.nowPlayingDeprecation().
+                if await MusicManager.shared.nowPlayingDeprecation(),
+                   Defaults[.mediaController] == .nowPlaying {
                     self.showMediaSourceWindow()
                 }
             }
@@ -693,7 +696,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 : OnboardingPlan.resumeStep(saved: Defaults[.onboardingResumeStep], choices: choices)
 
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 560, height: 580),
+                contentRect: NSRect(x: 0, y: 0, width: 560, height: 620),
                 // Closable: closing pauses setup, and the next launch resumes it.
                 styleMask: [.titled, .closable, .fullSizeContentView],
                 backing: .buffered,

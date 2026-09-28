@@ -61,7 +61,7 @@ struct OnboardingView: View {
         }
         // A fixed size. Steps differ in height, and resizing the window between them
         // would need animating to not jump; a fixed window never has to.
-        .frame(width: 560, height: 580)
+        .frame(width: 560, height: 620)
         .background(OnboardingBackground())
         .preferredColorScheme(.dark)
         .onChange(of: step) { _, newStep in
