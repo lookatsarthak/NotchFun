@@ -160,7 +160,12 @@ if [ "$PUBLISH" = true ]; then
   git add docs/appcast.xml
   git commit -q -m "Sign appcast for $VERSION" || true
   git push origin main
-  gh release create "v$VERSION" "$DMG" -R "$REPO" \
+  # A fixed-name copy alongside the versioned one, so
+  # .../releases/latest/download/NotchFun.dmg always resolves to the newest release.
+  # scripts/install.sh, and the one-line install in the README, depend on it.
+  LATEST_DMG="$ROOT/dist/NotchFun.dmg"
+  cp "$DMG" "$LATEST_DMG"
+  gh release create "v$VERSION" "$DMG" "$LATEST_DMG" -R "$REPO" \
     --title "NotchFun $VERSION" --generate-notes
   echo "Published: https://github.com/$REPO/releases/tag/v$VERSION"
 else

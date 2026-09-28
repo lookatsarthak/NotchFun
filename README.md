@@ -86,6 +86,18 @@ four Thunderbolt ports, 2020 27-inch iMac).
 > updater will keep you there rather than offer you a build that cannot launch; 1.2.1
 > remains downloadable from [Releases](https://github.com/lookatsarthak/NotchFun/releases).
 
+**One line in Terminal** — the quickest way, and the only one without a security warning
+on first launch. Copy it, paste it into Terminal, press Return:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lookatsarthak/NotchFun/main/scripts/install.sh | bash
+```
+
+It downloads the latest release, puts NotchFun in Applications (quitting and replacing an
+older copy if you have one), and opens it. [Read the script](scripts/install.sh) first if
+you like — it is short. There is no warning because files downloaded by `curl` are not
+flagged as coming from the internet, which is what triggers macOS's check.
+
 **Homebrew**
 
 ```bash
