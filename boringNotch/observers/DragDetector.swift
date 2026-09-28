@@ -28,6 +28,7 @@ final class DragDetector {
     private var isDragging: Bool = false
     private var isContentDragging: Bool = false
     private var hasEnteredNotchRegion: Bool = false
+    private var mouseDownLocation: CGPoint = .zero
 
     private let notchRegion: CGRect
     private let dragPasteboard = NSPasteboard(name: .drag)
@@ -64,6 +65,7 @@ final class DragDetector {
         mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
             guard let self else { return }
             self.pasteboardChangeCount = self.dragPasteboard.changeCount
+            self.mouseDownLocation = NSEvent.mouseLocation
             self.isDragging = true
             self.isContentDragging = false
             self.hasEnteredNotchRegion = false
@@ -79,19 +81,28 @@ final class DragDetector {
             guard let self, self.isDragging else { return }
 
             if !self.isContentDragging {
-                // A drag puts its payload on the drag pasteboard before the first
-                // dragged event, so if the count has not moved by now this gesture is
-                // not carrying anything and never will be. Stop watching it: that turns
-                // "every pointer sample for the rest of this drag" into a single check.
-                guard self.dragPasteboard.changeCount != self.pasteboardChangeCount else {
+                // The source app writes the drag pasteboard only once the pointer passes
+                // its drag threshold, so give it a few points; past that, a gesture with
+                // nothing on the pasteboard never will have, and is dropped. That keeps
+                // a window move or a text selection to a handful of checks rather than
+                // one per pointer sample. See DragGesturePolicy.
+                switch DragGesturePolicy.decide(
+                    pasteboardChanged: self.dragPasteboard.changeCount != self.pasteboardChangeCount,
+                    from: self.mouseDownLocation,
+                    to: NSEvent.mouseLocation
+                ) {
+                case .keepWatching:
+                    return
+                case .abandon:
                     self.endGestureMonitors(keepingMouseUp: true)
                     return
+                case .content:
+                    guard self.hasValidDragContent() else {
+                        self.endGestureMonitors(keepingMouseUp: true)
+                        return
+                    }
+                    self.isContentDragging = true
                 }
-                guard self.hasValidDragContent() else {
-                    self.endGestureMonitors(keepingMouseUp: true)
-                    return
-                }
-                self.isContentDragging = true
             }
 
             let mouseLocation = NSEvent.mouseLocation
