@@ -102,9 +102,24 @@ codesign --verify --deep --strict "$APP_PATH" && echo "    signature verifies"
 echo "==> Staging disk image"
 STAGING=$(mktemp -d)
 trap 'rm -rf "$STAGING"' EXIT
-cp -R "$APP_PATH" "$STAGING/"
-# The Applications symlink is what makes the window a drag-to-install target.
-ln -s /Applications "$STAGING/Applications"
+
+# The window layout - background, icon positions, hidden toolbar - lives in the image's
+# .DS_Store. dmgbuild writes that file directly rather than scripting Finder, so this
+# works headless and gives the same window every time. It is a build-time tool only,
+# kept in a virtualenv under .build; nothing about it ends up in the app.
+DMGBUILD_VENV="$ROOT/.build/dmgvenv"
+if [ ! -x "$DMGBUILD_VENV/bin/dmgbuild" ]; then
+  echo "    installing dmgbuild into $DMGBUILD_VENV"
+  python3 -m venv "$DMGBUILD_VENV"
+  "$DMGBUILD_VENV/bin/pip" install -q --disable-pip-version-check "dmgbuild==1.6.5"
+fi
+
+# One TIFF holding the 1x and 2x images; see scripts/dmg/render-background.swift. It is
+# committed LZW-compressed (114KB) but goes into the image uncompressed: the image's own
+# lzfse pass does far better on flat gradient rows than LZW does, so the download grows
+# by ~51KB this way against ~111KB for the LZW file as-is.
+BACKGROUND="$STAGING/background.tiff"
+tiffutil -none "$ROOT/scripts/dmg/background.tiff" -out "$BACKGROUND" >/dev/null
 
 mkdir -p "$OUT_DIR"
 DMG="$OUT_DIR/$APP_NAME-$VERSION.dmg"
@@ -112,7 +127,8 @@ rm -f "$DMG"
 
 # Built in two steps, deliberately.
 #
-# `hdiutil create` can leave large unreferenced regions inside the image: the 1.4.1
+# `hdiutil create` (which dmgbuild runs underneath) can leave large unreferenced
+# regions inside the image: the 1.4.1
 # release shipped 1,088,360 bytes of slack - 98.8% zeroes - between two compressed
 # chunks, making the download 23% bigger than 1.4.0 despite the app itself having
 # shrunk. It mounted and ran fine, which is exactly why nobody noticed. It was not
@@ -126,13 +142,9 @@ rm -f "$DMG"
 # 10.11 to open, far below this app's own floor.
 RAW_DMG="$STAGING.raw.dmg"
 echo "==> Creating $DMG"
-hdiutil create \
-  -volname "$APP_NAME" \
-  -srcfolder "$STAGING" \
-  -fs HFS+ \
-  -format UDZO \
-  -ov \
-  "$RAW_DMG" >/dev/null
+"$DMGBUILD_VENV/bin/dmgbuild" -s "$ROOT/scripts/dmg/settings.py" \
+  -D app="$APP_PATH" -D background="$BACKGROUND" \
+  "$APP_NAME" "$RAW_DMG" >/dev/null
 
 hdiutil convert "$RAW_DMG" -format ULFO -o "$DMG" -quiet
 rm -f "$RAW_DMG"
