@@ -9,6 +9,8 @@ import SwiftUI
 struct ClipboardView: View {
 
     @EnvironmentObject var vm: BoringViewModel
+    @Default(.clipboardPasteOnSelect) private var clipboardPasteOnSelect
+    @Default(.enableHaptics) private var enableHaptics
     @ObservedObject private var clipboard = ClipboardStateViewModel.shared
 
     @Default(.clipboardCleanLinks) private var cleanLinks
@@ -358,7 +360,7 @@ struct ClipboardView: View {
             clipboard.copyToPasteboard(item)
         }
 
-        guard Defaults[.clipboardPasteOnSelect] else { return }
+        guard clipboardPasteOnSelect else { return }
 
         guard ClipboardPasteService.ensureAuthorized(promptIfNeeded: true) else { return }
         Task {
@@ -403,7 +405,7 @@ struct ClipboardView: View {
     /// rather than a continuous buzz. The calendar can skip this because it only ever
     /// scrolls a handful of slow-moving items.
     private func fireHaptic() {
-        guard Defaults[.enableHaptics] else { return }
+        guard enableHaptics else { return }
         let now = CFAbsoluteTimeGetCurrent()
         guard now - lastTickAt > 0.02 else { return }
         lastTickAt = now

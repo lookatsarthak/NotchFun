@@ -27,11 +27,13 @@ struct MusicPlayerView: View {
 struct AlbumArtView: View {
     @Bindable var musicManager = MusicManager.shared
     @ObservedObject var vm: BoringViewModel
+    @Default(.cornerRadiusScaling) private var cornerRadiusScaling
+    @Default(.lightingEffect) private var lightingEffect
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            if Defaults[.lightingEffect] {
+            if lightingEffect {
                 albumArtBackground
             }
             albumArtButton
@@ -44,7 +46,7 @@ struct AlbumArtView: View {
             .clipped()
             .clipShape(
                 RoundedRectangle(
-                    cornerRadius: Defaults[.cornerRadiusScaling]
+                    cornerRadius: cornerRadiusScaling
                         ? MusicPlayerImageSizes.cornerRadiusInset.opened
                         : MusicPlayerImageSizes.cornerRadiusInset.closed,
                     style: .continuous)
@@ -90,7 +92,7 @@ struct AlbumArtView: View {
             .clipped()
             .clipShape(
                 RoundedRectangle(
-                    cornerRadius: Defaults[.cornerRadiusScaling]
+                    cornerRadius: cornerRadiusScaling
                         ? MusicPlayerImageSizes.cornerRadiusInset.opened
                         : MusicPlayerImageSizes.cornerRadiusInset.closed,
                     style: .continuous)
@@ -114,6 +116,10 @@ struct AlbumArtView: View {
 struct MusicControlsView: View {
     @Bindable var musicManager = MusicManager.shared
         @EnvironmentObject var vm: BoringViewModel
+    @Default(.enableLyrics) private var enableLyrics
+    @Default(.playerColorTinting) private var playerColorTinting
+    @Default(.showCalendar) private var showCalendar
+    @Default(.showMirror) private var showMirror
         let webcamManager = WebcamManager.shared
     @State private var sliderValue: Double = 0
     @State private var dragging: Bool = false
@@ -149,13 +155,13 @@ struct MusicControlsView: View {
                 $musicManager.artistName,
                 font: .headline,
                 nsFont: .headline,
-                textColor: Defaults[.playerColorTinting]
+                textColor: playerColorTinting
                     ? Color(nsColor: musicManager.avgColor)
                         .ensureMinimumBrightness(factor: 0.6) : .gray,
                 frameWidth: width
             )
             .fontWeight(.medium)
-            if Defaults[.enableLyrics] {
+            if enableLyrics {
                 TimelineView(.animation(minimumInterval: 0.25)) { timeline in
                     let currentElapsed: Double = {
                         guard musicManager.isPlaying else { return musicManager.elapsedTime }
@@ -231,7 +237,7 @@ struct MusicControlsView: View {
         let padded = slotConfig.padded(to: sanitizedLimit, filler: .none)
         let result = Array(padded.prefix(sanitizedLimit))
         // If calendar and camera are both visible alongside music, hide the edge slots
-        let shouldHideEdges = Defaults[.showCalendar] && Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
+        let shouldHideEdges = showCalendar && showMirror && webcamManager.cameraAvailable && vm.isCameraExpanded
         if shouldHideEdges && result.count >= 5 {
             return Array(result.dropFirst().dropLast())
         }
@@ -424,6 +430,8 @@ struct VolumeControlView: View {
 
 struct NotchHomeView: View {
     @EnvironmentObject var vm: BoringViewModel
+    @Default(.showCalendar) private var showCalendar
+    @Default(.showMirror) private var showMirror
     let webcamManager = WebcamManager.shared
     let batteryModel = BatteryStatusViewModel.shared
     /// Read directly, not through BoringViewCoordinator. This is the only thing this
@@ -445,14 +453,14 @@ struct NotchHomeView: View {
     }
 
     private var shouldShowCamera: Bool {
-        Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
+        showMirror && webcamManager.cameraAvailable && vm.isCameraExpanded
     }
 
     private var mainContent: some View {
-        HStack(alignment: .top, spacing: (shouldShowCamera && Defaults[.showCalendar]) ? 10 : 15) {
+        HStack(alignment: .top, spacing: (shouldShowCamera && showCalendar) ? 10 : 15) {
             MusicPlayerView(albumArtNamespace: albumArtNamespace)
 
-            if Defaults[.showCalendar] {
+            if showCalendar {
                 CalendarView()
                     .frame(width: shouldShowCamera ? 170 : 215)
                     .onHover { isHovering in

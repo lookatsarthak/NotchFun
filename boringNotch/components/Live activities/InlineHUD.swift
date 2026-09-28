@@ -10,6 +10,7 @@ import Defaults
 
 struct InlineHUD: View {
     @EnvironmentObject var vm: BoringViewModel
+    @Default(.showClosedNotchHUDPercentage) private var showClosedNotchHUDPercentage
     @Binding var type: SneakContentType
     @Binding var value: CGFloat
     @Binding var icon: String
@@ -93,7 +94,7 @@ struct InlineHUD: View {
                                 .lineLimit(1)
                                 .allowsTightening(true)
                                 .multilineTextAlignment(.trailing)
-                        } else if Defaults[.showClosedNotchHUDPercentage] {
+                        } else if showClosedNotchHUDPercentage {
                             Text("\(Int(value * 100))%")
                                 .font(.caption)
                                 .fontWeight(.medium)

@@ -128,7 +128,7 @@ struct FileShareView: View {
         vm.airDropDropHandler = { providers in
             Task { @MainActor in
                 let provider = QuickShareService.shared.availableProviders
-                    .first { $0.id == Defaults[.quickShareProvider] }
+                    .first { $0.id == quickShareProvider }
                     ?? QuickShareProvider(id: "System Share Menu", imageData: nil, supportsRawText: true)
                 await QuickShareService.shared.shareDroppedFiles(providers, using: provider, from: anchor)
             }

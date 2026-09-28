@@ -10,6 +10,14 @@ import SwiftUI
 
 struct BoringHeader: View {
     @EnvironmentObject var vm: BoringViewModel
+    @Default(.boringShelf) private var boringShelf
+    @Default(.caffeineButtonInNotch) private var caffeineButtonInNotch
+    @Default(.clipboardHistoryEnabled) private var clipboardHistoryEnabled
+    @Default(.settingsIconInNotch) private var settingsIconInNotch
+    @Default(.showAccessoryBattery) private var showAccessoryBattery
+    @Default(.showBatteryIndicator) private var showBatteryIndicator
+    @Default(.showMirror) private var showMirror
+    @Default(.showOpenNotchHUD) private var showOpenNotchHUD
     let batteryModel = BatteryStatusViewModel.shared
     let accessoryBattery = AccessoryBatteryManager.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
@@ -18,8 +26,8 @@ struct BoringHeader: View {
     /// The tab bar used to be gated purely on the Shelf. Any feature that owns a tab
     /// can now bring it on screen.
     private var shouldShowTabs: Bool {
-        let shelfWantsTabs = Defaults[.boringShelf] && (!tvm.isEmpty || coordinator.alwaysShowTabs)
-        return shelfWantsTabs || Defaults[.clipboardHistoryEnabled]
+        let shelfWantsTabs = boringShelf && (!tvm.isEmpty || coordinator.alwaysShowTabs)
+        return shelfWantsTabs || clipboardHistoryEnabled
     }
 
     var body: some View {
@@ -47,14 +55,14 @@ struct BoringHeader: View {
 
             HStack(spacing: 4) {
                 if vm.notchState == .open {
-                    if isHUDType(coordinator.sneakPeek.type) && coordinator.sneakPeek.show && Defaults[.showOpenNotchHUD] {
+                    if isHUDType(coordinator.sneakPeek.type) && coordinator.sneakPeek.show && showOpenNotchHUD {
                         OpenNotchHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon)
                             .transition(NotchMotion.transition(.scale(scale: 0.8).combined(with: .opacity)))
                     } else {
-                        if Defaults[.caffeineButtonInNotch] {
+                        if caffeineButtonInNotch {
                             CaffeineButton()
                         }
-                        if Defaults[.showMirror] {
+                        if showMirror {
                             Button(action: {
                                 vm.toggleCameraPreview()
                             }) {
@@ -65,7 +73,7 @@ struct BoringHeader: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
-                        if Defaults[.settingsIconInNotch] {
+                        if settingsIconInNotch {
                             Button(action: {
                                 DispatchQueue.main.async {
                                     SettingsWindowController.shared.showWindow()
@@ -85,10 +93,10 @@ struct BoringHeader: View {
                         // .frame(maxWidth: .infinity), so they split the remaining space
                         // and the black notch rectangle between them stays centred no
                         // matter what this side contains.
-                        if Defaults[.showAccessoryBattery], let accessory = accessoryBattery.current {
+                        if showAccessoryBattery, let accessory = accessoryBattery.current {
                             AccessoryBatteryGlyph(accessory: accessory)
                         }
-                        if Defaults[.showBatteryIndicator] {
+                        if showBatteryIndicator {
                             BoringBatteryView(
                                 batteryWidth: 30,
                                 isCharging: batteryModel.isCharging,

@@ -20,6 +20,7 @@ struct Config: Equatable {
 
 struct WheelPicker: View {
     @EnvironmentObject var vm: BoringViewModel
+    @Default(.enableHaptics) private var enableHaptics
     @Binding var selectedDate: Date
     @State private var scrollPosition: Int?
     @State private var haptics: Bool = false
@@ -47,7 +48,7 @@ struct WheelPicker: View {
                             withAnimation(NotchMotion.content) {
                                 scrollPosition = index
                             }
-                            if Defaults[.enableHaptics] {
+                            if enableHaptics {
                                 haptics.toggle()
                             }
                         }
@@ -132,7 +133,7 @@ struct WheelPicker: View {
         let date = dateForItemIndex(index: newIndex, spacerNum: spacerNum)
         if !Calendar.current.isDate(date, inSameDayAs: selectedDate) {
             selectedDate = date
-            if Defaults[.enableHaptics] {
+            if enableHaptics {
                 haptics.toggle()
             }
         }

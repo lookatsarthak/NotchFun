@@ -15,6 +15,24 @@ import SwiftUI
 @MainActor
 struct ContentView: View {
     @EnvironmentObject var vm: BoringViewModel
+    @Default(.boringShelf) private var boringShelf
+    @Default(.caffeineIndicatorInNotch) private var caffeineIndicatorInNotch
+    @Default(.caffeineShowNotification) private var caffeineShowNotification
+    @Default(.closeGestureEnabled) private var closeGestureEnabled
+    @Default(.coloredSpectrogram) private var coloredSpectrogram
+    @Default(.compactMusicLiveActivity) private var compactMusicLiveActivity
+    @Default(.cornerRadiusScaling) private var cornerRadiusScaling
+    @Default(.enableGestures) private var enableGestures
+    @Default(.enableHaptics) private var enableHaptics
+    @Default(.enableShadow) private var enableShadow
+    @Default(.gestureSensitivity) private var gestureSensitivity
+    @Default(.inlineHUD) private var inlineHUD
+    @Default(.minimumHoverDuration) private var minimumHoverDuration
+    @Default(.openNotchOnHover) private var openNotchOnHover
+    @Default(.playerColorTinting) private var playerColorTinting
+    @Default(.showAccessoryBattery) private var showAccessoryBattery
+    @Default(.showPowerStatusNotifications) private var showPowerStatusNotifications
+    @Default(.sneakPeekStyles) private var sneakPeekStyles
     let webcamManager = WebcamManager.shared
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
@@ -44,7 +62,7 @@ struct ContentView: View {
     private let zeroHeightHoverPadding: CGFloat = 10
 
     private var topCornerRadius: CGFloat {
-       ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
+       ((vm.notchState == .open) && cornerRadiusScaling)
                 ? cornerRadiusInsets.opened.top
                 : cornerRadiusInsets.closed.top
     }
@@ -52,7 +70,7 @@ struct ContentView: View {
     private var currentNotchShape: NotchShape {
         NotchShape(
             topCornerRadius: topCornerRadius,
-            bottomCornerRadius: ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
+            bottomCornerRadius: ((vm.notchState == .open) && cornerRadiusScaling)
                 ? cornerRadiusInsets.opened.bottom
                 : cornerRadiusInsets.closed.bottom
         )
@@ -66,11 +84,11 @@ struct ContentView: View {
         CaffeineIndicatorPolicy.showsIndicator(
             .init(
                 isActive: caffeine.isActive,
-                settingEnabled: Defaults[.caffeineIndicatorInNotch],
+                settingEnabled: caffeineIndicatorInNotch,
                 notchIsClosed: vm.notchState == .closed,
                 hiddenForFullscreen: vm.hideOnClosed,
                 bannerIsShowing: coordinator.expandingView.show,
-                inlineHUDIsShowing: coordinator.sneakPeek.show && Defaults[.inlineHUD]
+                inlineHUDIsShowing: coordinator.sneakPeek.show && inlineHUD
                     && coordinator.sneakPeek.type != .music
                     && coordinator.sneakPeek.type != .battery
             )
@@ -85,20 +103,20 @@ struct ContentView: View {
     /// Whether the closed notch is currently showing the Mac's own power banner.
     private var showsPowerBanner: Bool {
         coordinator.expandingView.type == .battery && coordinator.expandingView.show
-            && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
+            && vm.notchState == .closed && showPowerStatusNotifications
     }
 
     private var showsAccessoryBatteryBanner: Bool {
         AccessoryBatteryPolicy.showsBanner(
             .init(
                 hasReading: accessoryBattery.current != nil,
-                settingEnabled: Defaults[.showAccessoryBattery],
+                settingEnabled: showAccessoryBattery,
                 bannerRequested: coordinator.expandingView.show
                     && coordinator.expandingView.type == .accessoryBattery,
                 notchIsClosed: vm.notchState == .closed,
                 hiddenForFullscreen: vm.hideOnClosed,
                 powerBannerIsShowing: showsPowerBanner,
-                inlineHUDIsShowing: coordinator.sneakPeek.show && Defaults[.inlineHUD]
+                inlineHUDIsShowing: coordinator.sneakPeek.show && inlineHUD
                     && coordinator.sneakPeek.type != .music
                     && coordinator.sneakPeek.type != .battery
             )
@@ -107,7 +125,7 @@ struct ContentView: View {
 
     private var showsCaffeineBanner: Bool {
         coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
-            && vm.notchState == .closed && Defaults[.caffeineShowNotification]
+            && vm.notchState == .closed && caffeineShowNotification
     }
 
     /// Any full-width banner row. All three need the same wide hover chin.
@@ -131,7 +149,7 @@ struct ContentView: View {
         MusicLiveActivityMetrics.metrics(
             .init(
                 closedNotchHeight: vm.effectiveClosedNotchHeight,
-                compact: Defaults[.compactMusicLiveActivity],
+                compact: compactMusicLiveActivity,
                 gestureProgress: gestureProgress
             )
         )
@@ -148,7 +166,7 @@ struct ContentView: View {
         {
             chinWidth += musicMetrics.addedWidth
         } else if !coordinator.expandingView.show && vm.notchState == .closed
-            && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
+            && (!musicManager.isPlaying && musicManager.isPlayerIdle) && showNotHumanFace
             && !vm.hideOnClosed
         {
             chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
@@ -181,7 +199,7 @@ struct ContentView: View {
                     .padding(
                         .horizontal,
                         vm.notchState == .open
-                        ? Defaults[.cornerRadiusScaling]
+                        ? cornerRadiusScaling
                         ? (cornerRadiusInsets.opened.top) : (cornerRadiusInsets.opened.bottom)
                         : cornerRadiusInsets.closed.bottom
                     )
@@ -195,8 +213,8 @@ struct ContentView: View {
                             .padding(.horizontal, topCornerRadius)
                     }
                     .shadow(
-                        color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
-                            ? .black.opacity(0.7) : .clear, radius: Defaults[.cornerRadiusScaling] ? 6 : 4
+                        color: ((vm.notchState == .open || isHovering) && enableShadow)
+                            ? .black.opacity(0.7) : .clear, radius: cornerRadiusScaling ? 6 : 4
                     )
                     .padding(
                         .bottom,
@@ -218,13 +236,13 @@ struct ContentView: View {
                     .onTapGesture {
                         doOpen()
                     }
-                    .conditionalModifier(Defaults[.enableGestures]) { view in
+                    .conditionalModifier(enableGestures) { view in
                         view
                             .panGesture(direction: .down) { translation, phase in
                                 handleDownGesture(translation: translation, phase: phase)
                             }
                     }
-                    .conditionalModifier(Defaults[.closeGestureEnabled] && Defaults[.enableGestures]) { view in
+                    .conditionalModifier(closeGestureEnabled && enableGestures) { view in
                         view
                             .panGesture(direction: .up) { translation, phase in
                                 handleUpGesture(translation: translation, phase: phase)
@@ -359,7 +377,7 @@ struct ContentView: View {
                         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
                       // A key the user just pressed outranks a caffeine banner. Battery stays
                       // above both: it reports a power change nothing else announces.
-                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
+                      } else if coordinator.sneakPeek.show && inlineHUD && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
                       // Below the HUD deliberately: you connect earbuds and reach for the
@@ -401,7 +419,7 @@ struct ContentView: View {
                               }
                           }
                           .frame(alignment: .center)
-                      } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
+                      } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && showNotHumanFace && !vm.hideOnClosed  {
                           BoringFaceAnimation()
                       } else if showsCaffeineIndicator {
                           // Nothing else is claiming the closed notch - the face is off and
@@ -427,7 +445,7 @@ struct ContentView: View {
                        }
 
                       if coordinator.sneakPeek.show {
-                          if (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && !Defaults[.inlineHUD] && vm.notchState == .closed {
+                          if (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && !inlineHUD && vm.notchState == .closed {
                               SystemEventIndicatorModifier(
                                   eventType: $coordinator.sneakPeek.type,
                                   value: $coordinator.sneakPeek.value,
@@ -449,11 +467,11 @@ struct ContentView: View {
                           }
                           // Old sneak peek music
                           else if coordinator.sneakPeek.type == .music {
-                              if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
+                              if vm.notchState == .closed && !vm.hideOnClosed && sneakPeekStyles == .standard {
                                   HStack(alignment: .center) {
                                       Image(systemName: "music.note")
                                       GeometryReader { geo in
-                                          MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
+                                          MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: playerColorTinting ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
                                       }
                                   }
                                   .foregroundStyle(.gray)
@@ -463,7 +481,7 @@ struct ContentView: View {
                       }
                   }
               }
-              .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed))) { view in
+              .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && sneakPeekStyles == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed))) { view in
                   view
                       .fixedSize()
               }
@@ -584,14 +602,14 @@ struct ContentView: View {
                         {
                             MarqueeText(
                                 .constant(musicManager.songTitle),
-                                textColor: Defaults[.coloredSpectrogram]
+                                textColor: coloredSpectrogram
                                     ? Color(nsColor: musicManager.avgColor) : Color.gray,
                                 minDuration: 0.4,
                                 frameWidth: 100
                             )
                             .opacity(
                                 (coordinator.expandingView.show
-                                    && Defaults[.sneakPeekStyles] == .inline)
+                                    && sneakPeekStyles == .inline)
                                     ? 1 : 0
                             )
                             Spacer(minLength: vm.closedNotchSize.width)
@@ -600,14 +618,14 @@ struct ContentView: View {
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                                 .foregroundStyle(
-                                    Defaults[.coloredSpectrogram]
+                                    coloredSpectrogram
                                         ? Color(nsColor: musicManager.avgColor)
                                         : Color.gray
                                 )
                                 .opacity(
                                     (coordinator.expandingView.show
                                         && coordinator.expandingView.type == .music
-                                        && Defaults[.sneakPeekStyles] == .inline)
+                                        && sneakPeekStyles == .inline)
                                         ? 1 : 0
                                 )
                         }
@@ -616,7 +634,7 @@ struct ContentView: View {
                 .frame(
                     width: (coordinator.expandingView.show
                         && coordinator.expandingView.type == .music
-                        && Defaults[.sneakPeekStyles] == .inline)
+                        && sneakPeekStyles == .inline)
                         ? 380
                         : vm.closedNotchSize.width
                             + -cornerRadiusInsets.closed.top
@@ -625,7 +643,7 @@ struct ContentView: View {
             HStack {
                 Rectangle()
                     .fill(
-                        Defaults[.coloredSpectrogram]
+                        coloredSpectrogram
                             ? Color(nsColor: musicManager.avgColor).gradient
                             : Color.gray.gradient
                     )
@@ -650,7 +668,7 @@ struct ContentView: View {
 
     @ViewBuilder
     var dragDetector: some View {
-        if Defaults[.boringShelf] && vm.notchState == .closed {
+        if boringShelf && vm.notchState == .closed {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -681,16 +699,16 @@ struct ContentView: View {
                 isHovering = true
             }
             
-            if vm.notchState == .closed && Defaults[.enableHaptics] {
+            if vm.notchState == .closed && enableHaptics {
                 haptics.toggle()
             }
             
             guard vm.notchState == .closed,
                   !coordinator.sneakPeek.show,
-                  Defaults[.openNotchOnHover] else { return }
+                  openNotchOnHover else { return }
             
             hoverTask = Task {
-                try? await Task.sleep(for: .seconds(Defaults[.minimumHoverDuration]))
+                try? await Task.sleep(for: .seconds(minimumHoverDuration))
                 guard !Task.isCancelled else { return }
                 
                 await MainActor.run {
@@ -730,11 +748,11 @@ struct ContentView: View {
         }
 
         withAnimation(animationSpring) {
-            gestureProgress = (translation / Defaults[.gestureSensitivity]) * 20
+            gestureProgress = (translation / gestureSensitivity) * 20
         }
 
-        if translation > Defaults[.gestureSensitivity] {
-            if Defaults[.enableHaptics] {
+        if translation > gestureSensitivity {
+            if enableHaptics {
                 haptics.toggle()
             }
             withAnimation(animationSpring) {
@@ -748,7 +766,7 @@ struct ContentView: View {
         guard vm.notchState == .open, !vm.isHoveringCalendar, !vm.isHoveringScrollableContent else { return }
 
         withAnimation(animationSpring) {
-            gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20
+            gestureProgress = (translation / gestureSensitivity) * -20
         }
 
         if phase == .ended {
@@ -757,7 +775,7 @@ struct ContentView: View {
             }
         }
 
-        if translation > Defaults[.gestureSensitivity] {
+        if translation > gestureSensitivity {
             withAnimation(animationSpring) {
                 isHovering = false
             }
@@ -766,7 +784,7 @@ struct ContentView: View {
                 vm.close()
             }
 
-            if Defaults[.enableHaptics] {
+            if enableHaptics {
                 haptics.toggle()
             }
         }
