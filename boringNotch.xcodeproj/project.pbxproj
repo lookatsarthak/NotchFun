@@ -26,6 +26,10 @@
 		7C1A9E4B2D6F81035E0A4412 /* MusicLiveActivityMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A9E4B2D6F81035E0A4411 /* MusicLiveActivityMetrics.swift */; };
 		7C1A9E4B2D6F81035E0A4413 /* MusicLiveActivityMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A9E4B2D6F81035E0A4411 /* MusicLiveActivityMetrics.swift */; };
 		7C1A9E4B2D6F81035E0A4415 /* MusicLiveActivityMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A9E4B2D6F81035E0A4414 /* MusicLiveActivityMetricsTests.swift */; };
+		5B6D7E02DF99108A8F66A7BD /* NowPlayingPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9EFA26388E4EA0D2BEF085 /* NowPlayingPayload.swift */; };
+		EBEC66BE35E3D1FCA6FFCED3 /* NowPlayingPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9EFA26388E4EA0D2BEF085 /* NowPlayingPayload.swift */; };
+		3F3937D61ACC3DB7B1B7E8F6 /* NowPlayingPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD4ED93D8D33346F22DF5CA /* NowPlayingPayloadTests.swift */; };
+		5E51CAF1BB274B32E807DD52 /* PlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1153BD902D986DB300979FB0 /* PlaybackState.swift */; };
 		E0768B9B57374B3580B23640 /* URLCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95D159687544B04B2B42C9F /* URLCleaner.swift */; };
 		CD0EE573435B78DE5885BA28 /* ClipboardSecretHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */; };
 		2553C297577D49C297D12A9C /* URLCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95D159687544B04B2B42C9F /* URLCleaner.swift */; };
@@ -263,6 +267,8 @@
 		92207BBACAA9410788BB8463 /* URLCleanerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCleanerTests.swift; sourceTree = "<group>"; };
 		3018FEE1B115407D9FBC8E59 /* NotchRadiusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchRadiusTests.swift; sourceTree = "<group>"; };
 		7C1A9E4B2D6F81035E0A4414 /* MusicLiveActivityMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLiveActivityMetricsTests.swift; sourceTree = "<group>"; };
+		1F9EFA26388E4EA0D2BEF085 /* NowPlayingPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingPayload.swift; sourceTree = "<group>"; };
+		5BD4ED93D8D33346F22DF5CA /* NowPlayingPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingPayloadTests.swift; sourceTree = "<group>"; };
 		898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristic.swift; sourceTree = "<group>"; };
 		B95D159687544B04B2B42C9F /* URLCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCleaner.swift; sourceTree = "<group>"; };
 		089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeineIndicatorPolicyTests.swift; sourceTree = "<group>"; };
@@ -496,6 +502,7 @@
 				7C1A9E4B2D6F81035E0A4541 /* AccessoryBatteryParserTests.swift */,
 				7C1A9E4B2D6F81035E0A4551 /* AccessoryBatteryPolicyTests.swift */,
 				7C1A9E4B2D6F81035E0A4414 /* MusicLiveActivityMetricsTests.swift */,
+				5BD4ED93D8D33346F22DF5CA /* NowPlayingPayloadTests.swift */,
 				089F783D69B4C615627AE940 /* CaffeineIndicatorPolicyTests.swift */,
 				0EA2251216AC0834B2486494 /* CaffeineManagerTests.swift */,
 				78B4B9F0BD40215F39505BD8 /* ClipboardStorageTests.swift */,
@@ -710,6 +717,7 @@
 				1153BD922D986E4300979FB0 /* AppleMusicController.swift */,
 				1153BD992D98824300979FB0 /* SpotifyController.swift */,
 				1153BD9B2D98853B00979FB0 /* NowPlayingController.swift */,
+				1F9EFA26388E4EA0D2BEF085 /* NowPlayingPayload.swift */,
 			);
 			path = MediaControllers;
 			sourceTree = "<group>";
@@ -1196,6 +1204,9 @@
 				7B7C2BEC95784CB1A69056DA /* URLCleanerTests.swift in Sources */,
 				18934812AF584761BCFF7637 /* NotchRadiusTests.swift in Sources */,
 				7C1A9E4B2D6F81035E0A4415 /* MusicLiveActivityMetricsTests.swift in Sources */,
+				3F3937D61ACC3DB7B1B7E8F6 /* NowPlayingPayloadTests.swift in Sources */,
+				EBEC66BE35E3D1FCA6FFCED3 /* NowPlayingPayload.swift in Sources */,
+				5E51CAF1BB274B32E807DD52 /* PlaybackState.swift in Sources */,
 				4A993CCC7713F83C064C5986 /* CaffeineIndicatorPolicyTests.swift in Sources */,
 				1A43C16AC094C45427D6DA17 /* CaffeineManagerTests.swift in Sources */,
 				1E65879C8F1AF43D34EF07A0 /* ClipboardStorageTests.swift in Sources */,
@@ -1311,6 +1322,7 @@
 				14D570CB2C5F4B2C0011E668 /* BatteryStatusViewModel.swift in Sources */,
 				9A0887322C7A693000C160EA /* TabButton.swift in Sources */,
 				1153BD9C2D98853B00979FB0 /* NowPlayingController.swift in Sources */,
+				5B6D7E02DF99108A8F66A7BD /* NowPlayingPayload.swift in Sources */,
 				1194E9402EACC652009C82D6 /* Color+AccentColor.swift in Sources */,
 				B141C2412CA5F53F00AC8CC8 /* SparkleView.swift in Sources */,
 				116398962DF5D6C00052E6AF /* CalendarServiceProviding.swift in Sources */,
