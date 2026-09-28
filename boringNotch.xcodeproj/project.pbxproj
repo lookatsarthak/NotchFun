@@ -150,6 +150,16 @@
 		11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A45C782E34E63100CEB175 /* MediaChecker.swift */; };
 		11C5E3132DFE85970065821E /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C5E3112DFE85970065821E /* SettingsWindowController.swift */; };
 		11C5E3162DFE88510065821E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C5E3152DFE88510065821E /* SettingsView.swift */; };
+		00C9F987F20F7648D27C71B8 /* ShortcutsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB705EC5B5A596DB926A61F5 /* ShortcutsSettings.swift */; };
+		CF9A9EE2B0A2BE7512C2AB2A /* AdvancedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECE75F272A9C16B9B587620 /* AdvancedSettings.swift */; };
+		A0773976E875E37079B56EB5 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39245A58DAF6908252B66994 /* AppearanceSettings.swift */; };
+		C94A5B05A48CE44B74481A93 /* ShelfSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E66D6D18BC110E841D0E14B /* ShelfSettings.swift */; };
+		05AFA43CE92915B8875BA9F4 /* AboutSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB871D0767F82E11962CAB6 /* AboutSettings.swift */; };
+		0C481DB6431071E605FB36CD /* CalendarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA36160978D1680A85F0BEE /* CalendarSettings.swift */; };
+		4C39DD06504BDD9F0F248F44 /* MediaSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DCA821761CE0A7A46E94E1 /* MediaSettings.swift */; };
+		90133E82ECDCC21EFBD3D3EA /* HUDSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC62F9B66A789C4E761C97C9 /* HUDSettings.swift */; };
+		84EE815E1A05D6B79F69EC37 /* BatterySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C7FFA15881411575A87AB31 /* BatterySettings.swift */; };
+		7B748DDD057832EBA8862D24 /* GeneralSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE9D6B3F698DAF6BFE544FC3 /* GeneralSettings.swift */; };
 		11CC44A22CEE614100C7244B /* BoringViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CC44A12CEE614100C7244B /* BoringViewCoordinator.swift */; };
 		11CFC65F2E097F2F00748C80 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CFC65E2E097F2100748C80 /* OnboardingView.swift */; };
 		E3D988B9397868903EEC8927 /* OnboardingPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F2B8CF56E76620818968E1 /* OnboardingPlan.swift */; };
@@ -364,6 +374,16 @@
 		11A45C782E34E63100CEB175 /* MediaChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaChecker.swift; sourceTree = "<group>"; };
 		11C5E3112DFE85970065821E /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		11C5E3152DFE88510065821E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AB705EC5B5A596DB926A61F5 /* ShortcutsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettings.swift; sourceTree = "<group>"; };
+		BECE75F272A9C16B9B587620 /* AdvancedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettings.swift; sourceTree = "<group>"; };
+		39245A58DAF6908252B66994 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
+		8E66D6D18BC110E841D0E14B /* ShelfSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfSettings.swift; sourceTree = "<group>"; };
+		CCB871D0767F82E11962CAB6 /* AboutSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettings.swift; sourceTree = "<group>"; };
+		3DA36160978D1680A85F0BEE /* CalendarSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettings.swift; sourceTree = "<group>"; };
+		04DCA821761CE0A7A46E94E1 /* MediaSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSettings.swift; sourceTree = "<group>"; };
+		AC62F9B66A789C4E761C97C9 /* HUDSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDSettings.swift; sourceTree = "<group>"; };
+		6C7FFA15881411575A87AB31 /* BatterySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySettings.swift; sourceTree = "<group>"; };
+		DE9D6B3F698DAF6BFE544FC3 /* GeneralSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettings.swift; sourceTree = "<group>"; };
 		11CC44A12CEE614100C7244B /* BoringViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringViewCoordinator.swift; sourceTree = "<group>"; };
 		11CFC65E2E097F2100748C80 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C7F2B8CF56E76620818968E1 /* OnboardingPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPlan.swift; sourceTree = "<group>"; };
@@ -1012,6 +1032,16 @@
 				79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */,
 				11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */,
 				11C5E3152DFE88510065821E /* SettingsView.swift */,
+				AB705EC5B5A596DB926A61F5 /* ShortcutsSettings.swift */,
+				BECE75F272A9C16B9B587620 /* AdvancedSettings.swift */,
+				39245A58DAF6908252B66994 /* AppearanceSettings.swift */,
+				8E66D6D18BC110E841D0E14B /* ShelfSettings.swift */,
+				CCB871D0767F82E11962CAB6 /* AboutSettings.swift */,
+				3DA36160978D1680A85F0BEE /* CalendarSettings.swift */,
+				04DCA821761CE0A7A46E94E1 /* MediaSettings.swift */,
+				AC62F9B66A789C4E761C97C9 /* HUDSettings.swift */,
+				6C7FFA15881411575A87AB31 /* BatterySettings.swift */,
+				DE9D6B3F698DAF6BFE544FC3 /* GeneralSettings.swift */,
 				11C5E3112DFE85970065821E /* SettingsWindowController.swift */,
 				B1D6FD422C6603730015F173 /* SoftwareUpdater.swift */,
 				B1B112902C6A572100093D8F /* EditPanelView.swift */,
@@ -1260,6 +1290,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				00C9F987F20F7648D27C71B8 /* ShortcutsSettings.swift in Sources */,
+				CF9A9EE2B0A2BE7512C2AB2A /* AdvancedSettings.swift in Sources */,
+				A0773976E875E37079B56EB5 /* AppearanceSettings.swift in Sources */,
+				C94A5B05A48CE44B74481A93 /* ShelfSettings.swift in Sources */,
+				05AFA43CE92915B8875BA9F4 /* AboutSettings.swift in Sources */,
+				0C481DB6431071E605FB36CD /* CalendarSettings.swift in Sources */,
+				4C39DD06504BDD9F0F248F44 /* MediaSettings.swift in Sources */,
+				90133E82ECDCC21EFBD3D3EA /* HUDSettings.swift in Sources */,
+				84EE815E1A05D6B79F69EC37 /* BatterySettings.swift in Sources */,
+				7B748DDD057832EBA8862D24 /* GeneralSettings.swift in Sources */,
 				E3D988B9397868903EEC8927 /* OnboardingPlan.swift in Sources */,
 				C2845D9CF28C4A0B3DF4AD93 /* OnboardingSteps.swift in Sources */,
 				E50E243236078E968A4F475F /* NotchHoverHighlight.swift in Sources */,
