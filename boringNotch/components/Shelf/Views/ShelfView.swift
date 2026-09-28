@@ -9,7 +9,7 @@ import SwiftUI
 import AppKit
 
 struct ShelfView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @StateObject var tvm = ShelfStateViewModel.shared
     @StateObject var selection = ShelfSelectionModel.shared
     @StateObject private var quickLookService = QuickLookService()
@@ -19,7 +19,7 @@ struct ShelfView: View {
         HStack(spacing: 12) {
             FileShareView()
                 .aspectRatio(1, contentMode: .fit)
-                .environmentObject(vm)
+                .environment(vm)
             panel
                 .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: nil) { providers in
                     handleDrop(providers: providers)

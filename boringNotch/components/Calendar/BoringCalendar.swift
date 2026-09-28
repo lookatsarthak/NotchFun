@@ -19,7 +19,7 @@ struct Config: Equatable {
 }
 
 struct WheelPicker: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @Default(.enableHaptics) private var enableHaptics
     @Binding var selectedDate: Date
     @State private var scrollPosition: Int?
@@ -180,7 +180,7 @@ struct WheelPicker: View {
 }
 
 struct CalendarView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @ObservedObject private var calendarManager = CalendarManager.shared
     @State private var selectedDate = Date()
 
@@ -477,5 +477,5 @@ struct ReminderToggle: View {
     CalendarView()
         .frame(width: 215, height: 130)
         .background(.black)
-        .environmentObject(BoringViewModel())
+        .environment(BoringViewModel())
 }

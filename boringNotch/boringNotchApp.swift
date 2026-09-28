@@ -326,7 +326,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.contentView = NSHostingView(
             rootView: ContentView()
-                .environmentObject(viewModel)
+                .environment(viewModel)
         )
 
         window.orderFrontRegardless()

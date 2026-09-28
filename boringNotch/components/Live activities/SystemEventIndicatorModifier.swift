@@ -9,14 +9,12 @@ import SwiftUI
 import Defaults
 
 struct SystemEventIndicatorModifier: View {
-    @EnvironmentObject var vm: BoringViewModel
     @Default(.showClosedNotchHUDPercentage) private var showClosedNotchHUDPercentage
     @Binding var eventType: SneakContentType
     @Binding var value: CGFloat {
         didSet {
             DispatchQueue.main.async {
                 self.sendEventBack(value)
-                self.vm.objectWillChange.send()
             }
         }
     }
@@ -97,7 +95,6 @@ struct SystemEventIndicatorModifier: View {
 }
 
 struct DraggableProgressBar: View {
-    @EnvironmentObject var vm: BoringViewModel
     @Default(.enableGradient) private var enableGradient
     @Default(.inlineHUD) private var inlineHUD
     @Default(.systemEventIndicatorShadow) private var systemEventIndicatorShadow

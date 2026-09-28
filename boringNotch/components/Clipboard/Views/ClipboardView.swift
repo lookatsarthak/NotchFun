@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ClipboardView: View {
 
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @Default(.clipboardPasteOnSelect) private var clipboardPasteOnSelect
     @Default(.enableHaptics) private var enableHaptics
     @ObservedObject private var clipboard = ClipboardStateViewModel.shared

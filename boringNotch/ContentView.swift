@@ -14,8 +14,11 @@ import SwiftUI
 
 @MainActor
 struct ContentView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @Default(.boringShelf) private var boringShelf
+    /// Not read here directly: vm.chinHeight reads it, inside the model, where it is not
+    /// tracked. Holding the subscription is what redraws the chin when it changes.
+    @Default(.hideTitleBar) private var hideTitleBar
     @Default(.caffeineIndicatorInNotch) private var caffeineIndicatorInNotch
     @Default(.caffeineShowNotification) private var caffeineShowNotification
     @Default(.closeGestureEnabled) private var closeGestureEnabled
@@ -315,7 +318,7 @@ struct ContentView: View {
         .animation(NotchMotion.drag, value: gestureProgress)
         .background(dragDetector)
         .preferredColorScheme(.dark)
-        .environmentObject(vm)
+        .environment(vm)
         .onChange(of: vm.anyDropZoneTargeting) { _, isTargeted in
             anyDropDebounceTask?.cancel()
 
@@ -546,7 +549,7 @@ struct ContentView: View {
                 .contentShape(Rectangle())
                 .onDrop(
                     of: [.fileURL, .url, .utf8PlainText, .plainText, .data],
-                    delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting, vm: vm)
+                    delegate: GeneralDropTargetDelegate(isTargeted: Bindable(vm).generalDropTargeting, vm: vm)
                 )
         }
     }
@@ -861,6 +864,6 @@ struct GeneralDropTargetDelegate: DropDelegate {
     let vm = BoringViewModel()
     vm.open()
     return ContentView()
-        .environmentObject(vm)
+        .environment(vm)
         .frame(width: vm.notchSize.width, height: vm.notchSize.height)
 }

@@ -99,7 +99,7 @@ struct OpenNotchHUD: View {
 
 #Preview {
     OpenNotchHUD(type: .constant(.volume), value: .constant(0.5), icon: .constant(""))
-        .environmentObject(BoringViewModel())
+        .environment(BoringViewModel())
         .padding()
         .background(Color.gray)
 }

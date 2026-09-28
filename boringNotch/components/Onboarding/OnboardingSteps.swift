@@ -538,12 +538,9 @@ final class OnboardingTryIt: ObservableObject {
     func start() {
         guard cancellables.isEmpty, let delegate = AppDelegate.shared else { return }
 
-        let models = [delegate.vm] + Array(delegate.viewModels.values)
-        Publishers.MergeMany(models.map { $0.$notchState })
-            .filter { $0 == .open }
-            .first()
-            .sink { [weak self] _ in self?.mark(.openNotch) }
-            .store(in: &cancellables)
+        for model in [delegate.vm] + Array(delegate.viewModels.values) {
+            watchForOpen(model)
+        }
 
         ShelfStateViewModel.shared.$items
             .sink { [weak self] items in
@@ -562,6 +559,23 @@ final class OnboardingTryIt: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Observation fires once per registration, so this re-arms until the notch opens.
+    private func watchForOpen(_ model: BoringViewModel) {
+        guard !done.contains(.openNotch) else { return }
+        if model.notchState == .open {
+            mark(.openNotch)
+            return
+        }
+        withObservationTracking {
+            _ = model.notchState
+        } onChange: { [weak self, weak model] in
+            Task { @MainActor in
+                guard let self, let model else { return }
+                self.watchForOpen(model)
+            }
+        }
     }
 
     func sampleFileURL() -> URL? {

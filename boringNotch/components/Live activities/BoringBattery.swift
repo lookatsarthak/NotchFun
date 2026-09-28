@@ -241,7 +241,7 @@ struct BoringBatteryView: View {
     @State private var isHoveringPopover: Bool = false
     @State private var hideTask: Task<Void, Never>? = nil
 
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
 
     var body: some View {
         Button(action: {

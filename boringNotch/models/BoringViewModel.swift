@@ -15,22 +15,28 @@ import SwiftUI
 /// that does nothing outside a View - rather than stated. Removing that wrapper removed
 /// the inference, so it is written down now.
 ///
-/// Still an ObservableObject rather than @Observable: this type is injected into about
-/// twenty views through @EnvironmentObject, and converting it means changing every one
-/// of those to @Environment. A missed injection traps at runtime rather than failing to
-/// compile, so that step wants a running app to verify, not just a build.
+/// @Observable, so each view redraws only for the properties it actually reads. As an
+/// ObservableObject, any change - a hover flag, a drop-targeting flag, the AirDrop zone's
+/// frame - redrew every one of the dozen-odd views observing it. Views get it through
+/// `@Environment(BoringViewModel.self)`, injected with `.environment(_:)` wherever
+/// `.environmentObject(_:)` used to be; a missing injection traps at runtime either way.
+///
+/// The views that observe it subscribe to their own settings with @Default. They used
+/// to read `Defaults[...]` directly and only refreshed because some unrelated flag here
+/// changed - which per-property tracking no longer does.
 @MainActor
-class BoringViewModel: NSObject, ObservableObject {
+@Observable
+class BoringViewModel: NSObject {
     let coordinator = BoringViewCoordinator.shared
     let detector = FullscreenMediaDetector.shared
 
 
-    @Published private(set) var notchState: NotchState = .closed
+    private(set) var notchState: NotchState = .closed
 
-    @Published var dragDetectorTargeting: Bool = false
-    @Published var generalDropTargeting: Bool = false
-    @Published var dropZoneTargeting: Bool = false
-    @Published var dropEvent: Bool = false
+    var dragDetectorTargeting: Bool = false
+    var generalDropTargeting: Bool = false
+    var dropZoneTargeting: Bool = false
+    var dropEvent: Bool = false
 
     /// Where the AirDrop zone sits, in the notch's drop coordinate space.
     ///
@@ -38,12 +44,12 @@ class BoringViewModel: NSObject, ObservableObject {
     /// targets are never consulted, whether that target is in front of them or behind.
     /// Rather than keep fighting SwiftUI over which view should win, it routes by
     /// location, and needs to know where the zones are to do that.
-    @Published var airDropZoneFrame: CGRect = .zero
+    var airDropZoneFrame: CGRect = .zero
     /// Hands providers to the AirDrop zone's own handler, which owns the NSView the
     /// share sheet has to be anchored to.
-    var airDropDropHandler: (([NSItemProvider]) -> Void)?
+    @ObservationIgnored var airDropDropHandler: (([NSItemProvider]) -> Void)?
 
-    private var dropHighlightWatchdog: Task<Void, Never>?
+    @ObservationIgnored private var dropHighlightWatchdog: Task<Void, Never>?
 
     /// Lights the zone under the pointer, and arms a watchdog to put it out.
     ///
@@ -75,15 +81,15 @@ class BoringViewModel: NSObject, ObservableObject {
     ///
     /// This was a stored property kept in sync by a CombineLatest3 over the three
     /// targeting flags below. It is simply their disjunction, so the pipeline and the
-    /// duplicate state both go; each flag is @Published, so a change still redraws.
+    /// duplicate state both go; each flag is observed, so a change still redraws.
     var anyDropZoneTargeting: Bool {
         dropZoneTargeting || dragDetectorTargeting || generalDropTargeting
     }
     /// `nonisolated(unsafe)` so `deinit` can tear them down. Unlike the singletons,
     /// these really are created and destroyed per screen. Cancelling a Task and
     /// removing a NotificationCenter observer are each safe from any thread.
-    private nonisolated(unsafe) var notificationObservers: [Any] = []
-    private nonisolated(unsafe) var settingTask: Task<Void, Never>?
+    @ObservationIgnored private nonisolated(unsafe) var notificationObservers: [Any] = []
+    @ObservationIgnored private nonisolated(unsafe) var settingTask: Task<Void, Never>?
     
     /// Whether the closed notch is suppressed for a fullscreen app.
     ///
@@ -93,29 +99,29 @@ class BoringViewModel: NSObject, ObservableObject {
     /// entire closed-state content was suppressed. If the assignment never happened
     /// there was no way back. Showing the notch briefly over a fullscreen app is a much
     /// smaller failure than hiding it indefinitely.
-    @Published private(set) var hideOnClosed: Bool = false
+    private(set) var hideOnClosed: Bool = false
 
-    @Published var edgeAutoOpenActive: Bool = false
-    @Published var isHoveringCalendar: Bool = false
+    var edgeAutoOpenActive: Bool = false
+    var isHoveringCalendar: Bool = false
     /// Set while the pointer is over a vertically scrolling area inside the open notch.
     /// The pan-up-to-close gesture reads raw scroll-wheel events, so without this a
     /// scroll gesture inside such content is also read as "close the notch".
-    @Published var isHoveringScrollableContent: Bool = false
-    @Published var isBatteryPopoverActive: Bool = false
+    var isHoveringScrollableContent: Bool = false
+    var isBatteryPopoverActive: Bool = false
 
-    @Published var screenUUID: String? {
+    var screenUUID: String? {
         didSet {
             guard oldValue != screenUUID else { return }
             Task { @MainActor [weak self] in self?.recomputeHideOnClosed() }
         }
     }
 
-    @Published var notchSize: CGSize = getClosedNotchSize()
-    @Published var closedNotchSize: CGSize = getClosedNotchSize()
+    var notchSize: CGSize = getClosedNotchSize()
+    var closedNotchSize: CGSize = getClosedNotchSize()
     
     let webcamManager = WebcamManager.shared
-    @Published var isCameraExpanded: Bool = false
-    @Published var isRequestingAuthorization: Bool = false
+    var isCameraExpanded: Bool = false
+    var isRequestingAuthorization: Bool = false
     
     deinit {
         destroy()

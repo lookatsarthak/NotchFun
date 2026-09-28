@@ -9,7 +9,7 @@ import Defaults
 import SwiftUI
 
 struct BoringHeader: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @Default(.boringShelf) private var boringShelf
     @Default(.caffeineButtonInNotch) private var caffeineButtonInNotch
     @Default(.clipboardHistoryEnabled) private var clipboardHistoryEnabled
@@ -118,7 +118,7 @@ struct BoringHeader: View {
             .zIndex(2)
         }
         .foregroundColor(.gray)
-        .environmentObject(vm)
+        .environment(vm)
     }
 
     func isHUDType(_ type: SneakContentType) -> Bool {
@@ -132,5 +132,5 @@ struct BoringHeader: View {
 }
 
 #Preview {
-    BoringHeader().environmentObject(BoringViewModel())
+    BoringHeader().environment(BoringViewModel())
 }

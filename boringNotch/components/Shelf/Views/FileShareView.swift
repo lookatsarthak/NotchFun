@@ -11,7 +11,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct FileShareView: View {
-    @EnvironmentObject private var vm: BoringViewModel
+    @Environment(BoringViewModel.self) private var vm
     @StateObject private var quickShare = QuickShareService.shared
     @Default(.quickShareProvider) var quickShareProvider: String
 

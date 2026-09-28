@@ -13,7 +13,7 @@ import SwiftUI
 // MARK: - Music Player Components
 
 struct MusicPlayerView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
@@ -26,7 +26,7 @@ struct MusicPlayerView: View {
 
 struct AlbumArtView: View {
     @Bindable var musicManager = MusicManager.shared
-    @ObservedObject var vm: BoringViewModel
+    var vm: BoringViewModel
     @Default(.cornerRadiusScaling) private var cornerRadiusScaling
     @Default(.lightingEffect) private var lightingEffect
     let albumArtNamespace: Namespace.ID
@@ -115,7 +115,7 @@ struct AlbumArtView: View {
 
 struct MusicControlsView: View {
     @Bindable var musicManager = MusicManager.shared
-        @EnvironmentObject var vm: BoringViewModel
+        @Environment(BoringViewModel.self) var vm
     @Default(.enableLyrics) private var enableLyrics
     @Default(.playerColorTinting) private var playerColorTinting
     @Default(.showCalendar) private var showCalendar
@@ -429,7 +429,7 @@ struct VolumeControlView: View {
 // MARK: - Main View
 
 struct NotchHomeView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @Default(.showCalendar) private var showCalendar
     @Default(.showMirror) private var showMirror
     let webcamManager = WebcamManager.shared
@@ -466,7 +466,7 @@ struct NotchHomeView: View {
                     .onHover { isHovering in
                         vm.isHoveringCalendar = isHovering
                     }
-                    .environmentObject(vm)
+                    .environment(vm)
                     .transition(.opacity)
             }
 

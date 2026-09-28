@@ -9,7 +9,7 @@ import SwiftUI
 import Defaults
 
 struct InlineHUD: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @Environment(BoringViewModel.self) var vm
     @Default(.showClosedNotchHUDPercentage) private var showClosedNotchHUDPercentage
     @Binding var type: SneakContentType
     @Binding var value: CGFloat
@@ -159,5 +159,5 @@ struct InlineHUD: View {
         .padding(.horizontal, 8)
         .background(Color.black)
         .padding()
-        .environmentObject(BoringViewModel())
+        .environment(BoringViewModel())
 }
