@@ -12,6 +12,8 @@ set -euo pipefail
 # heuristically, and this checkout has an `upstream` remote pointing at the project
 # this was forked from — without -R it will happily aim a release at TheBoredTeam.
 REPO="lookatsarthak/NotchFun"
+# The Homebrew tap whose cask is bumped after publishing.
+TAP_REPO="lookatsarthak/homebrew-tap"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SPARKLE_BIN="$HOME/Library/Developer/Xcode/DerivedData/boringNotch-felwyhxnvozvaxfnhnwjyhgqmvaa/SourcePackages/artifacts/sparkle/Sparkle/bin"
@@ -168,6 +170,39 @@ if [ "$PUBLISH" = true ]; then
   gh release create "v$VERSION" "$DMG" "$LATEST_DMG" -R "$REPO" \
     --title "NotchFun $VERSION" --generate-notes
   echo "Published: https://github.com/$REPO/releases/tag/v$VERSION"
+
+  # The Homebrew cask pins a version and a checksum, and Homebrew never looks for a
+  # newer release by itself, so the cask has to be bumped with every release. It sat on
+  # 1.3.3 through four releases before this step existed, so `brew install` handed new
+  # users a build months old until Sparkle caught them up.
+  #
+  # The checksum is taken from the published download rather than the local file, so
+  # the cask is guaranteed to describe what Homebrew will actually fetch. Failure here
+  # does not undo the release, which is already out; it says what to do by hand.
+  echo "==> Updating the Homebrew cask"
+  bump_cask() {
+    local sha tap
+    sha=$(curl -fsSL "https://github.com/$REPO/releases/download/v$VERSION/$(basename "$DMG")" \
+          | shasum -a 256 | cut -d' ' -f1)
+    [ "$sha" = "$(shasum -a 256 "$DMG" | cut -d' ' -f1)" ] || { echo "    published DMG does not match the local one"; return 1; }
+    tap=$(mktemp -d)
+    git clone -q "https://github.com/$TAP_REPO.git" "$tap" || return 1
+    sed -i '' -e "s/^  version \".*\"/  version \"$VERSION\"/" \
+              -e "s/^  sha256 \".*\"/  sha256 \"$sha\"/" "$tap/Casks/notchfun.rb"
+    if git -C "$tap" diff --quiet; then
+      # Re-running a release that was already bumped: nothing to do, not a failure.
+      rm -rf "$tap"
+      echo "    cask already at $VERSION"
+      return 0
+    fi
+    git -C "$tap" commit -q -am "notchfun $VERSION" || return 1
+    # Credentials from gh explicitly: a global keychain helper may hold another account.
+    git -C "$tap" -c credential.helper= -c "credential.helper=!gh auth git-credential" \
+      push -q origin HEAD || return 1
+    rm -rf "$tap"
+    echo "    cask now at $VERSION"
+  }
+  bump_cask || echo "    WARNING: cask not updated. Set version and sha256 in $TAP_REPO/Casks/notchfun.rb by hand."
 else
   echo
   echo "Dry run complete. Review docs/appcast.xml, then re-run with --publish."
