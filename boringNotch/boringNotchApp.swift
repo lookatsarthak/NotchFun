@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import os
 import Combine
 import Defaults
 import KeyboardShortcuts
@@ -73,6 +74,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var previousScreens: [NSScreen]?
     private var onboardingWindowController: NSWindowController?
     private var mediaSourceWindowController: NSWindowController?
+    /// Kept alive for the life of the process; see handleTerminationSignal().
+    private var terminationSignalSource: DispatchSourceSignal?
     private var screenLockedObserver: Any?
     private var screenUnlockedObserver: Any?
     private var isScreenLocked: Bool = false
@@ -118,6 +121,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, Defaults[.caffeineShowNotification] else { return }
             self.coordinator.toggleExpandingView(status: true, type: .caffeine)
         }
+    }
+
+    /// Turns SIGTERM into a normal quit.
+    ///
+    /// SIGTERM is how launchd, `kill`, scripts/install.sh and scripts/release.sh ask the
+    /// app to stop. By default it ends the process on the spot, so applicationWillTerminate
+    /// never ran: a debounced clipboard-history save still waiting was lost, and the Now
+    /// Playing helper - a separate perl process - was left running with no parent until the
+    /// next track change. Routing the signal through NSApp.terminate runs the same shutdown
+    /// as choosing Quit.
+    ///
+    /// The default action has to be ignored for the dispatch source to receive the signal
+    /// instead. terminate(_:) normally exits and never returns; it only returns if the quit
+    /// was deferred or cancelled, and a signal is not a request to negotiate, so the process
+    /// exits a few seconds later regardless.
+    private func handleTerminationSignal() {
+        signal(SIGTERM, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        source.setEventHandler {
+            Logger(subsystem: "io.github.lookatsarthak.notchfun", category: "App")
+                .notice("Received SIGTERM; quitting normally")
+            NSApp.terminate(nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { exit(0) }
+        }
+        source.resume()
+        terminationSignalSource = source
     }
 
     /// Whether the login session is locked right now, as opposed to having just become so.
@@ -321,6 +350,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Self.shared = self
+        handleTerminationSignal()
 
         NotificationCenter.default.addObserver(
             self,

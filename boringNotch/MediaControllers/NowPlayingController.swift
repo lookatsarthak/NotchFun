@@ -99,6 +99,17 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         Task { await setupNowPlayingObserver() }
     }
 
+    /// Stops the perl helper now. Quitting cannot rely on deinit for this: MusicManager
+    /// is a singleton that is never deallocated, so the controller it holds lives until
+    /// exit and deinit never runs - which is how every quit left the helper running with
+    /// no parent until the next track change.
+    func stopHelper() {
+        streamTask?.cancel()
+        if let process, process.isRunning {
+            process.terminate()
+        }
+    }
+
     deinit {
         streamTask?.cancel()
         

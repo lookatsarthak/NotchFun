@@ -134,6 +134,10 @@ class MusicManager {
         flipWorkItem?.cancel()
         transitionWorkItem?.cancel()
 
+        // Stop the Now Playing helper explicitly; releasing the controller is not enough.
+        // See NowPlayingController.stopHelper().
+        (activeController as? NowPlayingController)?.stopHelper()
+
         // Release active controller
         activeController = nil
     }
