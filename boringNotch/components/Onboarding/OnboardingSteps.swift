@@ -76,7 +76,7 @@ struct FeaturesStep: View {
                             detail: "Drop files on the notch to keep them handy.",
                             isOn: $shelf)
                 FeatureCard(icon: "doc.on.clipboard", title: "Clipboard history",
-                            detail: "What you copy, searchable. Stays on this Mac.",
+                            detail: "What you copy, searchable, on this Mac.",
                             note: "Paste needs Accessibility",
                             isOn: $clipboard)
                 FeatureCard(icon: "cup.and.saucer.fill", title: "Caffeine",
