@@ -127,23 +127,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// SIGTERM is how launchd, `kill`, scripts/install.sh and scripts/release.sh ask the
     /// app to stop. By default it ends the process on the spot, so applicationWillTerminate
-    /// never ran: a debounced clipboard-history save still waiting was lost, and the Now
-    /// Playing helper - a separate perl process - was left running with no parent until the
-    /// next track change. Routing the signal through NSApp.terminate runs the same shutdown
-    /// as choosing Quit.
+    /// never ran: a debounced clipboard-history save still waiting was lost, and Caffeine's
+    /// teardown was skipped. Routing the signal through NSApp.terminate runs the same
+    /// shutdown as choosing Quit. The default action has to be ignored for the dispatch
+    /// source to receive the signal instead.
     ///
-    /// The default action has to be ignored for the dispatch source to receive the signal
-    /// instead. terminate(_:) normally exits and never returns; it only returns if the quit
-    /// was deferred or cancelled, and a signal is not a request to negotiate, so the process
-    /// exits a few seconds later regardless.
+    /// Two things are deliberately off the main dispatch queue. While a modal alert is up
+    /// - Sparkle's "You're up to date", any NSAlert - the main queue is not serviced, so a
+    /// handler or fallback scheduled there never runs and the signal is simply ignored;
+    /// that is how the first version of this failed. So the signal arrives on a background
+    /// queue; the quit is performed on the main run loop in its common modes, which include
+    /// the modal-panel mode, ending any modal session first; and the backstop exit waits on
+    /// the background queue, where nothing on the main thread can hold it up.
     private func handleTerminationSignal() {
         signal(SIGTERM, SIG_IGN)
-        let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .global(qos: .userInitiated))
         source.setEventHandler {
-            Logger(subsystem: "io.github.lookatsarthak.notchfun", category: "App")
-                .notice("Received SIGTERM; quitting normally")
-            NSApp.terminate(nil)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { exit(0) }
+            let main = CFRunLoopGetMain()
+            CFRunLoopPerformBlock(main, CFRunLoopMode.commonModes.rawValue) {
+                Logger(subsystem: "io.github.lookatsarthak.notchfun", category: "App")
+                    .notice("Received SIGTERM; quitting normally")
+                if NSApp.modalWindow != nil { NSApp.abortModal() }
+                NSApp.terminate(nil)
+            }
+            CFRunLoopWakeUp(main)
+            // terminate(_:) exits and never returns; this only matters if the quit is
+            // held up, and a signal is not a request to negotiate.
+            Thread.sleep(forTimeInterval: 3)
+            exit(0)
         }
         source.resume()
         terminationSignalSource = source
