@@ -7,6 +7,20 @@
     <language>en</language>
 
     <item>
+      <title>1.4.2</title>
+      <pubDate>Mon, 28 Sep 2026 21:18:54 +0530</pubDate>
+      <sparkle:version>19</sparkle:version>
+      <sparkle:shortVersionString>1.4.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[ See the release notes on GitHub. ]]></description>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.4.2/NotchFun-1.4.2.dmg"
+        sparkle:edSignature="v8CdRv7mvutoB+7D+lxTsQgX2zsVVlEQkWLqupOZi4UzZrMKLZnIiszy4+KW7Zcoq1tdfc0cQ+umzgTonWGfCA=="
+        length="4002247"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>1.4.1</title>
       <pubDate>Mon, 21 Sep 2026 16:37:04 +0530</pubDate>
       <sparkle:version>18</sparkle:version>
