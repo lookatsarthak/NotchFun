@@ -119,6 +119,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Whether the login session is locked right now, as opposed to having just become so.
+    private static func screenIsLocked() -> Bool {
+        guard let session = CGSessionCopyCurrentDictionary() as? [String: Any] else { return false }
+        return session["CGSSessionScreenIsLocked"] as? Bool ?? false
+    }
+
     @MainActor
     func onScreenLocked(_ notification: Notification) {
         isScreenLocked = true
@@ -467,8 +473,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
-            object: nil, queue: .main) { _ in
+            object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
+                    // Waking usually lands on the lock screen. Unlocking resumes it then.
+                    guard self?.isScreenLocked != true else { return }
                     ClipboardStateViewModel.shared.resumeMonitoring()
                 }
         }
@@ -518,6 +526,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         setupDragDetectors()
+
+        // The lock notification is only posted on the transition, so an app launched into
+        // an already-locked session (a relaunch after an update, a crash restart) never
+        // hears it and would carry on as if unlocked. Apply the current state once, after
+        // the windows exist so the lock-screen handling has something to act on.
+        if Self.screenIsLocked() {
+            onScreenLocked(Notification(name: Notification.Name("com.apple.screenIsLocked")))
+        }
 
         if coordinator.firstLaunch {
             DispatchQueue.main.async {

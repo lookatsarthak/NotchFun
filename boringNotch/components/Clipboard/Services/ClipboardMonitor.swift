@@ -85,16 +85,23 @@ final class ClipboardMonitor {
 
     /// Pauses polling without forgetting that the feature is on. Used for screen lock
     /// and system sleep, where nothing can be copied anyway.
+    ///
+    /// Remembered even when the monitor is not running yet, and `start` honours it. The
+    /// app can launch into a locked session — a relaunch after an update, say — and the
+    /// monitor only starts once the history preference has been read asynchronously,
+    /// after launch has already applied the lock. Dropping the suspend there left it
+    /// polling on the lock screen until the next unlock.
     func suspend() {
-        guard isRunning, !isSuspended else { return }
+        guard !isSuspended else { return }
         isSuspended = true
         timer?.invalidate()
         timer = nil
     }
 
     func resume() {
-        guard isRunning, isSuspended else { return }
+        guard isSuspended else { return }
         isSuspended = false
+        guard isRunning else { return }
         // Skip anything copied while suspended rather than back-filling on wake.
         changeCount = pasteboard.changeCount
         reschedule()

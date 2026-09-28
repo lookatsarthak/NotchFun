@@ -25,30 +25,64 @@ final class FullscreenMediaDetector {
     static let shared = FullscreenMediaDetector()
     
     private(set) var fullscreenStatus: [String: Bool] = [:]
-    
-    private var monitorTask: Task<Void, Never>?
-    
+
+    /// The last set of spaces MacroVisionKit reported.
+    ///
+    /// Kept because the status depends on two more inputs that are not space changes —
+    /// the hide setting and, under "media app only", which app is playing. Without it
+    /// those could only take effect at the next space change: switch the setting while
+    /// already in full screen, or start a video in the full-screen app, and nothing
+    /// happened until you left full screen.
+    @ObservationIgnored private var lastSpaces: [MacroVisionKit.FullScreenMonitor.SpaceInfo] = []
+
+    @ObservationIgnored private var monitorTask: Task<Void, Never>?
+    @ObservationIgnored private var settingTask: Task<Void, Never>?
+
     private init() {
         startMonitoring()
+        observeSetting()
+        observeMusicSource()
     }
-    
+
     // No deinit. `init()` is private and `shared` is the only instance, so this lives
     // for the whole process; and under @Observable a mutable stored property cannot be
     // made nonisolated, which a deinit would need in order to touch it.
-    
+
     private func startMonitoring() {
         monitorTask = Task { @MainActor in
             let stream = await FullScreenMonitor.shared.spaceChanges()
             for await spaces in stream {
-                updateStatus(with: spaces)
+                lastSpaces = spaces
+                updateStatus()
             }
         }
     }
-    
-    private func updateStatus(with spaces: [MacroVisionKit.FullScreenMonitor.SpaceInfo]) {
+
+    private func observeSetting() {
+        settingTask = Task { @MainActor [weak self] in
+            for await _ in Defaults.updates(.hideNotchOption, initial: false) {
+                self?.updateStatus()
+            }
+        }
+    }
+
+    /// `withObservationTracking` fires once per registration, so this re-arms itself.
+    /// It only fires when the source app changes, not on every track or progress tick.
+    private func observeMusicSource() {
+        withObservationTracking {
+            _ = MusicManager.shared.bundleIdentifier
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.updateStatus()
+                self?.observeMusicSource()
+            }
+        }
+    }
+
+    private func updateStatus() {
         var newStatus: [String: Bool] = [:]
-        
-        for space in spaces {
+
+        for space in lastSpaces {
             if let uuid = space.screenUUID {
                 let shouldDetect: Bool
                 if Defaults[.hideNotchOption] == .nowPlayingOnly, let musicSourceBundle = MusicManager.shared.bundleIdentifier  {
@@ -59,7 +93,7 @@ final class FullscreenMediaDetector {
                 newStatus[uuid] = shouldDetect
             }
         }
-        
+
         guard newStatus != fullscreenStatus else { return }
         self.fullscreenStatus = newStatus
         NotificationCenter.default.post(name: .fullscreenStatusChanged, object: nil)

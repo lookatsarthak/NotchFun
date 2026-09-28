@@ -283,6 +283,40 @@ struct ClipboardMonitorTests {
         monitor.stop()
     }
 
+    @Test("A suspend that arrives before start is honoured")
+    func suspendBeforeStart() async {
+        let directory = makeTemporaryDirectory("monitor-early-suspend")
+        defer { removeDirectory(directory) }
+        let store = ClipboardBlobStore(directory: directory)
+
+        let pasteboard = NSPasteboard.withUniqueName()
+        let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
+        var captured: [ClipboardItem] = []
+        monitor.setHandler { captured.append($0) }
+
+        // The launched-while-locked order: the lock is applied, then the feature starts.
+        monitor.suspend()
+        var config = ClipboardCaptureConfig.default
+        config.pollInterval = 0.1
+        monitor.start(config: config)
+
+        pasteboard.clearContents()
+        pasteboard.declareTypes([.string], owner: nil)
+        pasteboard.setString("on the lock screen", forType: .string)
+        try? await Task.sleep(for: .milliseconds(400))
+        #expect(captured.isEmpty)
+
+        monitor.resume()
+        pasteboard.clearContents()
+        pasteboard.declareTypes([.string], owner: nil)
+        pasteboard.setString("after unlock", forType: .string)
+        try? await Task.sleep(for: .milliseconds(600))
+        #expect(captured.count == 1)
+        #expect(captured.first?.title == "after unlock")
+
+        monitor.stop()
+    }
+
     @Test("A stopped monitor records nothing")
     func stopped() async {
         let directory = makeTemporaryDirectory("monitor-stop")
