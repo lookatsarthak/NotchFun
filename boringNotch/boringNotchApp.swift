@@ -734,7 +734,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// separate window from setup, because it can come up long after setup was done.
     private func showMediaSourceWindow() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 440),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -750,7 +750,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 window.close()
                 self?.mediaSourceWindowController = nil
             })
-            .frame(width: 400, height: 600)
+            .frame(width: 480, height: 440)
         )
         mediaSourceWindowController = NSWindowController(window: window)
         NSApp.activate(ignoringOtherApps: true)

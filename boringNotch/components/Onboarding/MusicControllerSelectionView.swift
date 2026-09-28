@@ -9,63 +9,57 @@ import SwiftUI
 import Defaults
 
 
+/// Shown when Now Playing has stopped working on this macOS, to pick an app to connect
+/// to directly. Styled like setup, since it is the same kind of moment.
 struct MusicControllerSelectionView: View {
     let onContinue: () -> Void
 
     @Default(.mediaController) var mediaController
-    
-    
-    @State private var selectedMediaController: MediaControllerType = Defaults[.mediaController]
-    
+
+    /// Starts on the current source only if it is still offered. It is shown precisely
+    /// because the current source, Now Playing, no longer works - and is then left out
+    /// of the list - so starting there left nothing selected, and Continue saved Now
+    /// Playing all over again.
+    @State private var selected: MediaControllerType = {
+        let available = MediaControllerType.available
+        return available.contains(Defaults[.mediaController])
+            ? Defaults[.mediaController]
+            : (available.first ?? Defaults[.mediaController])
+    }()
+
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Choose a Music Source")
-                .font(.title)
-                .fontWeight(.bold)
-                .padding(.top, 24)
+        VStack(alignment: .leading, spacing: 18) {
+            OnboardingStepHeader(
+                title: "Choose a music source",
+                subtitle: "Now Playing, which follows any app or browser, doesn't work on this version of macOS. Pick the app you listen with and the notch will connect to it directly. You can change this later in Settings."
+            )
 
-            Text("Select the music source you want to use. You can change this later in the app settings.")
-                .multilineTextAlignment(.center)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .padding(.horizontal)
-
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(MediaControllerType.available) { controller in
-                        ControllerOptionView(
-                            controller: controller,
-                            isSelected: self.selectedMediaController == controller
-                        )
-                        .onTapGesture {
-                            self.selectedMediaController = controller
-                        }
-                    }
+            VStack(spacing: 10) {
+                ForEach(MediaControllerType.available) { controller in
+                    ControllerOptionView(controller: controller, isSelected: selected == controller)
+                        .onTapGesture { selected = controller }
                 }
-                .padding()
             }
-            //Disable scroll if there are 4 or fewer to avoid unnecessary scroll behavior
-            .scrollDisabled(MediaControllerType.available.count <= 4)
 
-//            Spacer()
+            Spacer(minLength: 0)
 
-            Button("Continue", action: {
-                self.mediaController = self.selectedMediaController
-                NotificationCenter.default.post(
-                    name: Notification.Name.mediaControllerChanged,
-                    object: nil
-                )
-                onContinue()
-            })
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.bottom, 24)
+            HStack {
+                Spacer()
+                Button("Continue") {
+                    mediaController = selected
+                    NotificationCenter.default.post(name: .mediaControllerChanged, object: nil)
+                    onContinue()
+                }
+                .buttonStyle(OnboardingPrimaryButtonStyle())
+                .keyboardShortcut(.defaultAction)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
-                .ignoresSafeArea()
-        )
+        .padding(.horizontal, 32)
+        .padding(.top, 44)
+        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(OnboardingBackground())
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -74,34 +68,35 @@ struct ControllerOptionView: View {
     let isSelected: Bool
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .font(.title2)
-                .foregroundColor(isSelected ? .effectiveAccent : .secondary.opacity(0.5))
-                .animation(NotchMotion.control, value: isSelected)
+                .font(.system(size: 18))
+                .foregroundStyle(.white.opacity(isSelected ? 1 : 0.4))
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(controller.rawValue)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
                 Text(controller.description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding()
+        .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(isSelected ? Color.effectiveAccent.opacity(0.15) : Color.clear)
+                .fill(Color.white.opacity(isSelected ? 0.10 : 0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(isSelected ? Color.effectiveAccent : Color.secondary.opacity(0.3), lineWidth: 1.5)
+                .strokeBorder(Color.white.opacity(isSelected ? 0.28 : 0.08), lineWidth: 1)
         )
-        .contentShape(Rectangle())
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .animation(NotchMotion.control, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -121,5 +116,5 @@ extension MediaControllerType {
 
 #Preview {
     MusicControllerSelectionView(onContinue: {})
-        .frame(width: 400, height: 600)
+        .frame(width: 480, height: 440)
 }
