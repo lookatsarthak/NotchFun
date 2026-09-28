@@ -426,12 +426,17 @@ struct NotchHomeView: View {
     @EnvironmentObject var vm: BoringViewModel
     let webcamManager = WebcamManager.shared
     let batteryModel = BatteryStatusViewModel.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    /// Read directly, not through BoringViewCoordinator. This is the only thing this
+    /// view needs from the coordinator, and observing the coordinator re-rendered the
+    /// whole open-notch home view on everything it publishes - every volume, brightness
+    /// and battery popup - for a flag that changes once, at the end of first-run setup.
+    /// Same key, so it follows the coordinator's writes.
+    @AppStorage("firstLaunch") private var firstLaunch: Bool = true
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
         Group {
-            if !coordinator.firstLaunch {
+            if !firstLaunch {
                 mainContent
             }
         }
