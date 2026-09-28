@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CD82A3CCE1080D3B09FECBCE /* ClearConfirmButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */; };
+		E50E243236078E968A4F475F /* NotchHoverHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1BCA505FC84D88447CD27DD /* NotchHoverHighlight.swift */; };
 		03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */; };
 		0D0ACC5199355FAB6BF1B332 /* ClipboardAutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */; };
 		64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */; };
@@ -261,6 +262,7 @@
 
 /* Begin PBXFileReference section */
 		FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearConfirmButton.swift; sourceTree = "<group>"; };
+		E1BCA505FC84D88447CD27DD /* NotchHoverHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchHoverHighlight.swift; sourceTree = "<group>"; };
 		79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardIgnoredAppsSection.swift; sourceTree = "<group>"; };
 		FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAutoClearService.swift; sourceTree = "<group>"; };
 		793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristicTests.swift; sourceTree = "<group>"; };
@@ -793,6 +795,7 @@
 				14D570BF2C5EA5870011E668 /* AnimatedFace.swift */,
 				507266DA2C908E2E00A2D00D /* HoverButton.swift */,
 				FD320D10164800BFA88E6613 /* ClearConfirmButton.swift */,
+				E1BCA505FC84D88447CD27DD /* NotchHoverHighlight.swift */,
 			);
 			path = components;
 			sourceTree = "<group>";
@@ -1257,6 +1260,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E50E243236078E968A4F475F /* NotchHoverHighlight.swift in Sources */,
 				D2AC7272081A3D1784360A29 /* CaffeineSettings.swift in Sources */,
 				AE87BFAB9EBCE883C3328361 /* CaffeineAppBoundMenu.swift in Sources */,
 				739344C814B4BE55392F609C /* CaffeineNotification.swift in Sources */,

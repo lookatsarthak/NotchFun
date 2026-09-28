@@ -17,6 +17,15 @@ public enum NotchViews {
     case home
     case shelf
     case clipboard
+
+    /// Left-to-right position in the tab bar, so a switch can animate the way it moved.
+    var order: Int {
+        switch self {
+        case .home: return 0
+        case .shelf: return 1
+        case .clipboard: return 2
+        }
+    }
 }
 
 

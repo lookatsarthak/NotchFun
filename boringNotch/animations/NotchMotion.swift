@@ -37,6 +37,12 @@ enum NotchMotion {
     /// Anything living inside the notch: tab swaps, list rows, HUD bars.
     static var content: Animation { resolve(.spring(duration: 0.28, bounce: 0)) }
 
+    /// Content leaving while its replacement arrives, as in a tab swap. Shorter than
+    /// `content`, so the outgoing view is mostly gone before the incoming one is legible;
+    /// at equal speeds the two sat on top of each other at half opacity for several
+    /// frames and the switch read as a smear.
+    static var exit: Animation { resolve(.easeOut(duration: 0.12)) }
+
     /// Controls under the pointer: buttons, toggles, the clear-confirm capsule.
     static var control: Animation { resolve(.spring(duration: 0.20, bounce: 0)) }
 

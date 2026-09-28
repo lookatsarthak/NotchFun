@@ -477,13 +477,13 @@ struct ContentView: View {
                     switch coordinator.currentView {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
-                            .transition(.notchTab.animation(NotchMotion.content))
+                            .transition(.notchTab(direction: coordinator.tabDirection))
                     case .shelf:
                         ShelfView()
-                            .transition(.notchTab.animation(NotchMotion.content))
+                            .transition(.notchTab(direction: coordinator.tabDirection))
                     case .clipboard:
                         ClipboardView()
-                            .transition(.notchTab.animation(NotchMotion.content))
+                            .transition(.notchTab(direction: coordinator.tabDirection))
                     }
                 }
                 // The container leads, the content follows.

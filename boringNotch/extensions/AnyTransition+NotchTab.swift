@@ -9,32 +9,44 @@ extension AnyTransition {
     /// The transition used when switching between tabs in the open notch.
     ///
     /// Declared once and applied to every branch of the tab switch so all tabs animate
-    /// identically. Previously only `NotchHomeView` carried a transition — an
-    /// asymmetric slide-from-top on insert and a plain fade on removal — while Shelf
-    /// and Clipboard fell back to SwiftUI's default crossfade, so Home animated
-    /// differently from everything else and differently from itself on the way out.
+    /// identically; before that, Home animated differently from Shelf and Clipboard.
+    /// Resolved through NotchMotion.transition, so under Reduce Motion it becomes a
+    /// plain cross-fade rather than a shorter slide.
     ///
-    /// Symmetric and deliberately small: the open notch is only ~140pt tall, so a
-    /// full-edge move reads as a lurch at this size.
-    /// Resolved here rather than at the three call sites, so none of them can forget:
-    /// the 6pt offset below is movement, and under Reduce Motion this has to become a
-    /// plain cross-fade.
-    static var notchTab: AnyTransition {
+    /// Direction-aware: the incoming tab slides in from the side it sits on in the tab
+    /// bar, so a switch says which way you moved. Previously every switch was the same
+    /// small vertical drift, identical in both directions, and easy to miss entirely.
+    ///
+    /// Only the incoming view moves. A removed view animates with the transition it
+    /// last rendered with, which was attached before the direction of *this* switch was
+    /// known, so a directional exit would sometimes go the wrong way. It just fades, and
+    /// faster than the new one arrives (NotchMotion.exit), so the two do not smear.
+    ///
+    /// Both timings live here rather than on the call site: an `.animation` applied to
+    /// the whole transition there overrides the ones inside it, which silently undid
+    /// the faster exit.
+    ///
+    /// 16pt, not a full-width push: the open notch is small, and a large move reads as
+    /// a lurch at this size.
+    static func notchTab(direction: CGFloat) -> AnyTransition {
         NotchMotion.transition(
-            .opacity.combined(
-                with: .modifier(
-                    active: NotchTabOffsetModifier(offset: -6),
-                    identity: NotchTabOffsetModifier(offset: 0)
-                )
+            .asymmetric(
+                insertion: AnyTransition.opacity.combined(
+                    with: .modifier(
+                        active: NotchTabOffsetModifier(x: 16 * direction),
+                        identity: NotchTabOffsetModifier(x: 0)
+                    )
+                ).animation(NotchMotion.content),
+                removal: AnyTransition.opacity.animation(NotchMotion.exit)
             )
         )
     }
 }
 
 private struct NotchTabOffsetModifier: ViewModifier {
-    let offset: CGFloat
+    let x: CGFloat
 
     func body(content: Content) -> some View {
-        content.offset(y: offset)
+        content.offset(x: x)
     }
 }

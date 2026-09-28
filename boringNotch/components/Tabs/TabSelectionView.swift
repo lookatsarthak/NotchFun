@@ -39,32 +39,48 @@ struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.boringShelf) var shelfEnabled
     @Default(.clipboardHistoryEnabled) var clipboardEnabled
-    @Namespace var animation
+    @Namespace private var selection
+    @State private var hovered: NotchViews?
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(visibleTabs()) { tab in
-                    TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
-                        withAnimation(NotchMotion.content) {
-                            coordinator.currentView = tab.view
-                        }
+                let selected = coordinator.currentView == tab.view
+                TabButton(label: tab.label, icon: tab.icon, selected: selected) {
+                    // No withAnimation here. A transaction animation overrides the
+                    // timings a transition carries, which would force the outgoing tab
+                    // to fade as slowly as the new one arrives - the two then smear
+                    // together for several frames. The content transition brings its
+                    // own timings, and the pill gets its own below.
+                    coordinator.currentView = tab.view
+                }
+                .frame(height: 26)
+                .foregroundStyle(.white.opacity(selected ? 1 : hovered == tab.view ? 0.75 : 0.45))
+                .background {
+                    // Exactly one pill, under the selected tab only, so matchedGeometryEffect
+                    // has a single source and slides it to the next tab. This used to put a
+                    // pill under *every* tab, hidden on all but one, all sharing one id -
+                    // SwiftUI expects one source per id, so the slide was unreliable.
+                    //
+                    // The fill was secondarySystemFill, a translucent grey meant for
+                    // window backgrounds, which on the always-black notch was barely
+                    // visible. NotchHighlight explains why this is not Liquid Glass.
+                    if selected {
+                        Capsule()
+                            .fill(NotchHighlight.fill)
+                            .overlay(Capsule().strokeBorder(NotchHighlight.edge, lineWidth: 0.5))
+                            .matchedGeometryEffect(id: "selection", in: selection)
                     }
-                    .frame(height: 26)
-                    .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
-                    .background {
-                        if tab.view == coordinator.currentView {
-                            Capsule()
-                                .fill(coordinator.currentView == tab.view ? Color(nsColor: .secondarySystemFill) : Color.clear)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                        } else {
-                            Capsule()
-                                .fill(coordinator.currentView == tab.view ? Color(nsColor: .secondarySystemFill) : Color.clear)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                                .hidden()
-                        }
+                }
+                .onHover { inside in
+                    withAnimation(NotchMotion.control) {
+                        if inside { hovered = tab.view } else if hovered == tab.view { hovered = nil }
                     }
+                }
+                .help(tab.label)
             }
         }
-        .clipShape(Capsule())
+        .animation(NotchMotion.content, value: coordinator.currentView)
     }
 }
 

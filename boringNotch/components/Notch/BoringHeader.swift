@@ -58,15 +58,10 @@ struct BoringHeader: View {
                             Button(action: {
                                 vm.toggleCameraPreview()
                             }) {
-                                Capsule()
-                                    .fill(.black)
-                                    .frame(width: 30, height: 30)
-                                    .overlay {
-                                        Image(systemName: "web.camera")
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .imageScale(.medium)
-                                    }
+                                Image(systemName: "web.camera")
+                                    .foregroundColor(.white)
+                                    .imageScale(.medium)
+                                    .notchHoverHighlight()
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
@@ -77,15 +72,10 @@ struct BoringHeader: View {
                                 }
                                 
                             }) {
-                                Capsule()
-                                    .fill(.black)
-                                    .frame(width: 30, height: 30)
-                                    .overlay {
-                                        Image(systemName: "gear")
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .imageScale(.medium)
-                                    }
+                                Image(systemName: "gear")
+                                    .foregroundColor(.white)
+                                    .imageScale(.medium)
+                                    .notchHoverHighlight()
                             }
                             .buttonStyle(PlainButtonStyle())
                         }

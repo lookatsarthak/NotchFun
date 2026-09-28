@@ -45,7 +45,17 @@ struct ExpandedItem {
 class BoringViewCoordinator: ObservableObject {
     static let shared = BoringViewCoordinator()
 
-    @Published var currentView: NotchViews = .home
+    @Published var currentView: NotchViews = .home {
+        willSet {
+            if newValue != currentView {
+                tabDirection = newValue.order > currentView.order ? 1 : -1
+            }
+        }
+    }
+    /// +1 when the last tab switch moved right, -1 when it moved left. Read by the tab
+    /// transition in ContentView; not published, because it only ever changes together
+    /// with currentView, which already triggers the render that reads it.
+    private(set) var tabDirection: CGFloat = 1
     @Published var helloAnimationRunning: Bool = false
     private var sneakPeekDispatch: DispatchWorkItem?
     private var expandingViewDispatch: DispatchWorkItem?

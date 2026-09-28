@@ -38,7 +38,7 @@ struct HoverButton: View {
                     // it cannot be ruled out by building. An opaque fill cannot fail
                     // that way.
                     Capsule()
-                        .fill(isHovering ? Color.white.opacity(0.12) : .clear)
+                        .fill(isHovering ? NotchHighlight.fill : .clear)
                         .frame(width: size, height: size)
                         .overlay {
                             Image(systemName: icon)

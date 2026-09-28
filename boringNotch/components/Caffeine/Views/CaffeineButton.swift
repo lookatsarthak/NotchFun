@@ -21,17 +21,13 @@ struct CaffeineButton: View {
         Button {
             toggle()
         } label: {
-            Capsule()
-                .fill(.black)
-                .frame(width: 30, height: 30)
-                .overlay {
-                    Image(systemName: caffeine.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
-                        .foregroundStyle(.white)   // state is carried by fill vs outline, not colour;
-                                                   // accent is reserved for progress fills and
-                                                   // selection, and is user-customisable so it
-                                                   // cannot be relied on to read against black
-                        .imageScale(.medium)
-                }
+            Image(systemName: caffeine.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
+                .foregroundStyle(.white)   // state is carried by fill vs outline, not colour;
+                                           // accent is reserved for progress fills and
+                                           // selection, and is user-customisable so it
+                                           // cannot be relied on to read against black
+                .imageScale(.medium)
+                .notchHoverHighlight()
         }
         .buttonStyle(PlainButtonStyle())
         .contextMenu { CaffeineDurationMenu() }

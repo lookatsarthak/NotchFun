@@ -72,15 +72,14 @@ struct ClearConfirmButton: View {
                 width: confirming ? max(confirmWidth + 16, idleDiameter) : idleDiameter,
                 height: idleDiameter
             )
-            // Glass, because this capsule sits *on* the notch rather than being part of
-            // it. The shell itself stays opaque black: the whole illusion is that the
-            // physical notch is growing, and anything translucent on that surface would
-            // let the wallpaper through and break it on the first frame. Controls resting
-            // on top are the opposite case — they should read as separate objects.
-            .glassEffect(
-                .regular.tint(confirming ? Color.red.opacity(0.25) : nil),
-                in: .capsule
-            )
+            // The shared notch highlight, not Liquid Glass: glass on the notch samples the
+            // desktop behind the window rather than the notch, so its look depends on the
+            // user's wallpaper. See NotchHighlight. Red-tinted while armed.
+            .background {
+                Capsule()
+                    .fill(confirming ? Color.red.opacity(0.22) : NotchHighlight.fill)
+                    .overlay(Capsule().strokeBorder(NotchHighlight.edge, lineWidth: 0.5))
+            }
             // Without this the confirm text spills out of the collapsed capsule while it
             // is still fading, since it stays in the layout to be measured.
             .clipShape(Capsule())
