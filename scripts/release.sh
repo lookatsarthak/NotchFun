@@ -36,6 +36,13 @@ MIN_OS=$(xcodebuild -scheme boringNotch -configuration Release -showBuildSetting
 
 echo "==> Releasing NotchFun $VERSION (build $BUILD) to $REPO"
 
+# Release notes are required, and written first: the same file is shown in Sparkle's
+# update window inside the app and used as the GitHub release notes. See
+# release-notes/README.md for the format. Checked before building so a missing file
+# fails in seconds, not after a full build.
+NOTES="$ROOT/release-notes/$VERSION.md"
+[ -s "$NOTES" ] || { echo "error: write $NOTES first (see release-notes/README.md)"; exit 1; }
+
 "$ROOT/scripts/make-dmg.sh" "$ROOT/dist"
 DMG="$ROOT/dist/NotchFun-$VERSION.dmg"
 [ -f "$DMG" ] || { echo "error: $DMG not found"; exit 1; }
@@ -123,10 +130,23 @@ LENGTH=$(echo "$SIG_LINE" | sed -n 's/.*length="\([^"]*\)".*/\1/p')
 [ -n "$SIGNATURE" ] || { echo "error: could not parse a signature from: $SIG_LINE"; exit 1; }
 echo "    $SIG_LINE"
 
+echo "==> Rendering release notes"
+# GitHub's own Markdown renderer, so the in-app notes match the release page exactly
+# and nothing new has to be installed; gh is already required to publish.
+NOTES_HTML=$(mktemp)
+gh api markdown -f text="$(cat "$NOTES")" -f mode=gfm > "$NOTES_HTML"
+[ -s "$NOTES_HTML" ] || { echo "error: could not render $NOTES"; exit 1; }
+
 echo "==> Writing docs/appcast.xml"
-python3 - "$VERSION" "$BUILD" "$SIGNATURE" "$LENGTH" "$MIN_OS" <<'PY'
+python3 - "$VERSION" "$BUILD" "$SIGNATURE" "$LENGTH" "$MIN_OS" "$NOTES_HTML" <<'PY'
 import sys, pathlib, re, subprocess
-version, build, signature, length, min_os = sys.argv[1:6]
+version, build, signature, length, min_os, notes_path = sys.argv[1:7]
+notes = pathlib.Path(notes_path).read_text().strip()
+assert "]]>" not in notes, "release notes cannot contain ]]>"
+# Sparkle shows this in a small web view that follows the system appearance only if told to.
+style = ("<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;"
+         "margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}"
+         "li{margin:3px 0}</style>")
 p = pathlib.Path("docs/appcast.xml")
 s = p.read_text()
 pubdate = subprocess.check_output(["date", "-R"], text=True).strip()
@@ -136,7 +156,8 @@ item = f'''    <item>
       <sparkle:version>{build}</sparkle:version>
       <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>{min_os}</sparkle:minimumSystemVersion>
-      <description><![CDATA[ See the release notes on GitHub. ]]></description>
+      <description><![CDATA[{style}{notes}]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v{version}/NotchFun-{version}.dmg"
         sparkle:edSignature="{signature}"
@@ -168,7 +189,7 @@ if [ "$PUBLISH" = true ]; then
   LATEST_DMG="$ROOT/dist/NotchFun.dmg"
   cp "$DMG" "$LATEST_DMG"
   gh release create "v$VERSION" "$DMG" "$LATEST_DMG" -R "$REPO" \
-    --title "NotchFun $VERSION" --generate-notes
+    --title "NotchFun $VERSION" --notes-file "$NOTES"
   echo "Published: https://github.com/$REPO/releases/tag/v$VERSION"
 
   # The Homebrew cask pins a version and a checksum, and Homebrew never looks for a

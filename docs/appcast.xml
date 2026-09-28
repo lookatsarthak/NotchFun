@@ -12,7 +12,18 @@
       <sparkle:version>22</sparkle:version>
       <sparkle:shortVersionString>1.5.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[ See the release notes on GitHub. ]]></description>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>Improved</h3>
+<ul>
+<li><strong>Cleaner quitting.</strong> NotchFun now shuts down properly at log out and during updates, so nothing it was about to save is lost.</li>
+<li><strong>Smoother notch.</strong> Hovering, dragging and pressing volume keys redraw far less of the open notch.</li>
+<li><strong>Settings apply instantly.</strong> A changed setting shows in the notch straight away.</li>
+<li><strong>Keyboard shortcuts work better on macOS 27.</strong></li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li><strong>The Now Playing helper no longer keeps running</strong> after NotchFun quits.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
       <enclosure
         url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.5.1/NotchFun-1.5.1.dmg"
         sparkle:edSignature="3piRLl03YVzaJYXU6ZkXcaYDzSbz/41YCmsUuYndBi8fn++5j0bmmi+BOIVFTIR2XuYfdx6C++7ZdH3/zWJ/Dw=="

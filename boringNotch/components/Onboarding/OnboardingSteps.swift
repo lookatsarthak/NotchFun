@@ -8,6 +8,7 @@ import Combine
 import Defaults
 import EventKit
 import LaunchAtLogin
+import Sparkle
 import SwiftUI
 
 // MARK: - Hello
@@ -337,6 +338,16 @@ struct PermissionsStep: View {
 // MARK: - Preferences
 
 struct PreferencesStep: View {
+    /// On means checked daily, downloaded in the background and installed at the next
+    /// quit or restart. Off still checks and asks before downloading, so nobody is left
+    /// unaware of updates - they just are not installed silently. Starts on: Info.plist
+    /// defaults SUAutomaticallyUpdate to true, and this is where it is shown and can be
+    /// turned off. Someone who skips setup keeps that default, and Sparkle does not ask
+    /// separately, because SUEnableAutomaticChecks is set too.
+    @State private var autoUpdate: Bool = {
+        guard let updater = SettingsWindowController.shared.updater else { return true }
+        return updater.automaticallyChecksForUpdates && updater.automaticallyDownloadsUpdates
+    }()
     @Default(.openNotchOnHover) private var opensOnHover
     @Default(.menubarIcon) private var menubarIcon
     @Default(.showOnAllDisplays) private var showOnAllDisplays
@@ -353,6 +364,17 @@ struct PreferencesStep: View {
                     LaunchAtLogin.Toggle { EmptyView() }
                         .toggleStyle(.switch)
                         .controlSize(.small)
+                }
+                row("arrow.down.circle", "Update automatically", "Installs new versions in the background, at your next quit or restart.") {
+                    Toggle("", isOn: $autoUpdate)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .onChange(of: autoUpdate) { _, on in
+                            guard let updater = SettingsWindowController.shared.updater else { return }
+                            updater.automaticallyChecksForUpdates = true
+                            updater.automaticallyDownloadsUpdates = on
+                        }
                 }
                 row("cursorarrow.rays", "Open the notch", "Hovering is quicker; clicking avoids opening it by accident.") {
                     Picker("", selection: $opensOnHover) {
