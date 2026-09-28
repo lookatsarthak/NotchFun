@@ -43,7 +43,12 @@ public final class ImageService: ImageServiceProtocol {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
             throw URLError(.unsupportedURL)
         }
-        let (data, _) = try await session.data(from: url)
+        // App Transport Security blocks plain HTTP. Spotify has handed out http:// artwork
+        // links for images its CDN also serves over HTTPS, so ask for those securely.
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.scheme = "https"
+        guard let secureURL = components?.url else { throw URLError(.badURL) }
+        let (data, _) = try await session.data(from: secureURL)
         return data
     }
 }
