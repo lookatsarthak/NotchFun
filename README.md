@@ -13,6 +13,10 @@
   the black bar you were told to ignore.
 </p>
 
+<p align="center">
+  <a href="https://lookatsarthak.github.io/NotchFun/"><b>See it in action →</b></a>
+</p>
+
 ---
 
 ## What it is

@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NotchFun — the notch, but fun</title>
+  <meta name="description" content="NotchFun turns the MacBook notch into a small, quiet place for what's playing, files in motion, what you've copied, and more. Free and open source, for macOS 26 Tahoe.">
+  <meta name="theme-color" content="#07071A">
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="canonical" href="https://lookatsarthak.github.io/NotchFun/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NotchFun">
+  <meta property="og:title" content="NotchFun — the notch, but fun">
+  <meta property="og:description" content="Music, a file shelf, clipboard history and more, right in the MacBook notch. Free and open source for macOS 26 Tahoe.">
+  <meta property="og:url" content="https://lookatsarthak.github.io/NotchFun/">
+  <meta property="og:image" content="https://lookatsarthak.github.io/NotchFun/assets/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- The page's own notch. Pinned to the top centre of the window, so on a MacBook it
+     sits right under the real one. Every chapter below drives it. -->
+<div class="notch-rail">
+<div class="notch" id="notch" data-state="closed" data-view="home" aria-hidden="true">
+  <div class="notch-inner">
+
+    <!-- hello, as the app writes it on first launch -->
+    <div class="nv nv-hello">
+      <svg viewBox="-8 -12 316 124" class="hello-svg">
+        <defs>
+          <linearGradient id="helloGrad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color="#0A84FF"/><stop offset=".2" stop-color="#BF5AF2"/>
+            <stop offset=".4" stop-color="#FF453A"/><stop offset=".5" stop-color="#66D4CF"/>
+            <stop offset=".7" stop-color="#5E5CE6"/><stop offset=".9" stop-color="#FF375F"/>
+            <stop offset="1" stop-color="#0A84FF"/>
+          </linearGradient>
+          <filter id="helloGlow" x="-20%" y="-40%" width="140%" height="180%">
+            <feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path class="hello-path" filter="url(#helloGlow)" d="M0.28 88.72 C2.98 87.74, 49.67 56.78, 58.61 31.01 C67.55 5.24, 55.77 -6.80, 45.13 4.96 C34.48 16.73, 29.38 102.02, 30.08 93.20 C30.80 84.38, 36.47 47.82, 55.06 47.82 C77.20 51.46, 59.74 81.58, 66.98 88.72 C74.22 95.86, 100.76 89.98, 115.66 71.35 C130.56 52.72, 116.93 43.06, 107.99 45.44 C99.05 47.82, 83.87 71.63, 106.43 87.32 C129.00 103.00, 155.68 69.39, 160.36 62.81 C165.04 56.23, 191.86 5.80, 172.00 0.62 C152.13 -4.56, 145.46 50.62, 146.17 60.15 C146.88 69.67, 151.13 87.60, 163.76 91.24 C176.39 94.88, 204.21 64.77, 212.16 51.04 C220.10 37.32, 230.04 3.98, 219.82 1.32 C209.60 -1.34, 204.78 7.21, 201.51 15.05 C198.25 22.89, 186.61 86.06, 209.03 92.64 C231.46 99.22, 236.56 43.00, 261.82 47.82 C292.02 51.04, 276.99 86.00, 274.31 89.78 C261.14 108.40, 233.87 100.00, 239.83 69.61 C244.57 45.44, 258.85 43.28, 276.02 53.08 C287.94 57.70, 296.88 49.44, 299.71 43.20"/>
+      </svg>
+    </div>
+
+    <!-- closed, music playing: artwork left of the notch, waveform right -->
+    <div class="nv nv-live">
+      <span class="live-art art" data-art></span>
+      <span class="bars"><i></i><i></i><i></i><i></i></span>
+    </div>
+
+    <!-- closed, a key was pressed: the popup lives in the notch -->
+    <div class="nv nv-hud">
+      <svg class="hud-icon" viewBox="0 0 24 24"><use href="#i-speaker"/></svg>
+      <span class="hud-track"><span class="hud-fill"></span></span>
+    </div>
+
+    <!-- closed, a short banner: caffeine, AirPods, charging -->
+    <div class="nv nv-banner">
+      <span class="banner-lead"></span>
+      <span class="banner-trail"></span>
+    </div>
+
+    <!-- open: header row, then one of the views -->
+    <div class="nv nv-open">
+      <div class="n-header">
+        <div class="n-tabs">
+          <span class="n-tab" data-tab="home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
+          <span class="n-tab" data-tab="shelf"><svg viewBox="0 0 24 24"><use href="#i-tray"/></svg></span>
+          <span class="n-tab" data-tab="clip"><svg viewBox="0 0 24 24"><use href="#i-clip"/></svg></span>
+          <span class="n-tab-pill"></span>
+        </div>
+        <div class="n-actions">
+          <svg viewBox="0 0 24 24" class="n-cup"><use href="#i-cup"/></svg>
+          <span class="n-batt"><span class="n-batt-fill"></span></span>
+        </div>
+      </div>
+
+      <div class="n-view n-home">
+        <span class="home-art art" data-art></span>
+        <div class="home-music">
+          <div class="track-title" data-title>Night Drive</div>
+          <div class="track-artist" data-artist>Paper Satellites</div>
+          <div class="scrub"><span class="scrub-fill"></span></div>
+          <div class="scrub-times"><span data-elapsed>0:48</span><span data-remaining>-2:36</span></div>
+          <div class="controls">
+            <svg viewBox="0 0 24 24"><use href="#i-shuffle"/></svg>
+            <svg viewBox="0 0 24 24"><use href="#i-prev"/></svg>
+            <svg viewBox="0 0 24 24" class="c-play"><use href="#i-pause" data-playicon/></svg>
+            <svg viewBox="0 0 24 24"><use href="#i-next"/></svg>
+            <svg viewBox="0 0 24 24"><use href="#i-repeat"/></svg>
+          </div>
+        </div>
+        <div class="home-cal">
+          <div class="cal-month"><b data-month>Sep</b> <span data-year>2026</span></div>
+          <div class="cal-days" data-days></div>
+          <div class="cal-events" data-events></div>
+        </div>
+      </div>
+
+      <div class="n-view n-shelf">
+        <div class="shelf-zone" data-shelf>
+          <span class="shelf-empty">Drop files here</span>
+        </div>
+        <div class="shelf-share">
+          <span class="share-btn"><svg viewBox="0 0 24 24"><use href="#i-airdrop"/></svg>AirDrop</span>
+          <span class="share-btn"><svg viewBox="0 0 24 24"><use href="#i-share"/></svg>Share</span>
+        </div>
+      </div>
+
+      <div class="n-view n-clip">
+        <div class="clip-search"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg><span data-clipquery>Type to search</span></div>
+        <ol class="clip-list" data-cliplist></ol>
+      </div>
+
+      <div class="n-view n-mirror">
+        <div class="mirror-disc"><span class="mirror-face"></span></div>
+        <div class="mirror-note">A quick check before the call.<br><span>Nothing is recorded.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- A Mac menu bar, with the notch in the middle of it, as on the real thing. -->
+<header class="menubar">
+  <a class="mb-brand" href="#top"><img src="assets/favicon.png" alt=""><b>NotchFun</b></a>
+  <nav class="mb-links">
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="#changelog">Changelog</a>
+    <a href="#community">Community</a>
+  </nav>
+  <div class="mb-right">
+    <a class="mb-star" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16"><use href="#i-github"/></svg><span data-stars>GitHub</span>
+    </a>
+    <a class="mb-download" href="#install">Download</a>
+    <span class="mb-clock" data-clock></span>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <canvas class="stars" aria-hidden="true"></canvas>
+    <div class="notch-glow" aria-hidden="true"></div>
+    <p class="look-up" aria-hidden="true"><span class="arrow">↑</span> Psst — look up.</p>
+
+    <div class="hero-copy">
+      <p class="eyebrow reveal">Free · Open source · macOS 26 Tahoe</p>
+      <h1 class="headline">
+        <span class="line"><span>The notch,</span></span>
+        <span class="line"><span><em>but fun.</em></span></span>
+      </h1>
+      <p class="lede reveal">NotchFun turns the MacBook notch into a small, quiet place for what's playing, files you're moving around, what you've copied, and more.</p>
+      <div class="cta reveal">
+        <a class="btn btn-primary" href="https://github.com/lookatsarthak/NotchFun/releases/latest/download/NotchFun.dmg">
+          <svg viewBox="0 0 24 24"><use href="#i-download"/></svg>
+          <span class="roll" data-label="Download for Mac"><span>Download for Mac</span></span>
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><use href="#i-github"/></svg>
+          <span class="roll" data-label="View on GitHub"><span>View on GitHub</span></span>
+        </a>
+      </div>
+      <p class="version-note reveal"><span data-version>Latest release</span> · Apple Silicon and Tahoe-capable Intel Macs</p>
+    </div>
+
+    <a class="scroll-hint" href="#features">See it work <span>↓</span></a>
+  </section>
+
+  <!-- ============ CHAPTERS ============ -->
+  <div id="features" class="chapters">
+
+    <section class="chapter" data-chapter="music">
+      <div class="ch-copy">
+        <p class="ch-num">01 — Now playing</p>
+        <h2 class="reveal-lines"><span class="line"><span>What's playing,</span></span><span class="line"><span>right where you look.</span></span></h2>
+        <p class="ch-body reveal">Artwork, controls and a live waveform sit around the notch while music plays. Open it for the scrubber, shuffle and repeat. Apple Music, Spotify, and anything else that reports Now Playing.</p>
+        <p class="ch-example reveal"><b>Real life:</b> skip a track mid-call without hunting for the app. Close the notch and the artwork stays, tucked either side of it.</p>
+      </div>
+      <div class="ch-prop">
+        <div class="prop-card player-prop reveal">
+          <p class="prop-hint">↑ Watch the notch</p>
+          <div class="pp-row">
+            <button class="round-btn" data-act="prev" aria-label="Previous track"><svg viewBox="0 0 24 24"><use href="#i-prev"/></svg></button>
+            <button class="round-btn big" data-act="play" aria-label="Play or pause"><svg viewBox="0 0 24 24"><use href="#i-pause" data-playicon/></svg></button>
+            <button class="round-btn" data-act="next" aria-label="Next track"><svg viewBox="0 0 24 24"><use href="#i-next"/></svg></button>
+          </div>
+          <p class="prop-foot">Press play, then keep scrolling: the notch keeps the music with you.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="shelf">
+      <div class="ch-copy">
+        <p class="ch-num">02 — Shelf</p>
+        <h2 class="reveal-lines"><span class="line"><span>A pocket for</span></span><span class="line"><span>files in motion.</span></span></h2>
+        <p class="ch-body reveal">Drag anything toward the notch and it opens into a shelf. Drop it, carry on, and pick it up later — or AirDrop and share straight from there.</p>
+        <p class="ch-example reveal"><b>Real life:</b> collect screenshots from three apps, then drag all of them into one email.</p>
+      </div>
+      <div class="ch-prop">
+        <div class="desk reveal" data-desk>
+          <p class="prop-hint">Drag a file up to the notch ↑</p>
+          <div class="file" data-file="Invoice.pdf" style="--x:14%;--y:44%"><span class="file-icon pdf">PDF</span><span>Invoice.pdf</span></div>
+          <div class="file" data-file="Moodboard.png" style="--x:42%;--y:62%"><span class="file-icon img"></span><span>Moodboard.png</span></div>
+          <div class="file" data-file="Talk.key" style="--x:70%;--y:40%"><span class="file-icon key">KEY</span><span>Talk.key</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="clip">
+      <div class="ch-copy">
+        <p class="ch-num">03 — Clipboard history</p>
+        <h2 class="reveal-lines"><span class="line"><span>Everything you copied,</span></span><span class="line"><span>a glance away.</span></span></h2>
+        <p class="ch-body reveal">Text, links, images and files, with the app each came from. Start typing to search, pin the ones you reuse, and paste straight back into whatever you were doing. It never records passwords, and it stays on your Mac.</p>
+        <p class="ch-example reveal"><b>Real life:</b> copy a tracking number in the morning, paste it into a support chat at four.</p>
+      </div>
+      <div class="ch-prop">
+        <div class="prop-card snippets reveal">
+          <p class="prop-hint">Copy one — it lands in the notch ↑</p>
+          <div class="snippet"><span>1Z 999 AA1 0123 4567 84</span><button data-copy="1Z 999 AA1 0123 4567 84" data-app="Mail">Copy</button></div>
+          <div class="snippet"><span>github.com/lookatsarthak/NotchFun</span><button data-copy="https://github.com/lookatsarthak/NotchFun" data-app="Safari">Copy</button></div>
+          <div class="snippet"><span>Let's move stand-up to 9:45?</span><button data-copy="Let's move stand-up to 9:45?" data-app="Messages">Copy</button></div>
+          <label class="search-try">Search the history <input type="text" placeholder="try “plan”" data-clipsearch></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="cal">
+      <div class="ch-copy">
+        <p class="ch-num">04 — Calendar</p>
+        <h2 class="reveal-lines"><span class="line"><span>Your day,</span></span><span class="line"><span>one glance up.</span></span></h2>
+        <p class="ch-body reveal">Today's events and reminders beside the music, with a date strip you can scroll. No app to open, no widget to find.</p>
+        <p class="ch-example reveal"><b>Real life:</b> in the middle of writing, see the design review is in twelve minutes — without leaving the sentence.</p>
+      </div>
+      <div class="ch-prop">
+        <div class="prop-card clock-prop reveal">
+          <p class="prop-hint">↑ Today, in the notch</p>
+          <div class="big-time" data-bigtime>10:18</div>
+          <div class="next-up"><span class="dot"></span><span data-nextup>Design review in 12 min</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="keys">
+      <div class="ch-copy">
+        <p class="ch-num">05 — Volume &amp; brightness</p>
+        <h2 class="reveal-lines"><span class="line"><span>No more big square</span></span><span class="line"><span>in the middle.</span></span></h2>
+        <p class="ch-body reveal">Volume and brightness show up in the notch, small and to the side, instead of the popup over whatever you're reading. Keyboard backlight too.</p>
+        <p class="ch-example reveal"><b>Real life:</b> turn it down during a video without a grey box covering the subtitles.</p>
+      </div>
+      <div class="ch-prop">
+        <div class="prop-card keys-prop reveal">
+          <p class="prop-hint">Press a key (or ↑ ↓ on your keyboard)</p>
+          <div class="loupe-frame" aria-hidden="true"><div class="loupe notch" data-state="closed">
+            <div class="notch-inner">
+              <div class="nv nv-live"><span class="live-art art" data-art></span><span class="bars"><i></i><i></i><i></i><i></i></span></div>
+              <div class="nv nv-hud"><svg class="hud-icon" viewBox="0 0 24 24"><use href="#i-speaker"/></svg><span class="hud-track"><span class="hud-fill"></span></span></div>
+              <div class="nv nv-banner"><span class="banner-lead"></span><span class="banner-trail"></span></div>
+            </div>
+          </div><span class="loupe-label">Up close</span></div>
+          <div class="keyrow">
+            <button class="keycap" data-key="bright-down"><svg viewBox="0 0 24 24"><use href="#i-sun-low"/></svg><small>F1</small></button>
+            <button class="keycap" data-key="bright-up"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg><small>F2</small></button>
+            <button class="keycap" data-key="vol-down"><svg viewBox="0 0 24 24"><use href="#i-speaker-low"/></svg><small>F11</small></button>
+            <button class="keycap" data-key="vol-up"><svg viewBox="0 0 24 24"><use href="#i-speaker"/></svg><small>F12</small></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="little">
+      <div class="ch-copy">
+        <p class="ch-num">06 — The little things</p>
+        <h2 class="reveal-lines"><span class="line"><span>Small, and exactly</span></span><span class="line"><span>when you need them.</span></span></h2>
+        <p class="ch-body reveal">Keep the Mac awake for a download. See your AirPods' battery the moment they connect. Check your hair before a call. Each one is a quick moment in the notch, then it gets out of the way.</p>
+        <div class="little-tabs reveal" role="tablist">
+          <button role="tab" data-little="caffeine" aria-selected="true"><svg viewBox="0 0 24 24"><use href="#i-cup"/></svg>Caffeine</button>
+          <button role="tab" data-little="airpods" aria-selected="false"><svg viewBox="0 0 24 24"><use href="#i-airpods"/></svg>AirPods</button>
+          <button role="tab" data-little="charging" aria-selected="false"><svg viewBox="0 0 24 24"><use href="#i-bolt"/></svg>Charging</button>
+          <button role="tab" data-little="mirror" aria-selected="false"><svg viewBox="0 0 24 24"><use href="#i-camera"/></svg>Mirror</button>
+        </div>
+      </div>
+      <div class="ch-prop">
+        <div class="prop-card little-prop reveal">
+          <p class="prop-hint">↑ Watch the notch</p>
+          <div class="loupe-frame" aria-hidden="true"><div class="loupe notch" data-state="closed">
+            <div class="notch-inner">
+              <div class="nv nv-live"><span class="live-art art" data-art></span><span class="bars"><i></i><i></i><i></i><i></i></span></div>
+              <div class="nv nv-hud"><svg class="hud-icon" viewBox="0 0 24 24"><use href="#i-speaker"/></svg><span class="hud-track"><span class="hud-fill"></span></span></div>
+              <div class="nv nv-banner"><span class="banner-lead"></span><span class="banner-trail"></span></div>
+            </div>
+          </div><span class="loupe-label">Up close</span></div>
+          <p class="little-caption" data-littlecaption>Awake for an hour, then back to normal. Or until you say so, or while an app is running.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ REAL FOOTAGE ============ -->
+  <section class="real" id="real">
+    <div class="section-head">
+      <p class="eyebrow">Not a mock-up</p>
+      <h2 class="reveal-lines"><span class="line"><span>The real thing,</span></span><span class="line"><span>on a real MacBook.</span></span></h2>
+      <p class="section-lede reveal">Screen recordings of NotchFun itself. The track and the file are made up; everything else is exactly what you'd see.</p>
+    </div>
+    <div class="reel">
+      <figure class="clip clip-wide reveal">
+        <video src="media/music.mp4" poster="media/music.jpg" muted loop playsinline preload="none" width="1360" height="480"></video>
+        <figcaption><b>Hover to open.</b> Music sits either side of the notch; the player opens when you reach for it and tucks away when you leave.</figcaption>
+      </figure>
+      <figure class="clip clip-wide reveal">
+        <video src="media/shelf.mp4" poster="media/shelf.jpg" muted loop playsinline preload="none" width="1360" height="600"></video>
+        <figcaption><b>Drag up, drop, done.</b> Carrying a file toward the notch opens the shelf; it waits there until you need it.</figcaption>
+      </figure>
+      <figure class="clip reveal">
+        <video src="media/hello.mp4" poster="media/hello.jpg" muted loop playsinline preload="none" width="1040" height="400"></video>
+        <figcaption><b>First launch.</b> The notch says hello.</figcaption>
+      </figure>
+      <figure class="clip reveal">
+        <video src="media/hud.mp4" poster="media/hud.jpg" muted loop playsinline preload="none" width="1360" height="200"></video>
+        <figcaption><b>Volume keys.</b> A slim bar in the notch instead of the big square.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ BENTO ============ -->
+  <section class="native" id="native">
+    <div class="section-head">
+      <p class="eyebrow">Feels like part of macOS</p>
+      <h2 class="reveal-lines"><span class="line"><span>Quiet by default.</span></span><span class="line"><span>Thoughtful all the way down.</span></span></h2>
+    </div>
+    <div class="bento">
+      <article class="card c-shortcut reveal">
+        <div class="keys-demo"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>I</kbd></div>
+        <h3>Open it from the keyboard</h3>
+        <p>⇧⌘I opens the notch. Every shortcut can be changed.</p>
+      </article>
+      <article class="card c-shortcuts reveal">
+        <h3>In the Shortcuts app</h3>
+        <p>Five actions for automations and Spotlight.</p>
+        <ul class="actions">
+          <li>Set Caffeine</li><li>Open Notch</li><li>Close Notch</li><li>Paste as Plain Text</li><li>Set Clipboard History</li>
+        </ul>
+      </article>
+      <article class="card c-width reveal">
+        <h3>As wide as you like</h3>
+        <p>Pick how far the open notch reaches. Try it — this drives the notch up top.</p>
+        <input type="range" min="500" max="900" value="640" step="10" data-width aria-label="Open notch width">
+        <output data-widthout>640 pt</output>
+      </article>
+      <article class="card c-private reveal">
+        <svg viewBox="0 0 24 24" class="big-glyph"><use href="#i-lock"/></svg>
+        <h3>No account. No analytics.</h3>
+        <p>Your clipboard history lives in files only your user can read. Password-manager copies are thrown away before they reach memory.</p>
+      </article>
+      <article class="card c-full reveal">
+        <div class="mini-screen"><span class="ms-notch"></span><span class="ms-video"></span></div>
+        <h3>Steps aside in full screen</h3>
+        <p>Watching something full screen? The notch can hide itself, or only while media plays.</p>
+      </article>
+      <article class="card c-updates reveal">
+        <h3>Updates itself, quietly</h3>
+        <p>Signed updates download in the background and install when you next quit. Each one comes with plain-English notes.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ INSTALL ============ -->
+  <section class="install" id="install">
+    <div class="section-head">
+      <p class="eyebrow">Install</p>
+      <h2 class="reveal-lines"><span class="line"><span>Get NotchFun</span></span><span class="line"><span>in about a minute.</span></span></h2>
+      <p class="section-lede reveal">Requires macOS 26 Tahoe or later. Free, forever — it's GPLv3.</p>
+    </div>
+
+    <div class="install-grid">
+      <div class="dmg reveal" data-dmg aria-hidden="true">
+        <div class="dmg-bar"><i></i><i></i><i></i><span>NotchFun</span></div>
+        <div class="dmg-body">
+          <div class="dmg-slot"><img class="dmg-app" src="assets/icon.png" alt=""><span>NotchFun</span></div>
+          <svg class="dmg-arrow" viewBox="0 0 160 40"><path d="M6 26 C 50 4, 110 4, 150 24" /><path d="M140 14 L151 25 L137 30"/></svg>
+          <div class="dmg-slot"><span class="dmg-folder"><svg viewBox="0 0 24 24"><use href="#i-apps"/></svg></span><span>Applications</span></div>
+        </div>
+        <p class="dmg-hint">Drag NotchFun onto Applications</p>
+      </div>
+
+      <div class="methods reveal">
+        <div class="method-tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-method="terminal">Terminal <small>recommended</small></button>
+          <button role="tab" aria-selected="false" data-method="brew">Homebrew</button>
+          <button role="tab" aria-selected="false" data-method="dmg">Download</button>
+        </div>
+
+        <div class="method" data-panel="terminal">
+          <p>Paste into Terminal and press Return. It installs the latest release, replaces an older copy, and opens it — with no security warning.</p>
+          <div class="cmd"><code>curl -fsSL https://raw.githubusercontent.com/lookatsarthak/NotchFun/main/scripts/install.sh | bash</code><button class="copy" data-copytext>Copy</button></div>
+          <a class="small-link" href="https://github.com/lookatsarthak/NotchFun/blob/main/scripts/install.sh" target="_blank" rel="noopener">Read the script first — it's short →</a>
+        </div>
+
+        <div class="method" data-panel="brew" hidden>
+          <p>If you use Homebrew:</p>
+          <div class="cmd"><code>brew install --cask lookatsarthak/tap/notchfun</code><button class="copy" data-copytext>Copy</button></div>
+        </div>
+
+        <div class="method" data-panel="dmg" hidden>
+          <p>Download the disk image, open it, and drag NotchFun to Applications.</p>
+          <a class="btn btn-primary" href="https://github.com/lookatsarthak/NotchFun/releases/latest/download/NotchFun.dmg">
+            <svg viewBox="0 0 24 24"><use href="#i-download"/></svg><span>Download NotchFun.dmg</span>
+          </a>
+          <details class="gatekeeper">
+            <summary>macOS says it “could not verify” NotchFun?</summary>
+            <p>NotchFun isn't notarised by Apple — that needs a paid developer account — so macOS shows this for the first open. It isn't a finding about the app.</p>
+            <ol>
+              <li>Click <b>Done</b> on the warning (not Move to Bin).</li>
+              <li>Open <b>System Settings → Privacy &amp; Security</b>.</li>
+              <li>Next to “NotchFun was blocked”, click <b>Open Anyway</b>.</li>
+            </ol>
+            <p>Only once. The Terminal install skips this entirely.</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHANGELOG ============ -->
+  <section class="changelog" id="changelog">
+    <div class="section-head">
+      <p class="eyebrow">Changelog</p>
+      <h2 class="reveal-lines"><span class="line"><span>What's new,</span></span><span class="line"><span>in plain English.</span></span></h2>
+    </div>
+    <div class="timeline">
+      <svg class="timeline-line" preserveAspectRatio="none" viewBox="0 0 2 100" aria-hidden="true"><path d="M1 0 V100"/></svg>
+      <div class="releases" data-releases>
+        <p class="loading">Loading releases from GitHub…</p>
+      </div>
+    </div>
+    <a class="btn btn-ghost center" href="https://github.com/lookatsarthak/NotchFun/releases" target="_blank" rel="noopener"><span>All releases on GitHub →</span></a>
+  </section>
+
+  <!-- ============ COMMUNITY ============ -->
+  <section class="community" id="community">
+    <div class="section-head">
+      <p class="eyebrow">Community</p>
+      <h2 class="reveal-lines"><span class="line"><span>Help decide</span></span><span class="line"><span>what it does next.</span></span></h2>
+    </div>
+    <div class="comm-grid">
+      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun/issues/new?template=1-feature-request-form.yml" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><use href="#i-spark"/></svg>
+        <h3>Request a feature</h3><p>Something you wish the notch did? Say what, and why.</p><span class="go">Open a request →</span>
+      </a>
+      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun/issues/new?template=1-bug-report-form.yml" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><use href="#i-bug"/></svg>
+        <h3>Report a bug</h3><p>Tell us what happened and what you expected instead.</p><span class="go">Report it →</span>
+      </a>
+      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><use href="#i-star"/></svg>
+        <h3>Star it on GitHub</h3><p>The easiest way to help other people find it.</p><span class="go"><span data-stars2>Star</span> →</span>
+      </a>
+      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><use href="#i-code"/></svg>
+        <h3>Contribute</h3><p>SwiftUI and AppKit, built with Xcode. Pull requests welcome.</p><span class="go">How to start →</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="faq">
+    <div class="section-head"><p class="eyebrow">Questions</p></div>
+    <div class="faq-list">
+      <details class="reveal"><summary>Is it really free?</summary><p>Yes. NotchFun is open source under the GPLv3. No trial, no account, no in-app purchases.</p></details>
+      <details class="reveal"><summary>Which Macs does it run on?</summary><p>Any Mac on macOS 26 Tahoe or later: Apple Silicon, or one of the four Intel Macs that run Tahoe. 1.2.1 remains available for macOS 15 Sequoia.</p></details>
+      <details class="reveal"><summary>What permissions does it need?</summary><p>Only the ones for features you switch on — Calendar for events, Camera for the mirror, Accessibility for pasting from history and for the volume and brightness popup. Setup asks for each at the moment it matters.</p></details>
+      <details class="reveal"><summary>Does anything leave my Mac?</summary><p>There are no accounts and no analytics. It checks GitHub for updates, and if you show lyrics it looks up the current song on LRCLIB. Clipboard history never leaves your Mac.</p></details>
+      <details class="reveal"><summary>How is it related to boring.notch?</summary><p>NotchFun is a fork of <a href="https://github.com/TheBoredTeam/boring.notch" target="_blank" rel="noopener">boring.notch</a> by TheBoredTeam, who built the foundation. This fork adds clipboard history, AirPods battery, Shortcuts actions, a new setup, and a lot of fixes and polish.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="foot-brand"><img src="assets/icon.png" alt=""><div><b>NotchFun</b><span>The notch, but fun.</span></div></div>
+  <div class="foot-links">
+    <a href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/lookatsarthak/NotchFun/releases" target="_blank" rel="noopener">Releases</a>
+    <a href="https://github.com/lookatsarthak/NotchFun/issues" target="_blank" rel="noopener">Issues</a>
+    <a href="https://github.com/lookatsarthak/NotchFun/blob/main/LICENSE" target="_blank" rel="noopener">GPLv3</a>
+  </div>
+  <p class="foot-fine">A fork of boring.notch by TheBoredTeam; clipboard handling adapted from Maccy. Not affiliated with Apple. Mac, AirPods and AirDrop are trademarks of Apple Inc.</p>
+</footer>
+
+<!-- Icons, drawn once and reused -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" fill="currentColor"/></symbol>
+    <symbol id="i-tray" viewBox="0 0 24 24"><path d="M4 13 6.5 6h11L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4.8 13H9a3 3 0 0 0 6 0h4.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="3" width="6" height="4" rx="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-cup" viewBox="0 0 24 24"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="steam" d="M8.5 3.5c-1 1.2 1 1.8 0 3M12 3.5c-1 1.2 1 1.8 0 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3.5l9 10H20M4 17h3.5l2.2-2.4M14.3 9.4 16.5 7H20M18 5l2 2-2 2M18 15l2 2-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M5 11V9a2 2 0 0 1 2-2h11M16 5l2 2-2 2M19 13v2a2 2 0 0 1-2 2H6M8 19l-2-2 2-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M11.5 6v12L3 12zM21 6v12l-8.5-6z" fill="currentColor"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M12.5 6v12L21 12zM3 6v12l8.5-6z" fill="currentColor"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2" fill="currentColor"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-airdrop" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M7.8 16.2a6 6 0 1 1 8.4 0M5 19a10 10 0 1 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v11M8 7l4-4 4 4M6 11H5v9h14v-9h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-speaker-low" viewBox="0 0 24 24"><path d="M5 9.5h3.5L13 5.5v13l-4.5-4H5z" fill="currentColor"/><path d="M16.5 9.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-sun-low" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5" fill="currentColor"/><path d="M12 5v1M12 18v1M5 12h1M18 12h1M7 7l.7.7M16.3 16.3l.7.7M7 17l.7-.7M16.3 7.7l.7-.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-airpods" viewBox="0 0 24 24"><path d="M7 4a3 3 0 0 0-3 3c0 1.7 1.2 3 2.7 3H7v9a1.5 1.5 0 0 0 3 0V7a3 3 0 0 0-3-3zM17 4a3 3 0 0 1 3 3c0 1.7-1.2 3-2.7 3H17v9a1.5 1.5 0 0 1-3 0V7a3 3 0 0 1 3-3z" fill="currentColor"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L10 22l9-12h-6.2z" fill="currentColor"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/><path d="M8 20h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24"><path d="M12 4 4.5 18h3l1.4-2.8h6.2L16.5 18h3zM10.1 12.8 12 9l1.9 3.8z" fill="currentColor"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor"/></symbol>
+    <symbol id="i-bug" viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="12" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 8a3 3 0 0 1 6 0M4 12h3M17 12h3M4.5 17.5 7 16M19.5 17.5 17 16M4.5 7.5 7 9M19.5 7.5 17 9M12 11v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.9l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8.5 7.5-5 4.5 5 4.5M15.5 7.5l5 4.5-5 4.5M13.5 5l-3 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
+  </defs>
+</svg>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

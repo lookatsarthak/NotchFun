@@ -40,6 +40,19 @@ struct About: View {
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)
                     Button {
+                        if let url = URL(string: "https://lookatsarthak.github.io/NotchFun/") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        VStack(spacing: 5) {
+                            Image(systemName: "globe")
+                                .font(.system(size: 17))
+                                .frame(height: 18)
+                            Text("Website")
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    Button {
                         if let url = URL(string: "https://github.com/lookatsarthak/NotchFun") {
                             NSWorkspace.shared.open(url)
                         }
