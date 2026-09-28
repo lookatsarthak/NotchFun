@@ -76,7 +76,15 @@ extension Defaults.Keys {
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
-    
+
+    // MARK: Setup
+    /// The setup version last finished; 0 for never. Compared with OnboardingPlan.version
+    /// at launch, which is what lets a future redesign be shown once to existing users.
+    static let onboardingCompletedVersion = Key<Int>("onboardingCompletedVersion", default: 0)
+    /// The step setup was on when last seen, while it is unfinished; nil otherwise. Lets
+    /// setup resume where it was quit instead of starting over.
+    static let onboardingResumeStep = Key<String?>("onboardingResumeStep", default: nil)
+
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)

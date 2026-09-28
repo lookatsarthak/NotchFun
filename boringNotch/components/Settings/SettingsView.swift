@@ -164,6 +164,13 @@ struct GeneralSettings: View {
                 }
                 .tint(.effectiveAccent)
                 LaunchAtLogin.Toggle("Launch at login")
+                HStack {
+                    Text("Setup")
+                    Spacer()
+                    Button("Run setup again…") {
+                        AppDelegate.shared?.showOnboardingWindow(restart: true)
+                    }
+                }
                 Defaults.Toggle(key: .showOnAllDisplays) {
                     Text("Show on all displays")
                 }

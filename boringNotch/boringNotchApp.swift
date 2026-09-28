@@ -72,6 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var closeNotchTask: Task<Void, Never>?
     private var previousScreens: [NSScreen]?
     private var onboardingWindowController: NSWindowController?
+    private var mediaSourceWindowController: NSWindowController?
     private var screenLockedObserver: Any?
     private var screenUnlockedObserver: Any?
     private var isScreenLocked: Bool = false
@@ -535,16 +536,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             onScreenLocked(Notification(name: Notification.Name("com.apple.screenIsLocked")))
         }
 
-        if coordinator.firstLaunch {
+        let showSetup = OnboardingPlan.shouldShow(
+            completedVersion: Defaults[.onboardingCompletedVersion],
+            firstLaunch: coordinator.firstLaunch,
+            inProgress: Defaults[.onboardingResumeStep] != nil
+        )
+        if showSetup {
+            if coordinator.firstLaunch { playWelcomeSound() }
             DispatchQueue.main.async {
                 self.showOnboardingWindow()
             }
-            playWelcomeSound()
-        } else if MusicManager.shared.isNowPlayingDeprecated
-            && Defaults[.mediaController] == .nowPlaying
-        {
-            DispatchQueue.main.async {
-                self.showOnboardingWindow(step: .musicPermission)
+        } else {
+            // Someone who had the app before setup was versioned: record it, so the
+            // check above is a plain comparison from now on.
+            if Defaults[.onboardingCompletedVersion] == 0 {
+                Defaults[.onboardingCompletedVersion] = OnboardingPlan.version
+            }
+            if MusicManager.shared.isNowPlayingDeprecated && Defaults[.mediaController] == .nowPlaying {
+                DispatchQueue.main.async {
+                    self.showMediaSourceWindow()
+                }
             }
         }
 
@@ -660,29 +671,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.terminate(self)
     }
 
-    private func showOnboardingWindow(step: OnboardingStep = .welcome) {
+    /// Shows setup, resuming where it was left unless `restart` is set - which is what
+    /// "Run setup again" in Settings wants.
+    func showOnboardingWindow(restart: Bool = false) {
+        if restart {
+            // A window closed part-way is kept for resuming; a restart wants a new one.
+            onboardingWindowController?.close()
+            onboardingWindowController = nil
+        }
         if onboardingWindowController == nil {
+            let choices = OnboardingChoices(
+                shelf: Defaults[.boringShelf],
+                clipboardHistory: Defaults[.clipboardHistoryEnabled],
+                calendar: Defaults[.showCalendar],
+                mirror: Defaults[.showMirror],
+                mediaKeyHUD: Defaults[.hudReplacement],
+                opensOnHover: Defaults[.openNotchOnHover]
+            )
+            let start = restart
+                ? .hello
+                : OnboardingPlan.resumeStep(saved: Defaults[.onboardingResumeStep], choices: choices)
+
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
-                styleMask: [.titled, .fullSizeContentView],
+                contentRect: NSRect(x: 0, y: 0, width: 560, height: 580),
+                // Closable: closing pauses setup, and the next launch resumes it.
+                styleMask: [.titled, .closable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
             )
             window.center()
-            window.title = "Onboarding"
+            window.title = "Set up NotchFun"
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
+            window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(
                 rootView: OnboardingView(
-                    step: step,
-                    onFinish: {
-                        window.orderOut(nil)
-//                        NSApp.setActivationPolicy(.accessory)
+                    startAt: start,
+                    onFinish: { [weak self] in
                         window.close()
+                        self?.onboardingWindowController = nil
                         NSApp.deactivate()
                     },
                     onOpenSettings: {
-                        window.close()
                         SettingsWindowController.shared.showWindow()
                     }
                 ))
@@ -692,10 +722,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             onboardingWindowController = NSWindowController(window: window)
         }
 
-//        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
         onboardingWindowController?.window?.orderFrontRegardless()
+    }
+
+    /// Asks for a media source when Now Playing has stopped working on this macOS. A
+    /// separate window from setup, because it can come up long after setup was done.
+    private func showMediaSourceWindow() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.title = "Choose a media source"
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isReleasedWhenClosed = false
+        window.isRestorable = false
+        window.contentView = NSHostingView(
+            rootView: MusicControllerSelectionView(onContinue: { [weak self] in
+                window.close()
+                self?.mediaSourceWindowController = nil
+            })
+            .frame(width: 400, height: 600)
+        )
+        mediaSourceWindowController = NSWindowController(window: window)
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
     }
 }
 
