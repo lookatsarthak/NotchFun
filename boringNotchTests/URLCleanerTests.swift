@@ -155,128 +155,130 @@ struct URLCleanerTests {
     }
 }
 
-/// Covers the wiring rather than the algorithm: that the flag reaches the pasteboard,
-/// that a clean link is left completely alone, and that nothing else is affected.
-/// Every test uses `NSPasteboard.withUniqueName()`, so the real clipboard is untouched.
-@Suite("Link cleaning on write", .serialized)
-struct ClipboardLinkCleaningTests {
+extension PasteboardTests {
+    /// Covers the wiring rather than the algorithm: that the flag reaches the pasteboard,
+    /// that a clean link is left completely alone, and that nothing else is affected.
+    /// Every test uses `NSPasteboard.withUniqueName()`, so the real clipboard is untouched.
+    @Suite("Link cleaning on write", .serialized)
+    struct ClipboardLinkCleaningTests {
 
-    private func makeTextItem(_ text: String, store: ClipboardBlobStore) -> ClipboardItem {
-        ClipboardItem(
-            contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
-                                     data: Data(text.utf8))],
-            title: text, kind: .text
-        )
-    }
+        private func makeTextItem(_ text: String, store: ClipboardBlobStore) -> ClipboardItem {
+            ClipboardItem(
+                contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
+                                         data: Data(text.utf8))],
+                title: text, kind: .text
+            )
+        }
 
-    private func makeRichItem(_ text: String, html: String, store: ClipboardBlobStore) -> ClipboardItem {
-        ClipboardItem(
-            contents: [
-                store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue, data: Data(text.utf8)),
-                store.makeRef(type: NSPasteboard.PasteboardType.html.rawValue, data: Data(html.utf8)),
-            ],
-            title: text, kind: .text
-        )
-    }
+        private func makeRichItem(_ text: String, html: String, store: ClipboardBlobStore) -> ClipboardItem {
+            ClipboardItem(
+                contents: [
+                    store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue, data: Data(text.utf8)),
+                    store.makeRef(type: NSPasteboard.PasteboardType.html.rawValue, data: Data(html.utf8)),
+                ],
+                title: text, kind: .text
+            )
+        }
 
-    @Test("With the setting off, a tracked link is pasted exactly as copied")
-    func offIsAPassthrough() {
-        let directory = makeTemporaryDirectory("clean-off")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
-        let dirty = "https://example.com/a?utm_source=x&id=1"
+        @Test("With the setting off, a tracked link is pasted exactly as copied")
+        func offIsAPassthrough() {
+            let directory = makeTemporaryDirectory("clean-off")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
+            let dirty = "https://example.com/a?utm_source=x&id=1"
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.write(makeTextItem(dirty, store: store),
-                                                to: pasteboard, blobStore: store, cleanLinks: false))
-        #expect(pasteboard.string(forType: .string) == dirty)
-    }
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.write(makeTextItem(dirty, store: store),
+                                                    to: pasteboard, blobStore: store, cleanLinks: false))
+            #expect(pasteboard.string(forType: .string) == dirty)
+        }
 
-    @Test("With the setting on, the tracker is gone from what is pasted")
-    func onRewritesTheLink() {
-        let directory = makeTemporaryDirectory("clean-on")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("With the setting on, the tracker is gone from what is pasted")
+        func onRewritesTheLink() {
+            let directory = makeTemporaryDirectory("clean-on")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.write(
-            makeTextItem("https://example.com/a?utm_source=x&id=1", store: store),
-            to: pasteboard, blobStore: store, cleanLinks: true))
-        #expect(pasteboard.string(forType: .string) == "https://example.com/a?id=1")
-    }
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.write(
+                makeTextItem("https://example.com/a?utm_source=x&id=1", store: store),
+                to: pasteboard, blobStore: store, cleanLinks: true))
+            #expect(pasteboard.string(forType: .string) == "https://example.com/a?id=1")
+        }
 
-    @Test("A tracked link is written as plain text only, never half-cleaned")
-    func richLinkLosesItsOtherRepresentations() {
-        // The failure this prevents: cleaning the plain text but leaving the HTML anchor
-        // pointing at the tracked URL, so the setting works in some apps and not others.
-        let directory = makeTemporaryDirectory("clean-rich")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
-        let item = makeRichItem("https://example.com/a?fbclid=xyz",
-                                html: "<a href=\"https://example.com/a?fbclid=xyz\">link</a>",
-                                store: store)
+        @Test("A tracked link is written as plain text only, never half-cleaned")
+        func richLinkLosesItsOtherRepresentations() {
+            // The failure this prevents: cleaning the plain text but leaving the HTML anchor
+            // pointing at the tracked URL, so the setting works in some apps and not others.
+            let directory = makeTemporaryDirectory("clean-rich")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
+            let item = makeRichItem("https://example.com/a?fbclid=xyz",
+                                    html: "<a href=\"https://example.com/a?fbclid=xyz\">link</a>",
+                                    store: store)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store, cleanLinks: true))
-        #expect(pasteboard.string(forType: .string) == "https://example.com/a")
-        #expect(pasteboard.data(forType: .html) == nil)
-    }
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store, cleanLinks: true))
+            #expect(pasteboard.string(forType: .string) == "https://example.com/a")
+            #expect(pasteboard.data(forType: .html) == nil)
+        }
 
-    @Test("A link with nothing to clean keeps every representation it had")
-    func untrackedLinkKeepsRichContent() {
-        let directory = makeTemporaryDirectory("clean-noop")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
-        let item = makeRichItem("https://example.com/a?id=1",
-                                html: "<a href=\"https://example.com/a?id=1\">link</a>",
-                                store: store)
+        @Test("A link with nothing to clean keeps every representation it had")
+        func untrackedLinkKeepsRichContent() {
+            let directory = makeTemporaryDirectory("clean-noop")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
+            let item = makeRichItem("https://example.com/a?id=1",
+                                    html: "<a href=\"https://example.com/a?id=1\">link</a>",
+                                    store: store)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store, cleanLinks: true))
-        #expect(pasteboard.string(forType: .string) == "https://example.com/a?id=1")
-        #expect(pasteboard.data(forType: .html) != nil)
-    }
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store, cleanLinks: true))
+            #expect(pasteboard.string(forType: .string) == "https://example.com/a?id=1")
+            #expect(pasteboard.data(forType: .html) != nil)
+        }
 
-    @Test("Ordinary text is untouched even with the setting on")
-    func plainTextUnaffected() {
-        let directory = makeTemporaryDirectory("clean-text")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
-        let note = "remember to check utm_source in the analytics dashboard"
+        @Test("Ordinary text is untouched even with the setting on")
+        func plainTextUnaffected() {
+            let directory = makeTemporaryDirectory("clean-text")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
+            let note = "remember to check utm_source in the analytics dashboard"
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.write(makeTextItem(note, store: store),
-                                                to: pasteboard, blobStore: store, cleanLinks: true))
-        #expect(pasteboard.string(forType: .string) == note)
-    }
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.write(makeTextItem(note, store: store),
+                                                    to: pasteboard, blobStore: store, cleanLinks: true))
+            #expect(pasteboard.string(forType: .string) == note)
+        }
 
-    @Test("Paste-as-plain-text cleans the link too")
-    func plainTextPathAlsoCleans() {
-        // Otherwise the two paste routes would disagree, which is the kind of
-        // inconsistency that reads as a bug rather than a setting.
-        let directory = makeTemporaryDirectory("clean-plain")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("Paste-as-plain-text cleans the link too")
+        func plainTextPathAlsoCleans() {
+            // Otherwise the two paste routes would disagree, which is the kind of
+            // inconsistency that reads as a bug rather than a setting.
+            let directory = makeTemporaryDirectory("clean-plain")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.writePlainText(
-            makeTextItem("https://example.com/a?gclid=z&keep=2", store: store),
-            to: pasteboard, blobStore: store, cleanLinks: true))
-        #expect(pasteboard.string(forType: .string) == "https://example.com/a?keep=2")
-    }
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.writePlainText(
+                makeTextItem("https://example.com/a?gclid=z&keep=2", store: store),
+                to: pasteboard, blobStore: store, cleanLinks: true))
+            #expect(pasteboard.string(forType: .string) == "https://example.com/a?keep=2")
+        }
 
-    @Test("The write is still stamped as ours, so the monitor does not re-record it")
-    func selfCopyMarkerSurvivesCleaning() {
-        // Without this the cleaned URL would be captured as a brand new copy on the next
-        // poll, and history would fill with cleaned duplicates of itself.
-        let directory = makeTemporaryDirectory("clean-marker")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("The write is still stamped as ours, so the monitor does not re-record it")
+        func selfCopyMarkerSurvivesCleaning() {
+            // Without this the cleaned URL would be captured as a brand new copy on the next
+            // poll, and history would fill with cleaned duplicates of itself.
+            let directory = makeTemporaryDirectory("clean-marker")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        #expect(ClipboardPasteboardWriter.write(
-            makeTextItem("https://example.com/a?utm_source=x", store: store),
-            to: pasteboard, blobStore: store, cleanLinks: true))
-        #expect(pasteboard.data(forType: .fromNotchFun) != nil)
+            let pasteboard = NSPasteboard.withUniqueName()
+            #expect(ClipboardPasteboardWriter.write(
+                makeTextItem("https://example.com/a?utm_source=x", store: store),
+                to: pasteboard, blobStore: store, cleanLinks: true))
+            #expect(pasteboard.data(forType: .fromNotchFun) != nil)
+        }
     }
 }

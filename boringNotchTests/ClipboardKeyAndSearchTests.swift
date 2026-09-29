@@ -135,84 +135,86 @@ struct ClipboardSearchTests
     }
 }
 
-@Suite("Clipboard pasteboard writer")
-struct ClipboardPasteboardWriterTests {
-    @Test("Copying an entry puts it back on the pasteboard, marked as ours")
-    func writesText() {
-        let directory = makeTemporaryDirectory("writer")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+extension PasteboardTests {
+    @Suite("Clipboard pasteboard writer")
+    struct ClipboardPasteboardWriterTests {
+        @Test("Copying an entry puts it back on the pasteboard, marked as ours")
+        func writesText() {
+            let directory = makeTemporaryDirectory("writer")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let item = ClipboardItem(
-            contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
-                                     data: Data("round-trip payload".utf8))],
-            title: "round-trip payload", kind: .text
-        )
-        let pasteboard = NSPasteboard.withUniqueName()
+            let item = ClipboardItem(
+                contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
+                                         data: Data("round-trip payload".utf8))],
+                title: "round-trip payload", kind: .text
+            )
+            let pasteboard = NSPasteboard.withUniqueName()
 
-        #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store))
-        #expect(pasteboard.string(forType: .string) == "round-trip payload")
-        // Without this marker we would immediately re-record our own paste.
-        #expect(pasteboard.data(forType: .fromNotchFun) != nil)
-    }
+            #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store))
+            #expect(pasteboard.string(forType: .string) == "round-trip payload")
+            // Without this marker we would immediately re-record our own paste.
+            #expect(pasteboard.data(forType: .fromNotchFun) != nil)
+        }
 
-    @Test("Blob-backed payloads are written too")
-    func writesBlobBacked() {
-        let directory = makeTemporaryDirectory("writer-blob")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("Blob-backed payloads are written too")
+        func writesBlobBacked() {
+            let directory = makeTemporaryDirectory("writer-blob")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let item = ClipboardItem(
-            contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
-                                     data: Data(repeating: 0x41, count: 50_000))],
-            title: "big", kind: .text
-        )
-        let pasteboard = NSPasteboard.withUniqueName()
+            let item = ClipboardItem(
+                contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
+                                         data: Data(repeating: 0x41, count: 50_000))],
+                title: "big", kind: .text
+            )
+            let pasteboard = NSPasteboard.withUniqueName()
 
-        #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store))
-        #expect(pasteboard.data(forType: .string)?.count == 50_000)
-    }
+            #expect(ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store))
+            #expect(pasteboard.data(forType: .string)?.count == 50_000)
+        }
 
-    @Test("Source attribution rides along")
-    func writesSourceApp() {
-        let directory = makeTemporaryDirectory("writer-source")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("Source attribution rides along")
+        func writesSourceApp() {
+            let directory = makeTemporaryDirectory("writer-source")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let item = ClipboardItem(
-            contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
-                                     data: Data("x".utf8))],
-            title: "x", kind: .text, appBundleID: "com.example.app"
-        )
-        let pasteboard = NSPasteboard.withUniqueName()
+            let item = ClipboardItem(
+                contents: [store.makeRef(type: NSPasteboard.PasteboardType.string.rawValue,
+                                         data: Data("x".utf8))],
+                title: "x", kind: .text, appBundleID: "com.example.app"
+            )
+            let pasteboard = NSPasteboard.withUniqueName()
 
-        ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store)
-        #expect(pasteboard.string(forType: .source) == "com.example.app")
-    }
+            ClipboardPasteboardWriter.write(item, to: pasteboard, blobStore: store)
+            #expect(pasteboard.string(forType: .source) == "com.example.app")
+        }
 
-    @Test("A payload that cannot be read leaves the pasteboard untouched")
-    func failureLeavesPasteboardIntact() {
-        // The writer gathers everything before clearing, precisely so a missing blob
-        // cannot destroy what the user currently has copied.
-        let directory = makeTemporaryDirectory("writer-broken")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("A payload that cannot be read leaves the pasteboard untouched")
+        func failureLeavesPasteboardIntact() {
+            // The writer gathers everything before clearing, precisely so a missing blob
+            // cannot destroy what the user currently has copied.
+            let directory = makeTemporaryDirectory("writer-broken")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        pasteboard.clearContents()
-        let existing = NSPasteboardItem()
-        existing.setString("existing contents", forType: .string)
-        pasteboard.writeObjects([existing])
+            let pasteboard = NSPasteboard.withUniqueName()
+            pasteboard.clearContents()
+            let existing = NSPasteboardItem()
+            existing.setString("existing contents", forType: .string)
+            pasteboard.writeObjects([existing])
 
-        let brokenRef = ClipboardContentRef(
-            type: NSPasteboard.PasteboardType.string.rawValue,
-            data: Data(repeating: 0, count: 10_000),
-            blobFilename: "does-not-exist.bin"
-        )
-        let broken = ClipboardItem(contents: [brokenRef], title: "broken", kind: .text)
+            let brokenRef = ClipboardContentRef(
+                type: NSPasteboard.PasteboardType.string.rawValue,
+                data: Data(repeating: 0, count: 10_000),
+                blobFilename: "does-not-exist.bin"
+            )
+            let broken = ClipboardItem(contents: [brokenRef], title: "broken", kind: .text)
 
-        #expect(!ClipboardPasteboardWriter.write(broken, to: pasteboard, blobStore: store))
-        #expect(pasteboard.string(forType: .string) == "existing contents")
+            #expect(!ClipboardPasteboardWriter.write(broken, to: pasteboard, blobStore: store))
+            #expect(pasteboard.string(forType: .string) == "existing contents")
+        }
     }
 }
 

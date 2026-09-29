@@ -7,135 +7,137 @@ import AppKit
 import Foundation
 import Testing
 
-/// Every test here uses `NSPasteboard.withUniqueName()`, so the real system clipboard is
-/// never read or written — running the suite must not disturb whatever the user copied.
-/// Serialized: every test here creates a uniquely named NSPasteboard, and running them
-/// concurrently occasionally produced a pasteboard that returned nothing at all - a flake
-/// in the harness rather than the product, but a flake either way.
-@Suite("Clipboard capture filtering", .serialized)
-struct ClipboardCaptureTests {
-    private func capture(_ pasteboard: NSPasteboard, store: ClipboardBlobStore) -> ClipboardItem? {
-        guard let snapshot = ClipboardCapture.snapshot(
-            from: pasteboard,
-            sourceAppBundleID: "com.example.test",
-            config: .default
-        ) else { return nil }
-        return ClipboardCapture.makeItem(from: snapshot, blobStore: store)
-    }
-
-    @Test("Passwords are never recorded", arguments: [
-        "concealed", "transient", "legacy-password-manager",
-    ])
-    func secretsAreSkipped(variant: String) {
-        // The nspasteboard.org convention: password managers mark their copies, and we
-        // must honour that. A clipboard manager that records passwords is a liability.
-        let directory = makeTemporaryDirectory("secrets")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
-        let pasteboard = NSPasteboard.withUniqueName()
-
-        switch variant {
-        case "concealed":
-            pasteboard.declareTypes([.string, .concealed], owner: nil)
-            pasteboard.setString("hunter2", forType: .string)
-            pasteboard.setString("", forType: .concealed)
-        case "transient":
-            pasteboard.declareTypes([.string, .transient], owner: nil)
-            pasteboard.setString("temp", forType: .string)
-        default:
-            let onePassword = NSPasteboard.PasteboardType("com.agilebits.onepassword")
-            pasteboard.declareTypes([.string, onePassword], owner: nil)
-            pasteboard.setString("secret", forType: .string)
-            pasteboard.setString("x", forType: onePassword)
+extension PasteboardTests {
+    /// Every test here uses `NSPasteboard.withUniqueName()`, so the real system clipboard is
+    /// never read or written — running the suite must not disturb whatever the user copied.
+    /// Serialized: every test here creates a uniquely named NSPasteboard, and running them
+    /// concurrently occasionally produced a pasteboard that returned nothing at all - a flake
+    /// in the harness rather than the product, but a flake either way.
+    @Suite("Clipboard capture filtering", .serialized)
+    struct ClipboardCaptureTests {
+        private func capture(_ pasteboard: NSPasteboard, store: ClipboardBlobStore) -> ClipboardItem? {
+            guard let snapshot = ClipboardCapture.snapshot(
+                from: pasteboard,
+                sourceAppBundleID: "com.example.test",
+                config: .default
+            ) else { return nil }
+            return ClipboardCapture.makeItem(from: snapshot, blobStore: store)
         }
 
-        #expect(capture(pasteboard, store: store) == nil)
-    }
+        @Test("Passwords are never recorded", arguments: [
+            "concealed", "transient", "legacy-password-manager",
+        ])
+        func secretsAreSkipped(variant: String) {
+            // The nspasteboard.org convention: password managers mark their copies, and we
+            // must honour that. A clipboard manager that records passwords is a liability.
+            let directory = makeTemporaryDirectory("secrets")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
+            let pasteboard = NSPasteboard.withUniqueName()
 
-    @Test("Our own paste is not recorded again")
-    func selfCopyIgnored() {
-        let directory = makeTemporaryDirectory("selfcopy")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+            switch variant {
+            case "concealed":
+                pasteboard.declareTypes([.string, .concealed], owner: nil)
+                pasteboard.setString("hunter2", forType: .string)
+                pasteboard.setString("", forType: .concealed)
+            case "transient":
+                pasteboard.declareTypes([.string, .transient], owner: nil)
+                pasteboard.setString("temp", forType: .string)
+            default:
+                let onePassword = NSPasteboard.PasteboardType("com.agilebits.onepassword")
+                pasteboard.declareTypes([.string, onePassword], owner: nil)
+                pasteboard.setString("secret", forType: .string)
+                pasteboard.setString("x", forType: onePassword)
+            }
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        pasteboard.declareTypes([.string, .fromNotchFun], owner: nil)
-        pasteboard.setString("pasted by us", forType: .string)
-        pasteboard.setString("", forType: .fromNotchFun)
+            #expect(capture(pasteboard, store: store) == nil)
+        }
 
-        #expect(capture(pasteboard, store: store) == nil)
-    }
+        @Test("Our own paste is not recorded again")
+        func selfCopyIgnored() {
+            let directory = makeTemporaryDirectory("selfcopy")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-    @Test("Whitespace-only copies are ignored")
-    func blankIgnored() {
-        let directory = makeTemporaryDirectory("blank")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+            let pasteboard = NSPasteboard.withUniqueName()
+            pasteboard.declareTypes([.string, .fromNotchFun], owner: nil)
+            pasteboard.setString("pasted by us", forType: .string)
+            pasteboard.setString("", forType: .fromNotchFun)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("   \n\t ", forType: .string)
+            #expect(capture(pasteboard, store: store) == nil)
+        }
 
-        #expect(capture(pasteboard, store: store) == nil)
-    }
+        @Test("Whitespace-only copies are ignored")
+        func blankIgnored() {
+            let directory = makeTemporaryDirectory("blank")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-    @Test("Ordinary text is captured with its source app")
-    func textCaptured() {
-        let directory = makeTemporaryDirectory("text")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+            let pasteboard = NSPasteboard.withUniqueName()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("   \n\t ", forType: .string)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("Hello from the notch", forType: .string)
+            #expect(capture(pasteboard, store: store) == nil)
+        }
 
-        let item = capture(pasteboard, store: store)
-        #expect(item != nil)
-        #expect(item?.title == "Hello from the notch")
-        #expect(item?.kind == .text)
-        #expect(item?.appBundleID == "com.example.test")
-    }
+        @Test("Ordinary text is captured with its source app")
+        func textCaptured() {
+            let directory = makeTemporaryDirectory("text")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-    @Test("Junk pasteboard types are stripped but real ones kept")
-    func noiseTypesStripped() {
-        let directory = makeTemporaryDirectory("noise")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+            let pasteboard = NSPasteboard.withUniqueName()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("Hello from the notch", forType: .string)
 
-        let dynamic = NSPasteboard.PasteboardType("dyn.ah62d4rv4gu8zg55usm1044pxqzb085xyqz1hk64uqm10c6xenv61a3k")
-        let microsoft = NSPasteboard.PasteboardType("com.microsoft.ole.source.xyz")
-        let pasteboard = NSPasteboard.withUniqueName()
-        pasteboard.declareTypes([.string, dynamic, microsoft], owner: nil)
-        pasteboard.setString("clip", forType: .string)
-        pasteboard.setString("junk", forType: dynamic)
-        pasteboard.setString("junk", forType: microsoft)
+            let item = capture(pasteboard, store: store)
+            #expect(item != nil)
+            #expect(item?.title == "Hello from the notch")
+            #expect(item?.kind == .text)
+            #expect(item?.appBundleID == "com.example.test")
+        }
 
-        let types = Set(capture(pasteboard, store: store)?.contents.map(\.type) ?? [])
-        #expect(!types.contains(dynamic.rawValue))
-        #expect(!types.contains(microsoft.rawValue))
-        #expect(types.contains(NSPasteboard.PasteboardType.string.rawValue))
-    }
+        @Test("Junk pasteboard types are stripped but real ones kept")
+        func noiseTypesStripped() {
+            let directory = makeTemporaryDirectory("noise")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-    @Test("A multi-item copy becomes a single history entry")
-    func multiItemCopy() {
-        let directory = makeTemporaryDirectory("multi")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+            let dynamic = NSPasteboard.PasteboardType("dyn.ah62d4rv4gu8zg55usm1044pxqzb085xyqz1hk64uqm10c6xenv61a3k")
+            let microsoft = NSPasteboard.PasteboardType("com.microsoft.ole.source.xyz")
+            let pasteboard = NSPasteboard.withUniqueName()
+            pasteboard.declareTypes([.string, dynamic, microsoft], owner: nil)
+            pasteboard.setString("clip", forType: .string)
+            pasteboard.setString("junk", forType: dynamic)
+            pasteboard.setString("junk", forType: microsoft)
 
-        let first = NSPasteboardItem(); first.setString("first", forType: .string)
-        let second = NSPasteboardItem(); second.setString("second", forType: .string)
-        let pasteboard = NSPasteboard.withUniqueName()
-        pasteboard.clearContents()
-        pasteboard.writeObjects([first, second])
+            let types = Set(capture(pasteboard, store: store)?.contents.map(\.type) ?? [])
+            #expect(!types.contains(dynamic.rawValue))
+            #expect(!types.contains(microsoft.rawValue))
+            #expect(types.contains(NSPasteboard.PasteboardType.string.rawValue))
+        }
 
-        #expect(capture(pasteboard, store: store) != nil)
-    }
+        @Test("A multi-item copy becomes a single history entry")
+        func multiItemCopy() {
+            let directory = makeTemporaryDirectory("multi")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-    @Test("Stored type order is deterministic")
-    func typeOrderStable() {
-        // Order feeds the dedupe digest, so it has to be stable across captures.
-        let resolved = ClipboardCapture.resolvedTypes(for: [.string, .rtf, .html])
-        #expect(resolved == resolved.sorted { $0.rawValue < $1.rawValue })
+            let first = NSPasteboardItem(); first.setString("first", forType: .string)
+            let second = NSPasteboardItem(); second.setString("second", forType: .string)
+            let pasteboard = NSPasteboard.withUniqueName()
+            pasteboard.clearContents()
+            pasteboard.writeObjects([first, second])
+
+            #expect(capture(pasteboard, store: store) != nil)
+        }
+
+        @Test("Stored type order is deterministic")
+        func typeOrderStable() {
+            // Order feeds the dedupe digest, so it has to be stable across captures.
+            let resolved = ClipboardCapture.resolvedTypes(for: [.string, .rtf, .html])
+            #expect(resolved == resolved.sorted { $0.rawValue < $1.rawValue })
+        }
     }
 }
 
@@ -213,131 +215,133 @@ struct ClipboardHistoryTests {
     }
 }
 
-/// Serialized: these drive a real polling timer, and running them concurrently with the
-/// rest of the suite makes the timing assertions flaky.
-@Suite("Clipboard monitor", .serialized)
-@MainActor
-struct ClipboardMonitorTests {
-    @Test("Polling notices a copy exactly once")
-    func capturesOnce() async {
-        let directory = makeTemporaryDirectory("monitor")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+extension PasteboardTests {
+    /// Serialized: these drive a real polling timer, and running them concurrently with the
+    /// rest of the suite makes the timing assertions flaky.
+    @Suite("Clipboard monitor", .serialized)
+    @MainActor
+    struct ClipboardMonitorTests {
+        @Test("Polling notices a copy exactly once")
+        func capturesOnce() async {
+            let directory = makeTemporaryDirectory("monitor")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
-        var captured: [ClipboardItem] = []
-        monitor.setHandler { captured.append($0) }
+            let pasteboard = NSPasteboard.withUniqueName()
+            let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
+            var captured: [ClipboardItem] = []
+            monitor.setHandler { captured.append($0) }
 
-        var config = ClipboardCaptureConfig.default
-        config.pollInterval = 0.1
-        monitor.start(config: config)
+            var config = ClipboardCaptureConfig.default
+            config.pollInterval = 0.1
+            monitor.start(config: config)
 
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("monitored clip", forType: .string)
-        try? await Task.sleep(for: .milliseconds(600))
-        #expect(captured.count == 1)
-        #expect(captured.first?.title == "monitored clip")
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("monitored clip", forType: .string)
+            try? await Task.sleep(for: .milliseconds(600))
+            #expect(captured.count == 1)
+            #expect(captured.first?.title == "monitored clip")
 
-        // Nothing changed, so nothing more should be recorded.
-        try? await Task.sleep(for: .milliseconds(400))
-        #expect(captured.count == 1)
+            // Nothing changed, so nothing more should be recorded.
+            try? await Task.sleep(for: .milliseconds(400))
+            #expect(captured.count == 1)
 
-        monitor.stop()
-    }
+            monitor.stop()
+        }
 
-    @Test("Suspending stops capture, and resuming does not backfill")
-    func suspendResume() async {
-        let directory = makeTemporaryDirectory("monitor-suspend")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("Suspending stops capture, and resuming does not backfill")
+        func suspendResume() async {
+            let directory = makeTemporaryDirectory("monitor-suspend")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
-        var captured: [ClipboardItem] = []
-        monitor.setHandler { captured.append($0) }
+            let pasteboard = NSPasteboard.withUniqueName()
+            let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
+            var captured: [ClipboardItem] = []
+            monitor.setHandler { captured.append($0) }
 
-        var config = ClipboardCaptureConfig.default
-        config.pollInterval = 0.1
-        monitor.start(config: config)
+            var config = ClipboardCaptureConfig.default
+            config.pollInterval = 0.1
+            monitor.start(config: config)
 
-        monitor.suspend()
-        pasteboard.clearContents()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("while suspended", forType: .string)
-        try? await Task.sleep(for: .milliseconds(400))
-        #expect(captured.isEmpty)
+            monitor.suspend()
+            pasteboard.clearContents()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("while suspended", forType: .string)
+            try? await Task.sleep(for: .milliseconds(400))
+            #expect(captured.isEmpty)
 
-        // Resuming must not sweep up what was copied while we were not watching:
-        // that content was deliberately skipped, most likely because we pasted it.
-        monitor.resume()
-        try? await Task.sleep(for: .milliseconds(400))
-        #expect(captured.isEmpty)
+            // Resuming must not sweep up what was copied while we were not watching:
+            // that content was deliberately skipped, most likely because we pasted it.
+            monitor.resume()
+            try? await Task.sleep(for: .milliseconds(400))
+            #expect(captured.isEmpty)
 
-        pasteboard.clearContents()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("after resume", forType: .string)
-        try? await Task.sleep(for: .milliseconds(600))
-        #expect(captured.count == 1)
+            pasteboard.clearContents()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("after resume", forType: .string)
+            try? await Task.sleep(for: .milliseconds(600))
+            #expect(captured.count == 1)
 
-        monitor.stop()
-    }
+            monitor.stop()
+        }
 
-    @Test("A suspend that arrives before start is honoured")
-    func suspendBeforeStart() async {
-        let directory = makeTemporaryDirectory("monitor-early-suspend")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("A suspend that arrives before start is honoured")
+        func suspendBeforeStart() async {
+            let directory = makeTemporaryDirectory("monitor-early-suspend")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
-        var captured: [ClipboardItem] = []
-        monitor.setHandler { captured.append($0) }
+            let pasteboard = NSPasteboard.withUniqueName()
+            let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
+            var captured: [ClipboardItem] = []
+            monitor.setHandler { captured.append($0) }
 
-        // The launched-while-locked order: the lock is applied, then the feature starts.
-        monitor.suspend()
-        var config = ClipboardCaptureConfig.default
-        config.pollInterval = 0.1
-        monitor.start(config: config)
+            // The launched-while-locked order: the lock is applied, then the feature starts.
+            monitor.suspend()
+            var config = ClipboardCaptureConfig.default
+            config.pollInterval = 0.1
+            monitor.start(config: config)
 
-        pasteboard.clearContents()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("on the lock screen", forType: .string)
-        try? await Task.sleep(for: .milliseconds(400))
-        #expect(captured.isEmpty)
+            pasteboard.clearContents()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("on the lock screen", forType: .string)
+            try? await Task.sleep(for: .milliseconds(400))
+            #expect(captured.isEmpty)
 
-        monitor.resume()
-        pasteboard.clearContents()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("after unlock", forType: .string)
-        try? await Task.sleep(for: .milliseconds(600))
-        #expect(captured.count == 1)
-        #expect(captured.first?.title == "after unlock")
+            monitor.resume()
+            pasteboard.clearContents()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("after unlock", forType: .string)
+            try? await Task.sleep(for: .milliseconds(600))
+            #expect(captured.count == 1)
+            #expect(captured.first?.title == "after unlock")
 
-        monitor.stop()
-    }
+            monitor.stop()
+        }
 
-    @Test("A stopped monitor records nothing")
-    func stopped() async {
-        let directory = makeTemporaryDirectory("monitor-stop")
-        defer { removeDirectory(directory) }
-        let store = ClipboardBlobStore(directory: directory)
+        @Test("A stopped monitor records nothing")
+        func stopped() async {
+            let directory = makeTemporaryDirectory("monitor-stop")
+            defer { removeDirectory(directory) }
+            let store = ClipboardBlobStore(directory: directory)
 
-        let pasteboard = NSPasteboard.withUniqueName()
-        let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
-        var captured: [ClipboardItem] = []
-        monitor.setHandler { captured.append($0) }
+            let pasteboard = NSPasteboard.withUniqueName()
+            let monitor = ClipboardMonitor(pasteboard: pasteboard, blobStore: store)
+            var captured: [ClipboardItem] = []
+            monitor.setHandler { captured.append($0) }
 
-        var config = ClipboardCaptureConfig.default
-        config.pollInterval = 0.1
-        monitor.start(config: config)
-        monitor.stop()
+            var config = ClipboardCaptureConfig.default
+            config.pollInterval = 0.1
+            monitor.start(config: config)
+            monitor.stop()
 
-        pasteboard.clearContents()
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString("after stop", forType: .string)
-        try? await Task.sleep(for: .milliseconds(400))
+            pasteboard.clearContents()
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString("after stop", forType: .string)
+            try? await Task.sleep(for: .milliseconds(400))
 
-        #expect(captured.isEmpty)
+            #expect(captured.isEmpty)
+        }
     }
 }

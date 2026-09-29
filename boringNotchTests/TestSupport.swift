@@ -5,6 +5,7 @@
 
 import AppKit
 import Foundation
+import Testing
 
 /// A throwaway directory for a single test.
 ///
@@ -69,3 +70,11 @@ final class FakeAssertion: PowerAssertionHolding {
 
 /// A fixed reference point, so nothing depends on the wall clock.
 let testEpoch = Date(timeIntervalSince1970: 1_700_000_000)
+
+/// Every suite that creates an `NSPasteboard` lives inside this one.
+///
+/// `.serialized` on a suite only orders the tests inside it; separate suites still run in
+/// parallel. Creating uniquely named pasteboards from several suites at once occasionally
+/// crashed the test process (an abort inside AppKit, which then took every test in flight
+/// down with it), so the serialization has to cover all of them together.
+@Suite(.serialized) enum PasteboardTests {}
