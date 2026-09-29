@@ -687,6 +687,13 @@ function install() {
     b.classList.add('done');
     const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 30);
     setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
+    // A web page can't open Terminal with the line typed in (browsers block that, rightly),
+    // so the next best thing: say exactly what to press next, right under the button.
+    if ('next' in b.dataset) {
+      const next = $('[data-copiednext]');
+      next.hidden = false;
+      if (!reduced) animate(next, { opacity: [0, 1], y: [-6, 0], duration: 450, ease: 'out(3)' });
+    }
   }));
 
   // Homebrew copies its command, and says so.
