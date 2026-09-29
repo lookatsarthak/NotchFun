@@ -87,6 +87,12 @@ extension Defaults.Keys {
     /// Set once setup has switched Launch at login on for a first-time user, so it is
     /// only ever done once and never overrides a choice made later.
     static let onboardingOfferedLaunchAtLogin = Key<Bool>("onboardingOfferedLaunchAtLogin", default: false)
+    /// The volume and brightness popup choice made in setup, until setup finishes.
+    ///
+    /// The real setting is only written at the end (switching it on before Accessibility
+    /// is granted would prompt and switch itself back off), so without this a choice made
+    /// before quitting halfway through setup was forgotten on resume.
+    static let onboardingPendingHUDChoice = Key<Bool?>("onboardingPendingHUDChoice", default: nil)
 
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)

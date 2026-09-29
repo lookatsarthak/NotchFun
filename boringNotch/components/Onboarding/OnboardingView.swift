@@ -29,7 +29,7 @@ struct OnboardingView: View {
 
     init(startAt: OnboardingStep, onFinish: @escaping () -> Void, onOpenSettings: @escaping () -> Void) {
         _step = State(initialValue: startAt)
-        _hudChoice = State(initialValue: Defaults[.hudReplacement])
+        _hudChoice = State(initialValue: Defaults[.onboardingPendingHUDChoice] ?? Defaults[.hudReplacement])
         self.onFinish = onFinish
         self.onOpenSettings = onOpenSettings
     }
@@ -67,6 +67,10 @@ struct OnboardingView: View {
         .preferredColorScheme(.dark)
         .onChange(of: step) { _, newStep in
             Defaults[.onboardingResumeStep] = newStep.rawValue
+        }
+        // Kept until setup finishes, so quitting partway and coming back remembers it.
+        .onChange(of: hudChoice) { _, choice in
+            Defaults[.onboardingPendingHUDChoice] = choice
         }
         .onAppear {
             Defaults[.onboardingResumeStep] = step.rawValue
@@ -183,6 +187,7 @@ struct OnboardingView: View {
         tryIt.cleanUp()
         Defaults[.onboardingCompletedVersion] = OnboardingPlan.version
         Defaults[.onboardingResumeStep] = nil
+        Defaults[.onboardingPendingHUDChoice] = nil
         onFinish()
     }
 
