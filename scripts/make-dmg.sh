@@ -40,8 +40,11 @@ echo "==> Building $APP_NAME $VERSION (Release)"
 # returning URLSessionDataTask?, and so changed its mangled symbol -- a stale LottieView.o
 # failed to link with "Undefined symbols", while clean builds of the same source
 # succeeded. A release is worth the extra few minutes to be sure of what is in it.
+# generic/platform=macOS, not platform=macOS: the latter means "this Mac" and builds
+# only its architecture. Every release up to 1.5.1 shipped arm64-only that way, so the
+# Intel Macs that run Tahoe - which the README says are supported - could not open it.
 xcodebuild -scheme "$SCHEME" -configuration Release \
-  -destination 'platform=macOS' \
+  -destination 'generic/platform=macOS' \
   -derivedDataPath "$DERIVED" \
   CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES \
   clean build
