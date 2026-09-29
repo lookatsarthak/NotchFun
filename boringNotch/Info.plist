@@ -2,9 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>SUEnableAutomaticChecks</key>
-	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>NotchFun shows today's events in the notch. Nothing leaves your Mac.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>NotchFun shows your reminders beside today's events in the notch.</string>
 	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUEnableDownloaderService</key>
 	<true/>

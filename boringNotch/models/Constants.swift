@@ -84,6 +84,9 @@ extension Defaults.Keys {
     /// The step setup was on when last seen, while it is unfinished; nil otherwise. Lets
     /// setup resume where it was quit instead of starting over.
     static let onboardingResumeStep = Key<String?>("onboardingResumeStep", default: nil)
+    /// Set once setup has switched Launch at login on for a first-time user, so it is
+    /// only ever done once and never overrides a choice made later.
+    static let onboardingOfferedLaunchAtLogin = Key<Bool>("onboardingOfferedLaunchAtLogin", default: false)
 
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)

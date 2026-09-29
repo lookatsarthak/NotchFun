@@ -469,6 +469,17 @@ struct PreferencesStep: View {
                 }
             }
         }
+        .onAppear(perform: recommendLaunchAtLogin)
+    }
+
+    /// "Recommended" should mean on. For someone setting up for the first time, switch it
+    /// on as this screen appears, where they can see it and turn it off - the same way
+    /// automatic updates start on. Only once, and never for someone who has finished setup
+    /// before, so running setup again cannot undo a choice they made since.
+    private func recommendLaunchAtLogin() {
+        guard Defaults[.onboardingCompletedVersion] == 0, !Defaults[.onboardingOfferedLaunchAtLogin] else { return }
+        Defaults[.onboardingOfferedLaunchAtLogin] = true
+        if !LaunchAtLogin.isEnabled { LaunchAtLogin.isEnabled = true }
     }
 
     private func row<Control: View>(
@@ -491,7 +502,10 @@ struct PreferencesStep: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
+            // The switches have no visible label of their own; without this, VoiceOver
+            // read them as "checkbox, 0".
             control()
+                .accessibilityLabel(Text(title))
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.05)))
