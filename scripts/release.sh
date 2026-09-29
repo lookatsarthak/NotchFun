@@ -123,8 +123,14 @@ if [ ! -x "$SIGN_UPDATE" ]; then
 fi
 
 echo "==> Signing for Sparkle"
-# Reads the private key from your login Keychain; macOS may prompt for approval.
-SIG_LINE=$("$SIGN_UPDATE" "$DMG")
+# Reads the private key from your login Keychain, where macOS may stop to ask for the
+# keychain password - which leaves an unattended release waiting on a dialog. Set
+# SPARKLE_ED_KEY_FILE to an exported copy of the key to sign without the Keychain.
+if [ -n "${SPARKLE_ED_KEY_FILE:-}" ]; then
+  SIG_LINE=$("$SIGN_UPDATE" --ed-key-file "$SPARKLE_ED_KEY_FILE" "$DMG")
+else
+  SIG_LINE=$("$SIGN_UPDATE" "$DMG")
+fi
 SIGNATURE=$(echo "$SIG_LINE" | sed -n 's/.*edSignature="\([^"]*\)".*/\1/p')
 LENGTH=$(echo "$SIG_LINE" | sed -n 's/.*length="\([^"]*\)".*/\1/p')
 [ -n "$SIGNATURE" ] || { echo "error: could not parse a signature from: $SIG_LINE"; exit 1; }
