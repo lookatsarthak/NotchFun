@@ -396,6 +396,7 @@ struct ContentView: View {
                           CaffeineNotification(
                               isActive: caffeine.isActive,
                               detail: caffeine.session?.duration.shortTitle,
+                              session: caffeine.session,
                               notchWidth: vm.closedNotchSize.width,
                               namespace: caffeineNamespace
                           )

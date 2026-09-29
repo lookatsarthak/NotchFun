@@ -275,7 +275,7 @@ class BoringViewCoordinator: ObservableObject {
             }
         }
         Task { @MainActor in
-            withAnimation(NotchMotion.content) {
+            withAnimation(NotchMotion.sneak) {
                 self.sneakPeek.show = status
                 self.sneakPeek.type = type
                 self.sneakPeek.value = value
@@ -295,7 +295,7 @@ class BoringViewCoordinator: ObservableObject {
             try? await Task.sleep(for: .seconds(duration))
             guard let self = self, !Task.isCancelled else { return }
             await MainActor.run {
-                withAnimation(NotchMotion.content) {
+                withAnimation(NotchMotion.sneak) {
                     self.toggleSneakPeek(status: false, type: .music)
                     self.sneakPeekDuration = 1.5
                 }
@@ -319,7 +319,7 @@ class BoringViewCoordinator: ObservableObject {
         value: CGFloat = 0
     ) {
         Task { @MainActor in
-            withAnimation(NotchMotion.content) {
+            withAnimation(NotchMotion.sneak) {
                 self.expandingView.show = status
                 self.expandingView.type = type
                 self.expandingView.value = value

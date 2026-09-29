@@ -45,6 +45,10 @@ struct HoverButton: View {
                                 .foregroundColor(iconColor)
                                 .contentTransition(contentTransition)
                                 .font(scale == .large ? .largeTitle : .body)
+                                // A content transition only plays inside an animation.
+                                // Play and pause change from the music state, outside any
+                                // withAnimation, so without this the symbol just swapped.
+                                .animation(NotchMotion.control, value: icon)
                         }
                 }
         }

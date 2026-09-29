@@ -14,25 +14,41 @@ struct CaffeineButton: View {
     private let caffeine = CaffeineManager.shared
     @Default(.caffeineMode) private var mode
     @Default(.caffeineDefaultDuration) private var defaultDuration
+    @Default(.caffeineShowsTimeLeft) private var showsTimeLeft
 
     @State private var haptics = false
 
     var body: some View {
-        Button {
-            toggle()
-        } label: {
-            Image(systemName: caffeine.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
-                .foregroundStyle(.white)   // state is carried by fill vs outline, not colour;
-                                           // accent is reserved for progress fills and
-                                           // selection, and is user-customisable so it
-                                           // cannot be relied on to read against black
-                .imageScale(.medium)
-                .notchHoverHighlight()
+        HStack(spacing: 2) {
+            Button {
+                toggle()
+            } label: {
+                Image(systemName: caffeine.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
+                    .foregroundStyle(.white)   // state is carried by fill vs outline, not colour;
+                                               // accent is reserved for progress fills and
+                                               // selection, and is user-customisable so it
+                                               // cannot be relied on to read against black
+                    .imageScale(.medium)
+                    .contentTransition(.symbolEffect(.replace))
+                    .notchHoverHighlight()
+            }
+            .buttonStyle(PlainButtonStyle())
+            .contextMenu { CaffeineDurationMenu() }
+            .help(helpText)
+            .sensoryFeedback(.alignment, trigger: haptics)
+
+            // Beside the cup rather than inside its 30pt hover circle. Only exists while
+            // the notch is open, so the once-a-second tick never runs in the background.
+            if showsTimeLeft, let session = caffeine.session, session.expiresAt != nil {
+                CaffeineCountdown(session: session)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .fixedSize()
+                    .padding(.trailing, 4)
+                    .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
+            }
         }
-        .buttonStyle(PlainButtonStyle())
-        .contextMenu { CaffeineDurationMenu() }
-        .help(helpText)
-        .sensoryFeedback(.alignment, trigger: haptics)
+        .animation(NotchMotion.control, value: caffeine.session?.expiresAt)
     }
 
     private var helpText: String {

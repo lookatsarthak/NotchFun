@@ -195,6 +195,9 @@ extension Defaults.Keys {
     static let caffeineIndicatorInNotch = Key<Bool>("caffeineIndicatorInNotch", default: true)
     /// Show the "Caffeine on/off" indicator beside the closed notch.
     static let caffeineShowNotification = Key<Bool>("caffeineShowNotification", default: true)
+    /// A running clock beside the cup while a timed session is on. On by default: a
+    /// session that ends by itself is easier to trust when you can see when.
+    static let caffeineShowsTimeLeft = Key<Bool>("caffeineShowsTimeLeft", default: true)
     /// What a plain click keeps awake.
     static let caffeineMode = Key<CaffeineMode>("caffeineMode", default: .displayAwake)
     /// What a plain click schedules. Indefinite by default: an unexpected sleep during

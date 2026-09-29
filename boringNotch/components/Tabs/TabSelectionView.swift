@@ -16,9 +16,9 @@ struct TabModel: Identifiable {
 }
 
 let tabs = [
-    TabModel(label: "Home", icon: "house.fill", view: .home),
-    TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
-    TabModel(label: "Clipboard", icon: "doc.on.clipboard.fill", view: .clipboard)
+    TabModel(label: "Home", icon: "house", view: .home),
+    TabModel(label: "Shelf", icon: "tray", view: .shelf),
+    TabModel(label: "Clipboard", icon: "doc.on.clipboard", view: .clipboard)
 ]
 
 /// Tabs whose feature is currently switched on. Home is always present; the others

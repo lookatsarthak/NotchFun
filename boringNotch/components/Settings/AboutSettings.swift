@@ -39,19 +39,9 @@ struct About: View {
 
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)
-                    Button {
-                        if let url = URL(string: "https://lookatsarthak.github.io/NotchFun/") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    } label: {
-                        VStack(spacing: 5) {
-                            Image(systemName: "globe")
-                                .font(.system(size: 17))
-                                .frame(height: 18)
-                            Text("Website")
-                        }
-                        .contentShape(Rectangle())
-                    }
+                    linkButton("Website", systemImage: "globe", url: URL(string: "https://lookatsarthak.github.io/NotchFun/"))
+                    linkButton("Report a bug", systemImage: "ladybug", url: bugReportURL)
+                    linkButton("Suggest", systemImage: "lightbulb", url: URL(string: "https://github.com/lookatsarthak/NotchFun/issues/new?template=1-feature-request-form.yml"))
                     Button {
                         if let url = URL(string: "https://github.com/lookatsarthak/NotchFun") {
                             NSWorkspace.shared.open(url)
@@ -85,5 +75,35 @@ struct About: View {
             CheckForUpdatesView(updater: updaterController.updater)
         }
         .navigationTitle("About")
+    }
+
+    /// The bug form on GitHub with the version and macOS already filled in, so a report
+    /// from the app never arrives without them.
+    private var bugReportURL: URL? {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        var components = URLComponents(string: "https://github.com/lookatsarthak/NotchFun/issues/new")
+        components?.queryItems = [
+            URLQueryItem(name: "template", value: "1-bug-report-form.yml"),
+            URLQueryItem(name: "version", value: "\(version) (\(build))"),
+            URLQueryItem(name: "operating-system", value: "macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"),
+        ]
+        return components?.url
+    }
+
+    private func linkButton(_ title: String, systemImage: String, url: URL?) -> some View {
+        Button {
+            if let url { NSWorkspace.shared.open(url) }
+        } label: {
+            VStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 17))
+                    .frame(height: 18)
+                Text(title)
+            }
+            .contentShape(Rectangle())
+        }
     }
 }

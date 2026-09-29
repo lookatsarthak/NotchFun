@@ -3,6 +3,7 @@
 //  NotchFun
 //
 
+import Defaults
 import SwiftUI
 
 /// The transient indicator that appears beside the closed notch when caffeine turns on
@@ -18,6 +19,10 @@ import SwiftUI
 struct CaffeineNotification: View {
     let isActive: Bool
     let detail: String?
+    /// The running session, for its time left. The banner shows for a few seconds, so a
+    /// once-a-second tick only runs while it is on screen.
+    var session: CaffeineSession? = nil
+    @Default(.caffeineShowsTimeLeft) private var showsTimeLeft
     let notchWidth: CGFloat
     /// Shared with `CaffeineNotchIndicator`. When the banner goes away the cup does not
     /// fade out and a second one fade in — the one cup travels to where it lives next.
@@ -30,7 +35,11 @@ struct CaffeineNotification: View {
                 .font(.subheadline)
                 .foregroundStyle(.white)
         } trailing: {
-            if let detail, isActive {
+            if isActive, showsTimeLeft, let session, session.expiresAt != nil {
+                CaffeineCountdown(session: session)
+                    .font(.caption2)
+                    .foregroundStyle(.gray)
+            } else if let detail, isActive {
                 Text(detail)
                     .font(.caption2)
                     .foregroundStyle(.gray)
@@ -51,6 +60,20 @@ struct CaffeineNotification: View {
             image.matchedGeometryEffect(id: CaffeineNotchIndicator.morphID, in: namespace, isSource: false)
         } else {
             image
+        }
+    }
+}
+
+/// A timed session's time left, ticking once a second while it is on screen.
+struct CaffeineCountdown: View {
+    let session: CaffeineSession
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            Text(session.countdownClock(at: context.date) ?? "")
+                .monospacedDigit()
+                .contentTransition(.numericText(countsDown: true))
+                .animation(NotchMotion.control, value: session.countdownClock(at: context.date))
         }
     }
 }

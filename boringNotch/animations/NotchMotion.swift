@@ -34,6 +34,15 @@ enum NotchMotion {
     /// the asymmetry with `shellOpen` is deliberate rather than an oversight.
     static var shellClose: Animation { resolve(.spring(duration: 0.45, bounce: 0)) }
 
+    /// The closed notch widening beside the hardware for a moment - the volume and
+    /// brightness popups, the caffeine, charging and AirPods banners - and settling back.
+    ///
+    /// The shell's opening spring, used both ways. These are small, quick movements at the
+    /// edge of the screen, and a little give at each end reads as the notch reacting
+    /// rather than a rectangle being resized. It only ever widens or narrows the black
+    /// shape beside the cutout, so the overshoot never uncovers anything.
+    static var sneak: Animation { resolve(.spring(duration: 0.42, bounce: 0.20)) }
+
     /// Anything living inside the notch: tab swaps, list rows, HUD bars.
     static var content: Animation { resolve(.spring(duration: 0.28, bounce: 0)) }
 

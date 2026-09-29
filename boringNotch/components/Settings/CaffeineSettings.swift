@@ -67,6 +67,9 @@ struct CaffeineSettings: View {
                 Defaults.Toggle(key: .caffeineIndicatorInNotch) {
                     Text("Show a cup in the notch while active")
                 }
+                Defaults.Toggle(key: .caffeineShowsTimeLeft) {
+                    Text("Show time left for timed sessions")
+                }
                 Defaults.Toggle(key: .caffeineActivateOnLaunch) {
                     Text("Turn on when NotchFun launches")
                 }

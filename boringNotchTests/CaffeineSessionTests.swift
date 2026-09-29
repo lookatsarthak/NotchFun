@@ -17,6 +17,18 @@ struct CaffeineSessionTests {
         #expect(session.remainingLabel(at: testEpoch) == nil)
     }
 
+    @Test("The running clock counts down to the second, never showing zero early")
+    func countdownClock() {
+        let hour = CaffeineSession(mode: .displayAwake, duration: .minutes(60), startedAt: testEpoch)
+        #expect(hour.countdownClock(at: testEpoch) == "1:00:00")
+        #expect(hour.countdownClock(at: testEpoch.addingTimeInterval(0.2)) == "1:00:00")
+        #expect(hour.countdownClock(at: testEpoch.addingTimeInterval(1)) == "59:59")
+        #expect(hour.countdownClock(at: testEpoch.addingTimeInterval(3599.5)) == "0:01")
+        #expect(hour.countdownClock(at: testEpoch.addingTimeInterval(3600)) == "0:00")
+        let indefinite = CaffeineSession(mode: .displayAwake, duration: .indefinite, startedAt: testEpoch)
+        #expect(indefinite.countdownClock(at: testEpoch) == nil)
+    }
+
     @Test("A timed session expires exactly at its deadline")
     func timedExpiry() {
         let session = CaffeineSession(mode: .displayAwake, duration: .minutes(15), startedAt: testEpoch)

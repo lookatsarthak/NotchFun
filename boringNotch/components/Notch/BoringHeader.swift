@@ -80,7 +80,7 @@ struct BoringHeader: View {
                                 }
                                 
                             }) {
-                                Image(systemName: "gear")
+                                Image(systemName: "gearshape")
                                     .foregroundColor(.white)
                                     .imageScale(.medium)
                                     .notchHoverHighlight()
@@ -111,7 +111,8 @@ struct BoringHeader: View {
                     }
                 }
             }
-            .font(.system(.headline, design: .rounded))
+            // Lighter than the headline weight these used to inherit, to match the tabs.
+            .font(.system(size: 14, weight: .regular))
             .frame(maxWidth: .infinity, alignment: .trailing)
             .opacity(vm.notchState == .closed ? 0 : 1)
             .blur(radius: vm.notchState == .closed ? 8 : 0)

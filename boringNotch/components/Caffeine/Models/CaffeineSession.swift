@@ -43,6 +43,16 @@ struct CaffeineSession: Codable, Equatable, Sendable {
         return max(0, expiresAt.timeIntervalSince(now))
     }
 
+    /// A running clock for the notch, e.g. "59:59" or "1:05:09", or `nil` when the session
+    /// has no fixed end. Rounds up, so a one-hour session starts at "1:00:00" and the last
+    /// second shows "0:01" rather than "0:00".
+    func countdownClock(at now: Date = .now) -> String? {
+        guard let remaining = remaining(at: now) else { return nil }
+        let total = Int(remaining.rounded(.up))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
     /// Countdown for the notch, e.g. "42m" or "1:05".
     func remainingLabel(at now: Date = .now) -> String? {
         guard let remaining = remaining(at: now) else { return nil }

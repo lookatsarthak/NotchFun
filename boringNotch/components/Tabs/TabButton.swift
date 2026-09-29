@@ -15,7 +15,13 @@ struct TabButton: View {
     
     var body: some View {
         Button(action: onClick) {
+            // Outline until selected, then filled: the pill says where you are and the
+            // glyph agrees. One size and weight for every tab, lighter than the old
+            // headline-sized symbols.
             Image(systemName: icon)
+                .symbolVariant(selected ? .fill : .none)
+                .font(.system(size: 13, weight: .medium))
+                .contentTransition(.symbolEffect(.replace))
                 .padding(.horizontal, 15)
                 .contentShape(Capsule())
         }
