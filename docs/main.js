@@ -28,6 +28,7 @@ const N = {
   dragView: null,       // a file being dragged opens the shelf
   preview: false,       // the width slider
   hover: false,
+  tour: null,           // the hero's run-through: { state, view, banner }
   playing: false,
 };
 const viewOrder = { home: 0, shelf: 1, clip: 2, mirror: 3 };
@@ -42,6 +43,7 @@ function render() {
   else if (N.chapterView) { state = 'open'; view = N.chapterView; }
   else if (N.chapterBanner) { state = 'banner'; setBanner(N.chapterBanner); }
   else if (N.preview || N.hover) { state = 'open'; view = view === 'mirror' ? 'home' : view; }
+  else if (N.tour) { state = N.tour.state; view = N.tour.view || view; if (N.tour.banner) setBanner(N.tour.banner); }
   else if (N.playing) state = 'live';
 
   if (view !== notch.dataset.view) {
@@ -64,7 +66,7 @@ function syncLoupes(state) {
     // As large as the card allows, up to twice the real size.
     const room = l.parentElement.clientWidth - 48;
     const scale = Math.min(2, room / widths[closed]).toFixed(3);
-    l.style.cssText = notch.style.cssText.replace(/--ns:[^;]+;?/, '') + `--ls:${scale};`;
+    l.style.cssText = notch.style.cssText.replace(/--(ns|ts):[^;]+;?/g, '') + `--ls:${scale};`;
     $('.banner-lead', l).innerHTML = $('.banner-lead', notch).innerHTML;
     $('.banner-trail', l).innerHTML = $('.banner-trail', notch).innerHTML;
     $('.hud-icon use', l).setAttribute('href', $('.hud-icon use', notch).getAttribute('href'));
@@ -104,28 +106,125 @@ fitNotch();
 // The first thing the app does on a new Mac: open the notch and write "hello" in it.
 // The page does the same, with the app's own path.
 function playHello() {
-  const lookUp = $('.look-up');
   if (reduced) return Promise.resolve();
   N.hello = true;
   render();
   const [drawable] = createDrawable('.hello-path');
   drawable.setAttribute('draw', '0 0');
-  animate(lookUp, { opacity: [0, 1], translateY: [8, 0], duration: 500, delay: 300, ease: 'out(3)' });
-  animate('.look-up .arrow', { translateY: [0, -6, 0], duration: 700, delay: 700, loop: 2, ease: 'inOut(2)' });
   return new Promise(resolve => {
     animate(drawable, {
       draw: ['0 0', '0 1'],
-      duration: 2800,
+      duration: 2600,
       delay: 450,
       ease: 'inOut(1.6)',
-      onComplete: () => setTimeout(() => {
-        N.hello = false;
-        render();
-        animate(lookUp, { opacity: 0, duration: 400 });
-        resolve();
-      }, 350),
+      onComplete: () => setTimeout(() => { N.hello = false; render(); resolve(); }, 300),
     });
   });
+}
+
+// ------------------------------------------------------------------ hero
+
+// Up top the notch is drawn large and runs through its day, with the line above the
+// headline naming each thing as it happens. Scrolling shrinks it into the menu bar.
+const heroEl = $('[data-hero]');
+let heroScale = 1;
+
+function dock() {
+  const root = document.documentElement;
+  const ns = parseFloat(root.style.getPropertyValue('--ns')) || 1;
+  const openW = parseFloat(getComputedStyle(root).getPropertyValue('--open-w')) || 640;
+  heroScale = Math.max(ns, Math.min(1.6, (root.clientWidth - 64) / openW, (innerHeight * 0.42) / 190));
+  root.style.setProperty('--hero-s', heroScale.toFixed(3));
+  const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
+  const eased = 1 - Math.pow(1 - p, 3);
+  root.style.setProperty('--ts', (heroScale + (ns - heroScale) * eased).toFixed(4));
+  // The menu bar's links sit behind the large notch, so they arrive as it docks.
+  root.style.setProperty('--dock', eased.toFixed(3));
+}
+
+function numberClips() {
+  $$('[data-cliplist] li:not(.none)').forEach((li, i) => ($('kbd', li).textContent = i < 9 ? `⌘${i + 1}` : ''));
+}
+addEventListener('scroll', () => requestAnimationFrame(dock), { passive: true });
+addEventListener('resize', dock);
+
+// Swaps the kicker's words: the old line rolls up and out, the new one rolls in, and
+// the box eases to the new width so the sentence never jumps.
+let kickerText = '';
+function kick(text) {
+  if (text === kickerText) return;
+  kickerText = text;
+  const roll = $('[data-kicker]');
+  const next = document.createElement('span');
+  next.textContent = text;
+  const prev = roll.firstElementChild;
+  if (reduced || !prev) { roll.replaceChildren(next); return; }
+  next.style.position = 'absolute'; next.style.left = '0'; next.style.top = '0';
+  roll.append(next);
+  const w = next.getBoundingClientRect().width;
+  animate(roll, { width: [roll.getBoundingClientRect().width, w], duration: 500, ease: 'out(3)' });
+  animate(prev, { y: ['0%', '-110%'], opacity: [1, 0], duration: 420, ease: 'in(2)', onComplete: () => prev.remove() });
+  animate(next, { y: ['110%', '0%'], opacity: [0, 1], duration: 520, delay: 120, ease: 'out(3)',
+    onComplete: () => { next.style.position = ''; roll.style.width = ''; } });
+}
+
+function tour() {
+  if (reduced) { N.tour = { state: 'open', view: 'home' }; render(); return; }
+  const zone = $('[data-shelf]');
+  const list = $('[data-cliplist]');
+  let extra = null;
+  const cleanup = () => { const wasRow = extra?.tagName === 'LI'; extra?.remove(); extra = null; if (wasRow) numberClips(); zone.classList.toggle('has-items', !!$('.shelf-item', zone)); body.removeAttribute('data-focus'); };
+  const steps = [
+    { kicker: 'plays your music.', ms: 2400, run: () => { setPlaying(true); N.tour = { state: 'live' }; } },
+    { kicker: 'plays your music.', ms: 3000, run: () => { N.tour = { state: 'open', view: 'home' }; } },
+    { kicker: 'holds your files.', ms: 3200, run: () => {
+      N.tour = { state: 'open', view: 'shelf' };
+      setTimeout(() => {
+        extra = document.createElement('div');
+        extra.className = 'shelf-item';
+        extra.innerHTML = '<span class="file-icon pdf">PDF</span>Boarding pass.pdf';
+        zone.append(extra); zone.classList.add('has-items');
+        animate(extra, { scale: [0.5, 1], opacity: [0, 1], y: [-30, 0], duration: 700, ease: 'out(4)' });
+        const r = extra.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + 20 * heroScale, 40 * heroScale);
+      }, 650);
+    } },
+    { kicker: 'remembers what you copied.', ms: 3200, run: () => {
+      N.tour = { state: 'open', view: 'clip' };
+      setTimeout(() => {
+        extra = document.createElement('li');
+        extra.innerHTML = '<span class="src" style="background:#ffd60a"></span><span class="t">Flight AA 2417 · Gate B32</span><span class="a">Notes</span><kbd>⌘1</kbd>';
+        list.prepend(extra);
+        numberClips();
+        animate(extra, { opacity: [0, 1], y: [-12, 0], duration: 600, ease: 'out(3)' });
+      }, 600);
+    } },
+    { kicker: 'shows what’s next.', ms: 2800, run: () => { body.dataset.focus = 'cal'; N.tour = { state: 'open', view: 'home' }; } },
+    { kicker: 'keeps your Mac awake.', ms: 2600, run: () => {
+      N.tour = { state: 'banner', banner: { lead: '<svg viewBox="0 0 24 24" style="color:#ffd479"><use href="#i-cup"/></svg>Awake', trail: '<span>1:00:00</span>' } };
+      bannerContent = null;
+    } },
+    { kicker: 'turns it down, quietly.', ms: 2400, run: () => {
+      N.tour = { state: 'hud' };
+      $('.hud-icon use', notch).setAttribute('href', '#i-speaker');
+      [0.3, 0.42, 0.55, 0.68].forEach((l, i) => setTimeout(() => { notch.style.setProperty('--level', l); syncLoupes(notch.dataset.state); }, 300 + i * 260));
+    } },
+  ];
+  let i = 0, timer = null, running = false;
+  const step = () => {
+    cleanup();
+    const st = steps[i];
+    kick(st.kicker);
+    st.run();
+    render();
+    i = (i + 1) % steps.length;
+    timer = setTimeout(step, st.ms);
+  };
+  const start = () => { if (running) return; running = true; step(); };
+  const stop = () => { if (!running) return; running = false; clearTimeout(timer); cleanup(); N.tour = null; render(); };
+  // Runs only while the hero is on screen; reaching for the notch takes over from it.
+  new IntersectionObserver(([e]) => (e.intersectionRatio > 0.35 ? start() : stop()), { threshold: [0, 0.35, 0.6] }).observe(heroEl);
+  notch.addEventListener('pointerenter', () => { if (running) { clearTimeout(timer); } });
+  notch.addEventListener('pointerleave', () => { if (running) { clearTimeout(timer); timer = setTimeout(step, 1200); } });
 }
 
 // ------------------------------------------------------------------ reveals
@@ -222,9 +321,11 @@ function progress() {
   $('[data-remaining]').textContent = '-' + fmt(t.dur - elapsed);
 }
 function setPlaying(on) {
+  if (N.playing === on) return;
   N.playing = on;
   body.classList.toggle('playing', on);
-  $$('[data-playicon]').forEach(u => u.setAttribute('href', on ? '#i-pause' : '#i-play'));
+  // Everything else follows in CSS from body.playing: the glyphs swap like an SF Symbol
+  // replace, the artwork eases forward, the waveform wakes up.
   clearInterval(ticker);
   if (on) ticker = setInterval(() => {
     elapsed += 1;
@@ -317,6 +418,7 @@ function shelf() {
     zone.append(item);
     zone.classList.add('has-items');
     file.classList.add('gone');
+    file.classList.remove('lifted');
     const r = item.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + 24);
     if (!reduced) animate(item, { scale: [0.6, 1], opacity: [0, 1], duration: 600, ease: 'out(4)' });
@@ -331,46 +433,62 @@ function shelf() {
     b.onclick = () => {
       $$('.shelf-item', zone).forEach(i => i.remove());
       zone.classList.remove('has-items');
-      $$('.file', desk).forEach(f => { f.classList.remove('gone'); f.style.transform = ''; });
+      $$('.file', desk).forEach(f => f.classList.remove('gone', 'lifted'));
       b.remove();
     };
     desk.append(b);
   }
 
+  // A dragged file leaves the desk: a copy of it is lifted into a fixed layer above
+  // the whole page, so it stays in sight all the way up to the notch.
+  function lift(file) {
+    const r = file.getBoundingClientRect();
+    const ghost = document.createElement('div');
+    ghost.className = 'file-ghost';
+    ghost.innerHTML = file.innerHTML;
+    Object.assign(ghost.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px` });
+    document.body.append(ghost);
+    file.classList.add('lifted');
+    return { ghost, r };
+  }
+  function drop(file, ghost, into) {
+    if (into) {
+      animate(ghost, { scale: 0.4, opacity: 0, duration: 260, ease: 'in(2)', onComplete: () => { ghost.remove(); land(file); } });
+      return;
+    }
+    // Missed: it springs home, like a drag macOS refuses.
+    animate(ghost, { x: 0, y: 0, rotate: 0, scale: 1, duration: reduced ? 0 : 650, ease: 'out(4)',
+      onComplete: () => { ghost.remove(); file.classList.remove('lifted'); } });
+  }
+
   $$('.file', desk).forEach(file => {
-    let sx, sy, dragging = false;
+    let sx, sy, lastX, ghost = null;
     file.addEventListener('pointerdown', e => {
       interacted = true;
-      dragging = true;
-      sx = e.clientX; sy = e.clientY;
+      sx = lastX = e.clientX; sy = e.clientY;
       file.setPointerCapture(e.pointerId);
-      file.classList.add('dragging');
+      ({ ghost } = lift(file));
+      animate(ghost, { scale: 1.08, duration: 200, ease: 'out(3)' });
     });
     file.addEventListener('pointermove', e => {
-      if (!dragging) return;
+      if (!ghost) return;
       const dx = e.clientX - sx, dy = e.clientY - sy;
-      file.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
-      // Heading for the top of the screen opens the notch on the shelf, as a real
-      // drag does.
+      // A little tilt in the direction of travel, as if it has some weight.
+      const tilt = Math.max(-10, Math.min(10, (e.clientX - lastX) * 0.8));
+      lastX = e.clientX;
+      ghost.style.transform = `translate(${dx}px, ${dy}px) scale(1.08) rotate(${tilt}deg)`;
+      // Heading for the top of the screen opens the notch on the shelf, as a real drag does.
       const near = e.clientY < 320;
       if (near !== (N.dragView === 'shelf')) { N.dragView = near ? 'shelf' : null; render(); }
       zone.classList.toggle('hot', overNotch(e.clientX, e.clientY));
     });
     const end = e => {
-      if (!dragging) return;
-      dragging = false;
-      file.classList.remove('dragging');
+      if (!ghost) return;
+      const g = ghost; ghost = null;
       zone.classList.remove('hot');
-      if (overNotch(e.clientX, e.clientY)) {
-        land(file);
-      } else if (!reduced) {
-        const m = file.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
-        const [x, y] = m ? [+m[1], +m[2]] : [0, 0];
-        file.style.transform = '';
-        animate(file, { x: [x, 0], y: [y, 0], duration: 650, ease: 'out(4)' });
-      } else {
-        file.style.transform = '';
-      }
+      const m = g.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
+      if (m) { g.style.transform = ''; animate(g, { x: +m[1], y: +m[2], scale: 1.08, duration: 0 }); }
+      drop(file, g, overNotch(e.clientX, e.clientY));
       N.dragView = null;
       render();
     };
@@ -381,18 +499,20 @@ function shelf() {
   // If someone reaches the chapter and just reads, show them once what a drag does.
   return function demoOnce() {
     if (interacted || reduced || $('.shelf-item', zone)) return;
-    const file = $('.file', desk);
-    const fr = file.getBoundingClientRect();
-    const nr = notch.getBoundingClientRect();
-    const tx = nr.left + nr.width * 0.3 - fr.left;
-    const ty = nr.top + 70 - fr.top;
     interacted = true;
-    file.classList.add('dragging');
-    animate(file, {
-      x: [0, tx * 0.35, tx], y: [0, ty * 0.55, ty], scale: [1, 1.08, 0.8],
-      duration: 1500, ease: 'inOut(2)',
-      onComplete: () => { file.classList.remove('dragging'); file.style.transform = ''; land(file); },
-    });
+    const file = $('.file', desk);
+    const { ghost, r } = lift(file);
+    N.dragView = 'shelf'; render();
+    setTimeout(() => {
+      const nr = notch.getBoundingClientRect();
+      const tx = nr.left + nr.width * 0.3 - r.left;
+      const ty = nr.top + 70 - r.top;
+      animate(ghost, {
+        x: [0, tx * 0.3, tx], y: [0, ty * 0.6, ty], rotate: [0, -6, 0], scale: [1, 1.1, 1],
+        duration: 1400, ease: 'inOut(2)',
+        onComplete: () => { drop(file, ghost, true); N.dragView = null; render(); },
+      });
+    }, 350);
   };
 }
 
@@ -413,7 +533,7 @@ function clipboard() {
     $('.t', li).textContent = text;
     return li;
   };
-  const number = () => $$('li:not(.none)', list).forEach((li, i) => ($('kbd', li).textContent = i < 9 ? `⌘${i + 1}` : ''));
+  const number = numberClips;
   seed.slice(0, 3).forEach(([t, a]) => list.append(row(t, a)));
   number();
 
@@ -476,17 +596,17 @@ function keys() {
 const little = {
   caffeine: {
     banner: { lead: '<svg viewBox="0 0 24 24" style="color:#ffd479"><use href="#i-cup"/></svg>Awake', trail: '<span data-count>59:59</span>' },
-    caption: 'Awake for an hour, then back to normal. Or until you say so, or while an app is running.',
+    caption: 'Stay awake for the download. Sleep when it’s done.',
   },
   airpods: {
     banner: { lead: '<svg viewBox="0 0 24 24"><use href="#i-airpods"/></svg>AirPods Pro', trail: '82%<span class="ring" style="--p:.82"></span>' },
-    caption: 'Connect them and the notch shows their battery for a moment. One honest number, not a left/right guess.',
+    caption: 'Pop them in, see the battery. One honest number.',
   },
   charging: {
     banner: { lead: '<svg viewBox="0 0 24 24" style="color:#32d74b"><use href="#i-bolt"/></svg>Charging', trail: '84%<span class="ring" style="--p:.84"></span>' },
-    caption: 'Plug in and it says so, with the level. Unplug, and it tells you that too.',
+    caption: 'Plug in, it tells you. Unplug, same.',
   },
-  mirror: { view: 'mirror', caption: 'Open the mirror for a quick look before a call. It only uses the camera while it is open.' },
+  mirror: { view: 'mirror', caption: 'A quick look before the call. Nothing’s recorded.' },
 };
 let littleTab = 'caffeine', countdown;
 function applyLittle() {
@@ -546,12 +666,11 @@ function bento() {
     c.style.setProperty('--my', `${e.clientY - r.top}px`);
   }));
   const slider = $('[data-width]');
-  const out = $('[data-widthout]');
   let t;
   slider.addEventListener('input', () => {
     document.documentElement.style.setProperty('--open-w', `${slider.value}px`);
-    out.textContent = `${slider.value} pt`;
-    fitNotch();
+    slider.closest('.card').style.setProperty('--demo-w', slider.value);
+    fitNotch(); dock();
     N.preview = true; render();
     clearTimeout(t);
     t = setTimeout(() => { N.preview = false; render(); }, 1400);
@@ -561,46 +680,80 @@ function bento() {
 // ------------------------------------------------------------------ install
 
 function install() {
-  $$('[data-method]').forEach(b => b.addEventListener('click', () => {
-    $$('[data-method]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
-    $$('[data-panel]').forEach(p => (p.hidden = p.dataset.panel !== b.dataset.method));
-  }));
   $$('[data-copytext]').forEach(b => b.addEventListener('click', async () => {
     const text = b.previousElementSibling.textContent;
     try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }
     catch { b.textContent = 'Select & copy'; }
     b.classList.add('done');
+    const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 30);
     setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
   }));
 
-  // The disk image window, installing itself on a loop while it's on screen.
-  const dmg = $('[data-dmg]');
-  if (reduced) return;
-  const app = $('.dmg-app', dmg);
-  const folder = $('.dmg-folder', dmg);
-  const ghost = app.cloneNode();
-  Object.assign(ghost.style, { position: 'absolute', opacity: 0, pointerEvents: 'none', zIndex: 2 });
-  $('.dmg-body', dmg).append(ghost);
-  let tl;
-  const build = () => {
-    const br = $('.dmg-body', dmg).getBoundingClientRect();
-    const ar = app.getBoundingClientRect();
-    const fr = folder.getBoundingClientRect();
-    ghost.style.left = `${ar.left - br.left}px`;
-    ghost.style.top = `${ar.top - br.top}px`;
-    ghost.style.width = `${ar.width}px`;
-    const dx = fr.left + fr.width / 2 - (ar.left + ar.width / 2);
-    tl?.revert();
-    tl = createTimeline({ loop: true, loopDelay: 1600, autoplay: false })
-      .add(ghost, { opacity: [0, 0.9], scale: [1, 1.06], duration: 300, ease: 'out(2)' })
-      .add(ghost, { x: [0, dx], y: [0, -26, 0], scale: [1.06, 0.62], duration: 1100, ease: 'inOut(2)' })
-      .add(ghost, { opacity: 0, duration: 160 })
-      .add(folder, { scale: [1, 1.12, 1], duration: 500, ease: 'out(3)' }, '-=120')
-      .add('.dmg-hint', { opacity: [1, 0.3, 1], duration: 900 }, '-=500');
+  // Homebrew copies its command, and says so.
+  const brew = $('[data-brew]');
+  brew.addEventListener('click', async () => {
+    const label = $('[data-brewlabel]');
+    try { await navigator.clipboard.writeText(brew.dataset.brew); label.textContent = 'Copied — paste it in Terminal'; }
+    catch { label.textContent = brew.dataset.brew; }
+    brew.classList.add('done');
+    setTimeout(() => { label.textContent = 'Copy the brew command'; brew.classList.remove('done'); }, 2600);
+  });
+
+  // The three steps play in turn: the copy button gets clicked, Spotlight finds
+  // Terminal, Return is pressed and NotchFun is ready. On a loop while on screen.
+  const box = $('[data-steps]');
+  const steps = $$('.step', box);
+  const typed = $('[data-s2]', box);
+  if (reduced) { steps.forEach(s => s.classList.add('active')); steps[1].classList.add('found'); typed.textContent = 'Terminal'; steps[2].classList.add('done'); return; }
+  let run = 0;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  async function play() {
+    const id = ++run;
+    const live = () => id === run;
+    steps.forEach(s => s.classList.remove('active', 'clicked', 'found', 'pressed', 'done'));
+    typed.textContent = '';
+    steps[0].classList.add('active'); await sleep(900); if (!live()) return;
+    steps[0].classList.add('clicked'); await sleep(1300); if (!live()) return;
+    steps[0].classList.remove('active'); steps[1].classList.add('active');
+    for (const ch of 'Terminal') { await sleep(110); if (!live()) return; typed.textContent += ch; }
+    steps[1].classList.add('found'); await sleep(1400); if (!live()) return;
+    steps[1].classList.remove('active'); steps[2].classList.add('active'); await sleep(700); if (!live()) return;
+    steps[2].classList.add('pressed'); await sleep(160); steps[2].classList.remove('pressed'); await sleep(350); if (!live()) return;
+    steps[2].classList.add('done'); await sleep(2800); if (!live()) return;
+    play();
+  }
+  new IntersectionObserver(([e]) => (e.isIntersecting ? play() : run++), { threshold: 0.35 }).observe(box);
+}
+
+// ------------------------------------------------------------------ buttons
+
+// The hero buttons lean toward the pointer, and the download one says what it's doing.
+function buttons() {
+  if (!reduced) $$('.magnetic').forEach(b => {
+    b.addEventListener('pointermove', e => {
+      const r = b.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width / 2) * 0.22;
+      const y = (e.clientY - r.top - r.height / 2) * 0.35;
+      animate(b, { x, y, duration: 350, ease: 'out(3)' });
+    });
+    b.addEventListener('pointerleave', () => animate(b, { x: 0, y: 0, duration: 700, ease: 'out(4)' }));
+  });
+  const dl = $('[data-download]');
+  const label = (text) => {
+    const roll = $('.roll', dl);
+    roll.dataset.label = text;
+    $('span', roll).textContent = text;
   };
-  new IntersectionObserver(([e]) => {
-    if (e.isIntersecting) { build(); tl.play(); } else tl?.pause();
-  }, { threshold: 0.4 }).observe(dmg);
+  dl.addEventListener('click', () => {
+    const r = dl.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 44);
+    dl.classList.add('downloading');
+    label('Downloading…');
+    setTimeout(() => { dl.classList.remove('downloading'); label('Check your Downloads'); }, 2200);
+    setTimeout(() => label('Download for Mac'), 6500);
+  });
+  $('[data-star]').addEventListener('click', () => {
+    const r = $('[data-star]').getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 40);
+  });
 }
 
 // ------------------------------------------------------------------ GitHub
@@ -667,8 +820,12 @@ async function changelog() {
     });
     const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && (e.target.classList.add('in'), io.unobserve(e.target))), { rootMargin: '0px 0px -10% 0px' });
     $$('.release', box).forEach(r => io.observe(r));
-    const latest = releases[0]?.tag_name.replace(/^v/, '');
-    if (latest) $('[data-version]').textContent = `Version ${latest}`;
+    // The download button shows the real size of the disk image.
+    const dmg = releases[0]?.assets?.find(a => a.name === 'NotchFun.dmg');
+    if (dmg) $('[data-dmgsize]').textContent = `Disk image · ${(dmg.size / 1e6).toFixed(1)} MB`;
+    // The update card shows the real last step: previous release to the current one.
+    const v = r => r?.tag_name.replace(/^v/, '');
+    if (releases[1]) { $('.ud-old').textContent = v(releases[1]); $('.ud-new').textContent = v(releases[0]); }
   } catch {
     box.innerHTML = '<p class="loading">Couldn\'t reach GitHub just now. <a href="https://github.com/lookatsarthak/NotchFun/releases">See the releases there →</a></p>';
   }
@@ -702,18 +859,24 @@ function timelineLine() {
 
 // ------------------------------------------------------------------ real footage
 
-// The recordings play only while on screen, and not at all on their own for people
-// who asked for less motion — they get the poster and a play control instead.
-function footage() {
-  const videos = $$('.clip video');
-  if (reduced) { videos.forEach(v => (v.controls = true)); return; }
-  const io = new IntersectionObserver(entries => {
-    for (const e of entries) {
-      const v = e.target;
-      if (e.isIntersecting) { v.preload = 'auto'; v.play().catch(() => {}); } else v.pause();
-    }
-  }, { threshold: 0.35 });
-  videos.forEach(v => io.observe(v));
+// "Try it" or "Watch the real app": the recording replaces the demo in place, and only
+// plays while it is showing.
+function propSwitches() {
+  $$('[data-prop]').forEach(prop => {
+    const video = $('video', prop);
+    $$('[data-show]', prop).forEach(b => b.addEventListener('click', () => {
+      const show = b.dataset.show;
+      $$('[data-show]', prop).forEach(x => x.setAttribute('aria-selected', String(x === b)));
+      $$('[data-face]', prop).forEach(f => {
+        const on = f.dataset.face === show;
+        f.hidden = !on;
+        if (on && !reduced) animate(f, { opacity: [0, 1], scale: [0.97, 1], duration: 450, ease: 'out(3)' });
+        if (on) f.classList.add('in');
+      });
+      if (show === 'real') { video.preload = 'auto'; if (reduced) video.controls = true; else video.play().catch(() => {}); }
+      else video.pause();
+    }));
+  });
 }
 
 // ------------------------------------------------------------------ go
@@ -733,7 +896,9 @@ install();
 changelog();
 starCount();
 timelineLine();
-footage();
+propSwitches();
+buttons();
+dock();
 render();
 introHero();
-playHello();
+playHello().then(tour);
