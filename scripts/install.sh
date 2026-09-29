@@ -13,7 +13,25 @@
 set -euo pipefail
 
 URL="https://github.com/lookatsarthak/NotchFun/releases/latest/download/NotchFun.dmg"
-APP="/Applications/NotchFun.app"
+
+# NotchFun needs macOS 26 Tahoe. Stop before touching anything on an older Mac, so a
+# working copy of an older release is not replaced by one that cannot launch.
+MAJOR=$(sw_vers -productVersion | cut -d. -f1)
+if [ "$MAJOR" -lt 26 ]; then
+  echo "NotchFun needs macOS 26 Tahoe or later; this Mac has macOS $(sw_vers -productVersion)." >&2
+  echo "NotchFun 1.2.1 still works on macOS 15: https://github.com/lookatsarthak/NotchFun/releases/tag/v1.2.1" >&2
+  exit 1
+fi
+
+# /Applications, unless this account cannot write there (a standard, non-admin user),
+# or NotchFun already lives in ~/Applications - then that is where it goes.
+if [ -d "$HOME/Applications/NotchFun.app" ] || ! [ -w /Applications ]; then
+  DEST="$HOME/Applications"
+  mkdir -p "$DEST"
+else
+  DEST="/Applications"
+fi
+APP="$DEST/NotchFun.app"
 
 TMP=$(mktemp -d)
 MNT="$TMP/mnt"
@@ -50,10 +68,13 @@ if pgrep -x NotchFun >/dev/null; then
   pkill -f "NotchFun.app/Contents/Resources/mediaremote-adapter.pl" 2>/dev/null || true
 fi
 
-echo "Installing to /Applications..."
+echo "Installing to $DEST..."
 # Replace rather than copy over the top, so files a newer version dropped do not linger.
 rm -rf "$APP"
 ditto "$MNT/NotchFun.app" "$APP"
+# curl does not quarantine what it downloads, but some security tools add the flag to
+# everything; clear it so the first launch never stops at Gatekeeper.
+xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
 
 open "$APP"
 echo "Done. NotchFun is in your menu bar and your notch."
