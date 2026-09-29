@@ -212,7 +212,9 @@ class BoringViewModel: NSObject {
 
         switch webcamManager.authorizationStatus {
         case .authorized:
-            if webcamManager.isSessionRunning {
+            // Running or still warming up both count as on: deciding from isSessionRunning
+            // alone meant a click during warm-up asked it to start again rather than close.
+            if webcamManager.isSessionRunning || webcamManager.isStarting {
                 webcamManager.stopSession()
                 isCameraExpanded = false
             } else if webcamManager.cameraAvailable {
@@ -242,10 +244,15 @@ class BoringViewModel: NSObject {
             }
 
         case .notDetermined:
+            // Ask, and open the mirror as soon as it is allowed: one click, not two.
             isRequestingAuthorization = true
-            webcamManager.checkAndRequestVideoAuthorization()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            webcamManager.requestAccess { [weak self] granted in
+                guard let self else { return }
                 self.isRequestingAuthorization = false
+                if granted {
+                    self.webcamManager.startSession()
+                    self.isCameraExpanded = true
+                }
             }
 
         default:

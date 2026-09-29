@@ -20,6 +20,11 @@ class WebcamManager: NSObject {
     
     var cameraAvailable: Bool = false
 
+    /// Between asking the camera to start and it running. The mirror button reads this so
+    /// a click during warm-up closes the mirror instead of asking it to start again, and
+    /// the preview shows a spinner rather than looking like nothing happened.
+    var isStarting: Bool = false
+
     private let sessionQueue = DispatchQueue(label: "BoringNotch.WebcamManager.SessionQueue", qos: .userInitiated)
     
     private var isCleaningUp: Bool = false
@@ -30,6 +35,10 @@ class WebcamManager: NSObject {
     
     private override init() {
         super.init()
+        // Read what macOS already knows. This used to stay .notDetermined until the first
+        // click, which then only checked permission and never started the camera, so the
+        // mirror needed a second click after every launch. Reading it does not prompt.
+        authorizationStatus = AVCaptureDevice.authorizationStatus(for: .video)
         NotificationCenter.default.addObserver(self, selector: #selector(deviceWasDisconnected), name: AVCaptureDevice.wasDisconnectedNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(deviceWasConnected), name: AVCaptureDevice.wasConnectedNotification, object: nil)
         checkCameraAvailability()
@@ -69,6 +78,19 @@ class WebcamManager: NSObject {
         }
     }
     
+    /// Asks macOS for camera access if it has not asked yet, then reports the answer on
+    /// the main thread, so a click that triggers the prompt can open the mirror once
+    /// allowed instead of needing another click.
+    func requestAccess(completion: @escaping (Bool) -> Void) {
+        AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+            DispatchQueue.main.async {
+                self?.authorizationStatus = granted ? .authorized : .denied
+                if granted { self?.checkCameraAvailability() }
+                completion(granted)
+            }
+        }
+    }
+
     /// Requests access to the camera
     private func requestVideoAccess() {
         AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
@@ -121,6 +143,7 @@ class WebcamManager: NSObject {
                     NSLog("No video devices available")
                     DispatchQueue.main.async {
                         self.isSessionRunning = false
+                        self.isStarting = false
                         self.cameraAvailable = false
                     }
                     completion(false)
@@ -167,6 +190,7 @@ class WebcamManager: NSObject {
                 NSLog("Failed to setup capture session: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.isSessionRunning = false
+                    self.isStarting = false
                     self.cameraAvailable = false
                     self.previewLayer = nil
                 }
@@ -227,10 +251,12 @@ class WebcamManager: NSObject {
         let isRunning = self.captureSession?.isRunning ?? false
         DispatchQueue.main.async {
             self.isSessionRunning = isRunning
+            self.isStarting = false
         }
     }
     
     func startSession() {
+        isStarting = true
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
             
@@ -251,7 +277,11 @@ class WebcamManager: NSObject {
     
     private func startRunningCaptureSession() {
         sessionQueue.async { [weak self] in
-            guard let self = self, let session = self.captureSession, !session.isRunning else {
+            guard let self = self else { return }
+            // Always report back, even when there is nothing to start (already running,
+            // or stopped while setting up), so isStarting never sticks.
+            guard let session = self.captureSession, !session.isRunning else {
+                self.updateSessionState()
                 return
             }
             
@@ -265,6 +295,7 @@ class WebcamManager: NSObject {
     }
     
     func stopSession() {
+        isStarting = false
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
             

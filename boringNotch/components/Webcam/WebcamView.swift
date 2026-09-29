@@ -35,13 +35,21 @@ struct CameraPreviewView: View {
                 if !webcamManager.isSessionRunning {
                     ZStack {
                         placeholderBackground(size: geometry.size.width)
-                        VStack(spacing: 8) {
-                            Image(systemName: webcamManager.authorizationStatus == .denied ? "exclamationmark.triangle" : "web.camera")
-                                .foregroundStyle(.gray)
-                                .font(.system(size: geometry.size.width/3.5))
-                            Text(webcamManager.authorizationStatus == .denied ? "Access Denied" : "Mirror")
-                                .font(.caption2)
-                                .foregroundColor(.gray)
+                        if webcamManager.isStarting {
+                            // The camera takes a moment to warm up; show that the click
+                            // landed rather than an idle placeholder.
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(.gray)
+                        } else {
+                            VStack(spacing: 8) {
+                                Image(systemName: webcamManager.authorizationStatus == .denied ? "exclamationmark.triangle" : "web.camera")
+                                    .foregroundStyle(.gray)
+                                    .font(.system(size: geometry.size.width/3.5))
+                                Text(webcamManager.authorizationStatus == .denied ? "Access Denied" : "Mirror")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
                         }
                     }
                 }
@@ -93,7 +101,7 @@ struct CameraPreviewView: View {
         
         switch webcamManager.authorizationStatus {
         case .authorized:
-            if webcamManager.isSessionRunning {
+            if webcamManager.isSessionRunning || webcamManager.isStarting {
                 webcamManager.stopSession()
             } else if webcamManager.cameraAvailable {
                 webcamManager.startSession()
@@ -114,10 +122,9 @@ struct CameraPreviewView: View {
             }
         case .notDetermined:
             isRequestingAuthorization = true
-            webcamManager.checkAndRequestVideoAuthorization()
-            // Reset the request flag after a reasonable delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            webcamManager.requestAccess { granted in
                 isRequestingAuthorization = false
+                if granted { webcamManager.startSession() }
             }
         @unknown default:
             break
