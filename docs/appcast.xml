@@ -7,6 +7,29 @@
     <language>en</language>
 
     <item>
+      <title>1.6.1</title>
+      <pubDate>Wed, 30 Sep 2026 15:21:31 +0530</pubDate>
+      <sparkle:version>24</sparkle:version>
+      <sparkle:shortVersionString>1.6.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>New</h3>
+<ul>
+<li><strong>Forget old clips automatically.</strong> Settings → Clipboard → "Forget clips unused for" removes clips you haven't copied or pasted in a while. Pinned clips are always kept.</li>
+<li><strong>Nothing changes for you until you choose.</strong> If you already use clipboard history, it keeps everything as before; new installs start at one week.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li><strong>Setup remembers your volume popup choice.</strong> Quitting partway through setup and coming back no longer forgets it.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.6.1/NotchFun-1.6.1.dmg"
+        sparkle:edSignature="iQezC59Dmzu39ISCOSk6teVp2KGLmUajYAY8isz/uZF0cB0xbx8YHgqQk2SKdsNO3Q4yRtuNxQ4mPaCwCS1pBQ=="
+        length="6854475"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>1.6.0</title>
       <pubDate>Wed, 30 Sep 2026 02:04:32 +0530</pubDate>
       <sparkle:version>23</sparkle:version>
