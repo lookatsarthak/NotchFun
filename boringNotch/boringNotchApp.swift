@@ -139,6 +139,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// queue; the quit is performed on the main run loop in its common modes, which include
     /// the modal-panel mode, ending any modal session first; and the backstop exit waits on
     /// the background queue, where nothing on the main thread can hold it up.
+    /// Writes the clipboard retention setting once, on the first launch that has it.
+    ///
+    /// Someone who already had NotchFun keeps everything (Never); someone new starts at a
+    /// week. Told apart by what a previous session leaves behind: a finished setup, the
+    /// first-launch flag having been cleared, or clipboard history ever being toggled.
+    /// Runs before clipboard history loads, so its first sweep already uses the answer.
+    static func settleClipboardRetention(defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: "clipboardRetention") == nil else { return }
+        let isExistingUser = Defaults[.onboardingCompletedVersion] > 0
+            || defaults.object(forKey: "firstLaunch") != nil
+            || defaults.object(forKey: "clipboardHistoryEnabled") != nil
+        Defaults[.clipboardRetention] = ClipboardRetention.initial(isExistingUser: isExistingUser)
+    }
+
     private func handleTerminationSignal() {
         signal(SIGTERM, SIG_IGN)
         let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .global(qos: .userInitiated))
@@ -459,6 +473,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Clipboard history. Does nothing at all unless Defaults[.clipboardHistoryEnabled]
         // is on — bootstrap only installs the preference observers.
+        Self.settleClipboardRetention()
         ClipboardStateViewModel.shared.bootstrap()
 
         // Clearing the system clipboard is independent of history: it works whether or

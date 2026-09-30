@@ -11,6 +11,7 @@ struct ClipboardSettings: View {
     @Default(.clipboardHistoryEnabled) var enabled
     @Default(.clipboardPasteOnSelect) var pasteOnSelect
     @Default(.clipboardHistorySize) var historySize
+    @Default(.clipboardRetention) var retention
     @Default(.clipboardCheckInterval) var checkInterval
     @Default(.clipboardAutoClearDelay) var autoClearDelay
 
@@ -35,6 +36,11 @@ struct ClipboardSettings: View {
                         Text("\(historySize)").foregroundStyle(.secondary)
                     }
                 }
+                Picker("Forget clips unused for", selection: $retention) {
+                    ForEach(ClipboardRetention.allCases, id: \.self) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
                 Defaults.Toggle(key: .clipboardIgnoreUniversalClipboard) {
                     Text("Ignore items copied from other devices")
                 }
@@ -47,7 +53,7 @@ struct ClipboardSettings: View {
             } header: {
                 Text("History")
             } footer: {
-                Text("Pinned entries are never counted against the limit or removed automatically. While history is on, NotchFun checks the clipboard at the interval above.")
+                Text("Pinned entries are never counted against the limit or removed automatically. Copying or pasting a clip again restarts its clock. While history is on, NotchFun checks the clipboard at the interval above.")
             }
 
             Section {

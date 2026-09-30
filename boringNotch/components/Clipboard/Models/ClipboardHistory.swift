@@ -77,6 +77,22 @@ struct ClipboardHistory {
         return evicted
     }
 
+    /// Drops unpinned entries not used within the retention period, returning them so
+    /// their blobs can be deleted. "Used" is `lastCopiedAt`, which copying or pasting
+    /// the clip again moves forward.
+    @discardableResult
+    mutating func removeStale(retention: ClipboardRetention, now: Date = .now) -> [ClipboardItem] {
+        guard let interval = retention.interval else { return [] }
+        let cutoff = now.addingTimeInterval(-interval)
+        var removed: [ClipboardItem] = []
+        items.removeAll { item in
+            guard !item.isPinned, item.lastCopiedAt < cutoff else { return false }
+            removed.append(item)
+            return true
+        }
+        return removed
+    }
+
     @discardableResult
     mutating func remove(id: UUID) -> ClipboardItem? {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return nil }

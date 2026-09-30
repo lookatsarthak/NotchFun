@@ -225,6 +225,11 @@ extension Defaults.Keys {
     /// no tab, no key capture and nothing written to disk.
     static let clipboardHistoryEnabled = Key<Bool>("clipboardHistoryEnabled", default: false)
     static let clipboardHistorySize = Key<Int>("clipboardHistorySize", default: 200)
+    /// How long an unused clip is kept. The default only applies to someone new: the
+    /// first launch that has this setting writes it explicitly, as Never for anyone who
+    /// already had NotchFun (see ClipboardRetention.initial and
+    /// AppDelegate.settleClipboardRetention).
+    static let clipboardRetention = Key<ClipboardRetention>("clipboardRetention", default: .week)
     static let clipboardCheckInterval = Key<Double>("clipboardCheckInterval", default: 0.5)
     static let clipboardIgnoreUniversalClipboard = Key<Bool>("clipboardIgnoreUniversalClipboard", default: false)
     /// Skip text that looks like a credential even when the source app set no marker.
@@ -290,3 +295,5 @@ extension Defaults.Keys {
 
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCache_v1", default: false)
 }
+
+extension ClipboardRetention: Defaults.Serializable {}

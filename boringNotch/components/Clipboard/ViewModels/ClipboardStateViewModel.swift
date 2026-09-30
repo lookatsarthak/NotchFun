@@ -42,6 +42,7 @@ final class ClipboardStateViewModel: ObservableObject {
     private let persistence: ClipboardPersistenceService
     private let blobStore: ClipboardBlobStore
     private var preferenceTasks: [Task<Void, Never>] = []
+    private var wakeObserver: NSObjectProtocol?
 
     /// Which apps entries were copied from, most frequent first.
     ///
@@ -123,8 +124,21 @@ final class ClipboardStateViewModel: ObservableObject {
                 for await size in Defaults.updates(.clipboardHistorySize, initial: false) {
                     self?.applyHistoryLimit(max(1, size))
                 }
+            },
+            Task { [weak self] in
+                for await _ in Defaults.updates(.clipboardRetention, initial: false) {
+                    self?.sweepStale()
+                }
             }
         ]
+        // Waking is when the most time has passed without a check: a laptop shut on
+        // Friday opens on Monday with a weekend's worth of clips now stale.
+        if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.sweepStale() }
+        }
     }
 
     /// Whether what is on disk has actually been read into `history`.
@@ -148,6 +162,7 @@ final class ClipboardStateViewModel: ObservableObject {
                 // Only ever prune against a history we actually read. Pruning against an
                 // empty one deletes every blob on disk.
                 blobStore.pruneOrphans(keeping: history.items)
+                sweepStale()
             } else {
                 savingSuspended = true
                 Self.logger.error("Clipboard index could not be read; not writing to it this session")
@@ -196,6 +211,9 @@ final class ClipboardStateViewModel: ObservableObject {
 
     func beginPresenting() {
         isPresenting = true
+        // Checked right before showing, so a stale clip is never on screen even though
+        // nothing runs on a timer to remove it.
+        sweepStale()
         needsRefresh = true
         refreshIfPresenting()
     }
@@ -218,6 +236,10 @@ final class ClipboardStateViewModel: ObservableObject {
         // Reclaim disk for anything the size limit pushed out.
         if !outcome.evicted.isEmpty {
             blobStore.delete(outcome.evicted.flatMap(\.contents))
+        }
+        let stale = history.removeStale(retention: Defaults[.clipboardRetention])
+        if !stale.isEmpty {
+            blobStore.delete(stale.flatMap(\.contents))
         }
 
         if canPersist { persistence.scheduleSave(history.items) }
@@ -267,6 +289,19 @@ final class ClipboardStateViewModel: ObservableObject {
     func clearAll() {
         history.clearAll()
         persistence.deleteEverything()
+        needsRefresh = true
+        refreshIfPresenting()
+    }
+
+    /// Forgets clips unused for longer than the retention setting. Cheap - one pass
+    /// over at most a thousand entries - so it runs at every natural moment (load, copy,
+    /// opening the tab, wake, a changed setting) instead of on a timer.
+    private func sweepStale() {
+        guard didLoadHistory else { return }
+        let removed = history.removeStale(retention: Defaults[.clipboardRetention])
+        guard !removed.isEmpty else { return }
+        blobStore.delete(removed.flatMap(\.contents))
+        if canPersist { persistence.scheduleSave(history.items) }
         needsRefresh = true
         refreshIfPresenting()
     }
