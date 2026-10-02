@@ -82,10 +82,11 @@ It's off by default. Turn it on in **Settings → Clipboard**.
 
 ## Install
 
-**Requires macOS 26 Tahoe or later.** Apple Silicon, or one of the four Intel Macs
+**Requires macOS 26 Tahoe or later**, macOS 27 included. Apple Silicon, or one of the four Intel Macs
 that run Tahoe (2019 Mac Pro, 2019 16-inch MacBook Pro, 2020 13-inch MacBook Pro with
 four Thunderbolt ports, 2020 27-inch iMac).
 
+> Apple went straight from macOS 15 Sequoia to macOS 26 Tahoe; there are no versions 16–25.
 > NotchFun 1.2.1 was the last release for macOS 15 Sequoia. If you are on Sequoia the
 > updater will keep you there rather than offer you a build that cannot launch; 1.2.1
 > remains downloadable from [Releases](https://github.com/lookatsarthak/NotchFun/releases).
