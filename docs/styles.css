@@ -270,6 +270,7 @@ body[data-focus="cal"] .home-music, body[data-focus="cal"] .home-art { opacity: 
 .mb-star { display: flex; align-items: center; gap: 6px; }
 .mb-star svg { width: 15px; height: 15px; }
 .mb-download { text-decoration: none; padding: 5px 11px; border-radius: 999px; background: #fff; color: #000; font-weight: 600; }
+.mb-download svg { display: none; width: 16px; height: 16px; }
 .mb-clock { color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
 @media (max-width: 1120px) { .mb-links, .mb-clock { display: none; } }
 
@@ -476,7 +477,7 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 .wd-notch { position: relative; height: 54px; width: calc((var(--demo-w, 640) - 400) * 0.6px + 120px); border-radius: 0 0 18px 18px; background: #000; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
   transition: width 0.5s var(--spring); }
 .wd-notch i { position: absolute; left: 12px; top: 12px; width: 30px; height: 30px; border-radius: 8px; background: var(--art, linear-gradient(135deg, #ff5fa2, #7b61ff 55%, #1d1a5c)); }
-.c-width input { width: 100%; margin-top: 18px; accent-color: var(--lav); }
+.c-width input { width: 100%; height: 32px; margin: 10px 0 -8px; accent-color: var(--lav); }
 .lock-demo svg { width: 64px; height: 64px; fill: none; stroke: var(--lav); stroke-width: 2.6; stroke-linecap: round; }
 .lock-demo circle { fill: var(--lav); stroke: none; }
 .lock-demo .shackle { transform: translateY(-5px); transition: transform 0.45s var(--spring); }
@@ -577,7 +578,7 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 .release-body code { font: 500 13px var(--mono); background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 5px; }
 .release-body p { margin: 8px 0; }
 .release-body.clamped { max-height: 260px; overflow: hidden; -webkit-mask: linear-gradient(#000 70%, transparent); mask: linear-gradient(#000 70%, transparent); }
-.more { margin-top: 10px; border: 0; background: none; color: var(--lav); font: 600 14px var(--font); cursor: pointer; padding: 0; }
+.more { margin-top: 0; border: 0; background: none; color: var(--lav); font: 600 14px var(--font); cursor: pointer; padding: 10px 12px 10px 0; }
 .loading { color: var(--ink-3); }
 
 .comm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
@@ -589,11 +590,11 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 .comm .go { margin-top: 8px; font: 700 14px/1 var(--font); color: var(--lav); }
 
 .faq-list { max-width: 780px; margin: 0 auto; display: grid; gap: 10px; }
-.faq details { padding: 18px 22px; border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
-.faq summary { cursor: pointer; font: 700 17px/1.3 var(--font); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq details { padding: 0; border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+.faq summary { padding: 18px 22px; cursor: pointer; font: 700 17px/1.3 var(--font); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
 .faq summary::after { content: "+"; color: var(--lav); font-size: 22px; line-height: 1; transition: transform 0.25s var(--settle); }
 .faq details[open] summary::after { transform: rotate(45deg); }
-.faq details p { margin: 12px 0 0; color: var(--ink-2); line-height: 1.6; }
+.faq details p { margin: -6px 22px 0; padding-bottom: 18px; color: var(--ink-2); line-height: 1.6; }
 .faq details a { color: var(--lav); }
 
 .foot { max-width: 1180px; margin: 120px auto 0; padding: 40px 28px 60px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
@@ -602,7 +603,7 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 .foot-brand b { display: block; font: 800 18px/1.2 var(--font); }
 .foot-brand span { color: var(--ink-3); font-size: 14px; }
 .foot-links { display: flex; gap: 22px; }
-.foot-links a { color: var(--ink-2); text-decoration: none; font-weight: 500; }
+.foot-links a { padding: 10px 0; color: var(--ink-2); text-decoration: none; font-weight: 500; }
 .foot-links a:hover { color: #fff; }
 .foot-fine { grid-column: 1 / -1; margin: 0; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
 
@@ -620,8 +621,14 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 }
 @media (max-width: 560px) {
   .comm-grid { grid-template-columns: 1fr; }
-  .menubar .mb-brand b, .mb-star span { display: none; }
+  /* The docked notch takes the middle of a phone's bar, up to ~220px when a banner
+     shows, so the bar keeps one round button a side: the app icon and Download. */
+  .menubar .mb-brand b, .mb-star { display: none; }
   .menubar { gap: 12px; }
+  .mb-brand { margin: -6px; padding: 6px; }
+  .mb-download { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; }
+  .mb-download span { display: none; }
+  .mb-download svg { display: block; }
   .big-time { font-size: 72px; }
 }
 
