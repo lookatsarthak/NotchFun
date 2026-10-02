@@ -82,7 +82,7 @@ It's off by default. Turn it on in **Settings → Clipboard**.
 
 ## Install
 
-**Requires macOS 26 Tahoe or later**, macOS 27 included. Apple Silicon, or one of the four Intel Macs
+**Requires macOS 26 Tahoe or later.** Apple Silicon, or one of the four Intel Macs
 that run Tahoe (2019 Mac Pro, 2019 16-inch MacBook Pro, 2020 13-inch MacBook Pro with
 four Thunderbolt ports, 2020 27-inch iMac).
 
