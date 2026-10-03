@@ -18,7 +18,7 @@ const settle = () => new Promise(r => setTimeout(r, 300));
 
 before(() => {
   execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--command',
-    'DELETE FROM counts; DELETE FROM visitors; DELETE FROM salts; DELETE FROM feedback; DELETE FROM limits; DELETE FROM snapshots;'], { stdio: 'ignore' });
+    'DELETE FROM counts; DELETE FROM visitors; DELETE FROM salts; DELETE FROM feedback; DELETE FROM limits; DELETE FROM snapshots; DELETE FROM journeys;'], { stdio: 'ignore' });
 });
 
 test('download buttons redirect to the latest disk image and count by channel', async () => {
@@ -146,11 +146,16 @@ test('the daily job copies GitHub numbers and clears old visitor data', async ()
     "INSERT INTO visitors (day, hash) VALUES ('2000-01-01', 'old'); INSERT INTO salts (day, salt) VALUES ('2000-01-01', 'old'); INSERT INTO limits (key, hour, n) VALUES ('old', '2000-01-01T00', 1);"], { stdio: 'ignore' });
   const res = await get('/stats?snapshot=1', { authorization: `Bearer ${ADMIN}` });
   assert.equal(res.status, 200);
-  const { rows } = await res.json();
-  assert.ok(rows > 3, `copied ${rows} rows from GitHub`);
-  const s = await stats();
-  assert.ok(s.github.some(r => r.metric === 'stars'));
-  assert.ok(s.github.some(r => r.metric.startsWith('asset:v1.6.1/')));
+  const { rows, via } = await res.json();
+  // Locally there's no GitHub credential, and GitHub allows only 60 anonymous calls an
+  // hour, so the copy itself is only checked when it got through.
+  if (rows > 0) {
+    const s = await stats();
+    assert.ok(s.github.some(r => r.metric === 'stars'));
+    assert.ok(s.github.some(r => r.metric.startsWith('asset:v1.6.1/')));
+  } else {
+    assert.equal(via, 'none');
+  }
   const left = execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--json', '--command',
     "SELECT (SELECT COUNT(*) FROM visitors WHERE day < '2001-01-01') + (SELECT COUNT(*) FROM salts WHERE day < '2001-01-01') + (SELECT COUNT(*) FROM limits WHERE hour < '2001') AS n"]).toString();
   assert.equal(JSON.parse(left)[0].results[0].n, 0);
@@ -161,4 +166,59 @@ test('admin page and unknown paths', async () => {
   assert.equal(res.status, 200);
   assert.match(await res.text(), /NotchFun numbers/);
   assert.equal((await get('/nope')).status, 404);
+});
+
+test('behaviour: batches, allowed events only, once per kind of thing', async () => {
+  const ua = { 'user-agent': 'Behaviour browser' };
+  assert.equal((await post('/e', { b: [{ e: 'view', c: 'news.ycombinator.com' }, { e: 'device', c: 'mac/desktop' }, { e: 'lang', c: 'en' }] }, ua)).status, 204);
+  for (const [e, c] of [['section', 'music'], ['section', 'install'], ['toggle', 'shelf:real'], ['video_end', 'shelf'], ['demo', 'clip:search'],
+    ['faq_open', 'warning'], ['outbound', 'releases'], ['time', '30s-2m'], ['changelog_more', '']]) {
+    assert.equal((await post('/e', { e, c }, ua)).status, 204, `${e} ${c}`);
+  }
+  // Refused: unknown channels, unknown events, a batch with one bad event, an oversized batch.
+  for (const bad of [{ e: 'section', c: 'basement' }, { e: 'toggle', c: 'music:maybe' }, { e: 'device', c: 'mac/fridge' }, { e: 'lang', c: 'english!' },
+    { e: 'time', c: 'forever' }, { e: 'constructor' }, { b: [{ e: 'view', c: '' }, { e: 'nope' }] }, { b: Array(13).fill({ e: 'view', c: '' }) }, { b: [] }]) {
+    assert.equal((await post('/e', bad, ua)).status, 400, JSON.stringify(bad).slice(0, 60));
+  }
+  await settle();
+  const s = await stats();
+  assert.equal(total(s, 'device', 'mac/desktop'), 1);
+  assert.equal(total(s, 'lang', 'en'), 1);
+  assert.equal(total(s, 'section', 'music'), 1);
+  assert.equal(total(s, 'toggle', 'shelf:real'), 1);
+  assert.equal(total(s, 'faq_open', 'warning'), 1);
+  assert.equal(total(s, 'outbound', 'releases'), 1);
+  assert.equal(total(s, 'time', '30s-2m'), 1);
+  assert.equal(total(s, 'section', 'basement'), 0);
+  assert.equal(total(s, 'view', 'news.ycombinator.com'), 1, 'nothing from the refused batch was counted');
+});
+
+test('funnel: steps from one visitor today, including a download through /d', async () => {
+  const ua = { 'user-agent': 'Funnel browser' };
+  const before = (await stats()).funnel;
+  await post('/e', { b: [{ e: 'view', c: '' }] }, ua);
+  await post('/e', { e: 'section', c: 'music' }, ua);
+  await post('/e', { e: 'section', c: 'install' }, ua);
+  await get('/d/install', ua);
+  await settle();
+  // Another visitor who only landed.
+  await post('/e', { b: [{ e: 'view', c: '' }] }, { 'user-agent': 'Bounce browser' });
+  await settle();
+  const after = (await stats()).funnel;
+  assert.deepEqual(
+    Object.fromEntries(Object.keys(after).map(k => [k, after[k] - before[k]])),
+    { landed: 2, features: 1, install: 1, action: 1 },
+  );
+});
+
+test('funnel: finished days roll up into counts and their hashes are deleted', async () => {
+  execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--command',
+    "INSERT INTO journeys (day, hash, steps) VALUES ('2001-01-01', 'a', 15), ('2001-01-01', 'b', 1), ('2001-01-01', 'c', 3);"], { stdio: 'ignore' });
+  await get('/stats?snapshot=1', { authorization: `Bearer ${ADMIN}` });
+  const rows = JSON.parse(execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--json', '--command',
+    "SELECT channel, n FROM counts WHERE event = 'funnel' AND day = '2001-01-01' ORDER BY channel"]).toString())[0].results;
+  assert.deepEqual(Object.fromEntries(rows.map(r => [r.channel, r.n])), { action: 1, features: 2, install: 1, landed: 3 });
+  const left = JSON.parse(execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--json', '--command',
+    "SELECT COUNT(*) AS n FROM journeys WHERE day < '2002-01-01'"]).toString())[0].results[0].n;
+  assert.equal(left, 0);
 });

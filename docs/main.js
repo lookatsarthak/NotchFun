@@ -8,6 +8,7 @@
 import { animate, createTimeline, createDrawable, stagger } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
 import { track, downloadURL } from './api.js';
 import { feedbackDialog } from './feedback.js';
+import { insights } from './insights.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -776,7 +777,7 @@ function counts() {
   if (!from && document.referrer) {
     try { const host = new URL(document.referrer).hostname; if (host !== location.hostname) from = host; } catch {}
   }
-  track('view', from.toLowerCase().slice(0, 64));
+  insights(from.toLowerCase().slice(0, 64));
 
   const installSeen = new IntersectionObserver(([e]) => {
     if (e.isIntersecting) { track('install_seen'); installSeen.disconnect(); }

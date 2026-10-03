@@ -14,6 +14,8 @@ const dmgFor = version => `https://github.com/${REPO}/releases/download/v${versi
 const ORIGINS = new Set(['https://lookatsarthak.github.io', 'http://127.0.0.1:8765', 'http://localhost:8765']);
 
 // Everything that can be counted, and the channels each may carry. Anything else is dropped.
+// A Set lists the allowed channels; a RegExp describes them.
+const CHAPTERS = 'music|shelf|clip|cal|keys|little';
 const SITE_EVENTS = {
   view: null, // channel is the referring domain
   install_seen: new Set(['']),
@@ -21,7 +23,29 @@ const SITE_EVENTS = {
   copy_brew: new Set(['', 'install']),
   star_click: new Set(['hero', 'menubar', 'community', 'footer']),
   feedback_open: new Set(['idea', 'bug', 'other']),
+  // How visitors behave: how far down they get, what they try, who they are.
+  section: new Set(['hero', 'music', 'shelf', 'clip', 'cal', 'keys', 'little', 'native', 'install', 'changelog', 'community', 'faq', 'footer']),
+  toggle: new RegExp(`^(${CHAPTERS}):(try|real)$`),
+  video_end: new RegExp(`^(${CHAPTERS})$`),
+  demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'clip:copy', 'clip:search', 'keys:press',
+    'little:caffeine', 'little:charging', 'little:airpods', 'little:mirror', 'native:width']),
+  faq_open: new Set(['free', 'warning', 'macs', 'permissions', 'privacy']),
+  changelog_more: new Set(['']),
+  outbound: new Set(['github', 'releases', 'issues', 'license', 'contributing', 'install_script', 'other']),
+  time: new Set(['<10s', '10-30s', '30s-2m', '2-5m', '5m+']),
+  device: /^(mac|ios|windows|android|linux|other)\/(phone|tablet|desktop)$/,
+  lang: /^[a-z]{2,3}$/,
 };
+const allowed = (rule, channel) => (rule instanceof RegExp ? rule.test(channel) : rule.has(channel));
+
+// Funnel steps, recorded per daily visitor hash.
+const STEP = { landed: 1, features: 2, install: 4, action: 8 };
+const stepFor = (event, channel) =>
+  event === 'view' ? STEP.landed
+  : event === 'section' && channel === 'music' ? STEP.features
+  : (event === 'section' && channel === 'install') || event === 'install_seen' ? STEP.install
+  : event === 'copy_curl' || event === 'copy_brew' || event === 'dmg' ? STEP.action
+  : 0;
 const DMG_CHANNELS = new Set(['hero', 'install', 'readme', 'other']);
 const INSTALL_STEPS = { start: 'curl_start', ok: 'curl_ok', fail: 'curl_fail' };
 const FAIL_REASONS = new Set(['old_macos', 'not_mac', 'download', 'mount', 'copy', 'open', 'other']);
@@ -60,7 +84,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(snapshot(env));
+    ctx.waitUntil(Promise.all([snapshot(env), rollup(env)]));
   },
 };
 
@@ -70,7 +94,10 @@ export default {
 // ad blocker. The redirect never waits on the database: counting happens after it's sent.
 function download(request, env, ctx, channel, url) {
   if (request.method === 'GET' && url.searchParams.get('nt') !== '1') {
-    ctx.waitUntil(count(env, { event: 'dmg', channel: DMG_CHANNELS.has(channel) ? channel : 'other', country: country(request) }).catch(console.error));
+    ctx.waitUntil(Promise.all([
+      count(env, { event: 'dmg', channel: DMG_CHANNELS.has(channel) ? channel : 'other', country: country(request) }),
+      journey(env, request, STEP.action),
+    ]).catch(console.error));
   }
   return redirect(DMG_LATEST);
 }
@@ -99,25 +126,58 @@ async function installPing(request, env, ctx, url) {
 
 // The website's own counts: page views (with the referring domain), unique visitors, and
 // clicks on star, copy and feedback. Sent with sendBeacon as text, so there's no preflight.
+// One event as {e, c}, or up to 12 as {b: [{e, c}, ...]}. Anything not in SITE_EVENTS is
+// refused; in a batch, the whole batch is.
 async function siteEvent(request, env, ctx, cors) {
   if (!cors['access-control-allow-origin'] || BOT.test(request.headers.get('user-agent') ?? '')) return new Response(null, { status: 204, headers: cors });
   let body;
-  try { body = JSON.parse((await request.text()).slice(0, 2000)); } catch { return new Response(null, { status: 400, headers: cors }); }
-  const event = body?.e;
-  if (!(event in SITE_EVENTS)) return new Response(null, { status: 400, headers: cors });
-  let channel = typeof body.c === 'string' ? body.c.toLowerCase() : '';
-  if (event === 'view') channel = DOMAIN.test(channel) ? channel.replace(/^www\./, '') : '';
-  else if (!SITE_EVENTS[event].has(channel)) return new Response(null, { status: 400, headers: cors });
+  try { body = JSON.parse((await request.text()).slice(0, 4000)); } catch { return new Response(null, { status: 400, headers: cors }); }
+  const list = Array.isArray(body?.b) ? body.b : [body];
+  if (!list.length || list.length > 12) return new Response(null, { status: 400, headers: cors });
+  const events = [];
+  for (const item of list) {
+    const event = item?.e;
+    if (!Object.hasOwn(SITE_EVENTS, event)) return new Response(null, { status: 400, headers: cors });
+    let channel = typeof item.c === 'string' ? item.c.toLowerCase() : '';
+    if (event === 'view') channel = DOMAIN.test(channel) ? channel.replace(/^www\./, '') : '';
+    else if (!allowed(SITE_EVENTS[event], channel)) return new Response(null, { status: 400, headers: cors });
+    events.push({ event, channel });
+  }
 
   ctx.waitUntil((async () => {
-    await count(env, { event, channel, country: country(request) });
-    if (event === 'view') {
+    const where = country(request);
+    let steps = 0;
+    for (const { event, channel } of events) {
+      await count(env, { event, channel, country: where });
+      steps |= stepFor(event, channel);
+    }
+    if (events.some(e => e.event === 'view')) {
       const hash = await visitorHash(env, request);
       const res = await env.DB.prepare('INSERT OR IGNORE INTO visitors (day, hash) VALUES (?1, ?2)').bind(today(), hash).run();
-      if (res.meta.changes === 1) await count(env, { event: 'visitor', country: country(request) });
+      if (res.meta.changes === 1) await count(env, { event: 'visitor', country: where });
     }
+    if (steps) await journey(env, request, steps);
   })().catch(console.error));
   return new Response(null, { status: 204, headers: cors });
+}
+
+async function journey(env, request, steps) {
+  const hash = await visitorHash(env, request);
+  await env.DB.prepare(
+    `INSERT INTO journeys (day, hash, steps) VALUES (?1, ?2, ?3)
+     ON CONFLICT (day, hash) DO UPDATE SET steps = steps | ?3`,
+  ).bind(today(), hash, steps).run();
+}
+
+// Folds finished days' journeys into funnel counts, then forgets them.
+async function rollup(env) {
+  const day = today();
+  const stmts = Object.entries(STEP).map(([name, bit]) => env.DB.prepare(
+    `INSERT INTO counts (day, event, channel, version, country, n)
+     SELECT day, 'funnel', ?1, '', '', COUNT(*) FROM journeys WHERE day < ?2 AND steps & ?3 GROUP BY day
+     ON CONFLICT (day, event, channel, version, country) DO UPDATE SET n = n + excluded.n`,
+  ).bind(name, day, bit));
+  await env.DB.batch([...stmts, env.DB.prepare('DELETE FROM journeys WHERE day < ?1').bind(day)]);
 }
 
 async function count(env, { event, channel = '', version = '', country = '' }) {
@@ -313,7 +373,7 @@ async function githubToken(env) {
 
 async function stats(request, env, url) {
   if (!(await authorised(request, env))) return json({ error: 'unauthorised' }, 401);
-  if (url.searchParams.get('snapshot') === '1') return json(await snapshot(env));
+  if (url.searchParams.get('snapshot') === '1') { await rollup(env); return json(await snapshot(env)); }
   if (url.searchParams.get('resend') === '1') return json({ resent: await resendUnsent(env) });
   const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
   const since = daysAgo(days - 1);
@@ -327,7 +387,13 @@ async function stats(request, env, url) {
     all('SELECT metric, value FROM snapshots WHERE day = (SELECT MAX(day) FROM snapshots WHERE metric = ?1)', 'stars'),
     all(`SELECT day, metric, value FROM snapshots WHERE day >= ?1 AND metric IN ('stars', 'gh_views', 'gh_view_uniques', 'gh_clones') ORDER BY day`, since),
   ]);
-  return json({ since, days, totals, daily, countries, versions, feedback: feedbackRows, github: latest, githubDaily: stars });
+  const live = await env.DB.prepare(
+    `SELECT SUM(steps & 1 > 0) AS landed, SUM(steps & 2 > 0) AS features, SUM(steps & 4 > 0) AS install, SUM(steps & 8 > 0) AS action
+     FROM journeys WHERE day = ?1`,
+  ).bind(today()).first();
+  const funnel = Object.fromEntries(Object.keys(STEP).map(name => [name,
+    totals.filter(t => t.event === 'funnel' && t.channel === name).reduce((a, t) => a + t.n, 0) + (live?.[name] ?? 0)]));
+  return json({ since, days, totals, daily, countries, versions, funnel, feedback: feedbackRows, github: latest, githubDaily: stars });
 }
 
 async function authorised(request, env) {

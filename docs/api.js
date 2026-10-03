@@ -1,9 +1,10 @@
 // NotchFun's backend (worker/ in the repo): feedback, and anonymous counts.
 //
-// What the site counts: page views with the referring site, the install section being
-// seen, and clicks on download, copy, star and feedback. No cookies, nothing stored that
-// identifies you. Visiting with ?notrack turns it off on this browser for good, and the
-// browser's Do Not Track setting is honoured.
+// What the site counts (insights.js has the details): page views with the referring site,
+// how far down the page people get, what they click and try, rough device type, language
+// and time on page, and clicks on download, copy, star and feedback. Everything is a
+// count. No cookies, nothing stored that identifies you. Visiting with ?notrack turns it
+// off on this browser for good, and the browser's Do Not Track setting is honoured.
 
 const LIVE = location.hostname === 'lookatsarthak.github.io';
 
@@ -21,9 +22,18 @@ export const noTrack = (() => {
 })();
 
 export function track(event, channel = '') {
+  send({ e: event, c: channel });
+}
+
+/** Several events in one request: [[event, channel], ...], at most 12. */
+export function trackMany(events) {
+  send({ b: events.map(([e, c = '']) => ({ e, c })) });
+}
+
+function send(body) {
   if (noTrack) return;
   try {
-    navigator.sendBeacon(`${API}/e`, new Blob([JSON.stringify({ e: event, c: channel })], { type: 'text/plain' }));
+    navigator.sendBeacon(`${API}/e`, new Blob([JSON.stringify(body)], { type: 'text/plain' }));
   } catch { /* counting is never worth an error */ }
 }
 

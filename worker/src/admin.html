@@ -33,6 +33,12 @@
   .tag { color: #120f2a; background: var(--lav); border-radius: 999px; padding: 0 8px; font-weight: 600; }
   .tag.bug { background: var(--pink); }
   .empty { color: var(--ink2); }
+  .bars { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: grid; gap: 8px; }
+  .bar { display: grid; grid-template-columns: minmax(90px, 160px) 1fr 84px; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; }
+  .bar .track { display: block; height: 10px; border-radius: 999px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .bar .fill { display: block; min-width: 2px; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--lav), var(--pink)); }
+  .bar .v { text-align: right; color: var(--ink2); font-size: 13px; }
+  .note { color: var(--ink2); font-size: 13px; margin: -4px 0 10px; }
   .err { color: var(--red); }
 </style>
 </head>
@@ -67,6 +73,16 @@ async function load() {
   render(await res.json());
 }
 
+const SECTIONS = [['hero', 'Top of the page'], ['music', '01 Now playing'], ['shelf', '02 Shelf'], ['clip', '03 Clipboard'], ['cal', '04 Calendar'],
+  ['keys', '05 Volume & brightness'], ['little', '06 Little things'], ['native', 'Made for the Mac'], ['install', 'Install'],
+  ['changelog', 'Changelog'], ['community', 'Community'], ['faq', 'Questions'], ['footer', 'Bottom of the page']];
+const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 'music:prev': 'Music: previous', 'shelf:drag': 'Shelf: dragged a file',
+  'clip:copy': 'Clipboard: copied', 'clip:search': 'Clipboard: searched', 'keys:press': 'Volume keys: pressed',
+  'little:caffeine': 'Little things: Caffeine', 'little:charging': 'Little things: Charging', 'little:airpods': 'Little things: AirPods',
+  'little:mirror': 'Little things: Mirror', 'native:width': 'Width slider' };
+const FAQS = { free: 'Is it really free?', warning: 'Why does macOS warn me?', macs: 'Which Macs?', permissions: 'What permissions?', privacy: 'Does anything leave my Mac?' };
+const TIMES = ['<10s', '10-30s', '30s-2m', '2-5m', '5m+'];
+
 function render(d) {
   const sum = (event, channel) => d.totals.filter(t => t.event === event && (channel === undefined || t.channel === channel)).reduce((a, t) => a + t.n, 0);
   const series = event => {
@@ -82,8 +98,14 @@ function render(d) {
   const stat = (label, value, event) => `<div class="stat"><b>${value.toLocaleString()}</b><span>${label}</span>${event ? spark(series(event)) : ''}</div>`;
   const table = (head, rows) => rows.length
     ? `<table><tr>${head.map((h, i) => `<th${i === head.length - 1 ? ' class="n"' : ''}>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map((c, i) => `<td${i === r.length - 1 ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`
-    : '<p class="empty">Nothing yet.</p>';
+    : `<table><tr>${head.map((h, i) => `<th${i === head.length - 1 ? ' class="n"' : ''}>${h}</th>`).join('')}</tr><tr><td class="empty" colspan="${head.length}">Nothing yet</td></tr></table>`;
   const channels = event => d.totals.filter(t => t.event === event).map(t => [t.channel || '—', t.n]);
+  const bars = (rows, base) => rows.length && base
+    ? `<div class="bars">${rows.map(([label, n]) => {
+        const pct = Math.round((n / base) * 100);
+        return `<div class="bar"><span>${esc(label)}</span><span class="track"><span class="fill" style="width:${Math.min(100, pct)}%"></span></span><span class="v">${n.toLocaleString()} · ${pct}%</span></div>`;
+      }).join('')}</div>`
+    : '<p class="empty">Nothing yet.</p>';
 
   $('#out').innerHTML = `
     <h2>Last ${d.days} days</h2>
@@ -96,6 +118,31 @@ function render(d) {
       ${stat('Homebrew installs', sum('brew'), 'brew')}
       ${stat('Star button clicks', sum('star_click'), 'star_click')}
       ${stat('Feedback received', d.feedback.filter(f => f.created_at.slice(0, 10) >= d.since).length)}
+    </div>
+
+    <h2>Funnel</h2>
+    <p class="note">Visitors per day, linked only within the same day. Installs from Terminal and Homebrew are counted separately above.</p>
+    ${bars([['Landed', d.funnel.landed], ['Saw the features', d.funnel.features], ['Reached Install', d.funnel.install], ['Copied or downloaded', d.funnel.action]], d.funnel.landed)}
+
+    <h2>How far people get</h2>
+    <p class="note">Share of visits that reached each part of the page, top to bottom.</p>
+    ${bars(SECTIONS.map(([key, label]) => [label, sum('section', key)]), sum('view'))}
+
+    <h2>What they try</h2>
+    <div class="cols">
+      <div>${table(['Demo', 'Visits'], channels('demo').map(([c, n]) => [DEMOS[c] || c, n]))}</div>
+      <div>${table(['Chapter: Try it / Watch the real app', 'Visits'], channels('toggle').map(([c, n]) => [c.replace(':try', ' · Try it').replace(':real', ' · Real app'), n]))}</div>
+      <div>${table(['Watched a video to the end', 'Visits'], channels('video_end'))}</div>
+      <div>${table(['FAQ opened', 'Visits'], channels('faq_open').map(([c, n]) => [FAQS[c] || c, n]))}</div>
+      <div>${table(['Went to', 'Visits'], channels('outbound'))}</div>
+      <div>${table(['Other', 'Visits'], [['Opened the whole changelog', sum('changelog_more')], ['Opened feedback', sum('feedback_open')]])}</div>
+    </div>
+
+    <h2>Who visits</h2>
+    <div class="cols">
+      <div>${table(['Device', 'Visits'], channels('device'))}</div>
+      <div>${table(['Language', 'Visits'], channels('lang'))}</div>
+      <div>${table(['Time on page', 'Visits'], TIMES.map(t => [t, sum('time', t)]))}</div>
     </div>
 
     <h2>GitHub, latest copy</h2>

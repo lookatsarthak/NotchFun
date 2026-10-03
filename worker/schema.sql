@@ -55,3 +55,13 @@ CREATE TABLE IF NOT EXISTS snapshots (
   value  INTEGER NOT NULL,
   PRIMARY KEY (day, metric)
 );
+
+-- Today's funnel per visitor hash: which steps each visit reached (bits: 1 landed,
+-- 2 saw the features, 4 reached Install, 8 copied or downloaded). Rolled up into counts
+-- and deleted every night, like the visitor hashes.
+CREATE TABLE IF NOT EXISTS journeys (
+  day   TEXT NOT NULL,
+  hash  TEXT NOT NULL,
+  steps INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, hash)
+);
