@@ -12,6 +12,8 @@ The app never talks to it. Only the website, `install.sh` and the Homebrew cask 
 | `POST /feedback` | The feedback form. Checked with Turnstile, 5 an hour per visitor, emailed with Resend. |
 | `GET /admin` | The numbers. Asks for the admin token. |
 | `GET /stats` | The same as JSON, with `Authorization: Bearer <admin token>`. |
+| `GET /stats?resend=1` | Retries feedback whose email failed, and returns Resend's error if it fails again. |
+| `GET /stats?snapshot=1` | Runs the daily GitHub copy now. |
 
 Every day at 00:10 UTC it copies GitHub's stars, traffic, referrers and per-file download
 counts (GitHub keeps traffic for only 14 days) and deletes the previous day's visitor hashes.

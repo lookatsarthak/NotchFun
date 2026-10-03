@@ -161,7 +161,7 @@ async function feedback(request, env, ctx, cors) {
   ).bind(new Date().toISOString(), kind, message, email || null, version, macos, source).first();
 
   ctx.waitUntil(sendEmail(env, { id, kind, message, email, version, macos, source })
-    .then(sent => sent && env.DB.prepare('UPDATE feedback SET emailed = 1 WHERE id = ?1').bind(id).run())
+    .then(r => r.ok && env.DB.prepare('UPDATE feedback SET emailed = 1 WHERE id = ?1').bind(id).run())
     .catch(console.error));
   return json({ ok: true }, 200, cors);
 }
@@ -179,7 +179,7 @@ async function verifyTurnstile(env, token, ip) {
 // Sent with Resend to the maintainer's own address, which lives only in a Worker secret.
 // Replying goes to the person, if they left an email.
 async function sendEmail(env, f) {
-  if (!env.RESEND_API_KEY || !env.FEEDBACK_TO) return false;
+  if (!env.RESEND_API_KEY || !env.FEEDBACK_TO) return { ok: false, status: 0, error: 'RESEND_API_KEY or FEEDBACK_TO not set' };
   const label = { idea: 'Idea', bug: 'Bug', other: 'Feedback' }[f.kind];
   const firstLine = f.message.split('\n')[0].slice(0, 70);
   const text = [
@@ -203,8 +203,22 @@ async function sendEmail(env, f) {
       text,
     }),
   });
-  if (!res.ok) console.error('resend', res.status, await res.text());
-  return res.ok;
+  if (res.ok) return { ok: true, status: res.status };
+  const error = (await res.text()).slice(0, 300);
+  console.error('resend', res.status, error);
+  return { ok: false, status: res.status, error };
+}
+
+// Retries feedback whose email failed, and says why if it fails again.
+async function resendUnsent(env) {
+  const rows = (await env.DB.prepare('SELECT * FROM feedback WHERE emailed = 0 ORDER BY id').all()).results;
+  const results = [];
+  for (const row of rows) {
+    const r = await sendEmail(env, { id: row.id, kind: row.kind, message: row.message, email: row.email ?? '', version: row.app_version, macos: row.macos, source: row.source });
+    if (r.ok) await env.DB.prepare('UPDATE feedback SET emailed = 1 WHERE id = ?1').bind(row.id).run();
+    results.push({ id: row.id, ...r });
+  }
+  return results;
 }
 
 // ------------------------------------------------------------------ privacy helpers
@@ -273,6 +287,7 @@ async function snapshot(env) {
 async function stats(request, env, url) {
   if (!(await authorised(request, env))) return json({ error: 'unauthorised' }, 401);
   if (url.searchParams.get('snapshot') === '1') return json({ rows: await snapshot(env) });
+  if (url.searchParams.get('resend') === '1') return json({ resent: await resendUnsent(env) });
   const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
   const since = daysAgo(days - 1);
   const all = (sql, ...args) => env.DB.prepare(sql).bind(...args).all().then(r => r.results);
