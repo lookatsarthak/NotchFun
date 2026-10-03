@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NotchFun numbers</title>
+<style>
+  :root { --bg: #0b0a1c; --card: #16142e; --line: rgba(255,255,255,.08); --ink: #f3f1ff; --ink2: #a9a4c9; --lav: #b9a4ff; --pink: #ff7ab8; --green: #5ee0a0; --red: #ff7a7a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -.02em; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--lav); margin: 34px 0 12px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  input, select, button { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+  button { cursor: pointer; background: var(--lav); color: #120f2a; font-weight: 600; border: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .stat b { display: block; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--ink2); font-size: 13px; }
+  .stat svg { display: block; width: 100%; height: 28px; margin-top: 8px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th { color: var(--ink2); font-weight: 500; font-size: 13px; }
+  td.n { text-align: right; }
+  tr:last-child td { border-bottom: 0; }
+  .fb { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; }
+  .fb p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .meta { color: var(--ink2); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .tag { color: #120f2a; background: var(--lav); border-radius: 999px; padding: 0 8px; font-weight: 600; }
+  .tag.bug { background: var(--pink); }
+  .empty { color: var(--ink2); }
+  .err { color: var(--red); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>NotchFun numbers</h1>
+    <form class="controls" id="f">
+      <input id="token" type="password" placeholder="Admin token" autocomplete="current-password" aria-label="Admin token">
+      <select id="days" aria-label="Period">
+        <option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option>
+      </select>
+      <button>Show</button>
+    </form>
+  </header>
+  <div id="out"><p class="empty">Enter the admin token to see the numbers.</p></div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+try { $('#token').value = localStorage.getItem('nf-admin') || ''; } catch {}
+
+$('#f').addEventListener('submit', e => { e.preventDefault(); load(); });
+if ($('#token').value) load();
+
+async function load() {
+  const token = $('#token').value.trim();
+  try { localStorage.setItem('nf-admin', token); } catch {}
+  $('#out').innerHTML = '<p class="empty">Loading…</p>';
+  const res = await fetch(`stats?days=${$('#days').value}`, { headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok) { $('#out').innerHTML = `<p class="err">${res.status === 401 ? 'Wrong token.' : 'Could not load (' + res.status + ').'}</p>`; return; }
+  render(await res.json());
+}
+
+function render(d) {
+  const sum = (event, channel) => d.totals.filter(t => t.event === event && (channel === undefined || t.channel === channel)).reduce((a, t) => a + t.n, 0);
+  const series = event => {
+    const byDay = new Map(d.daily.filter(r => r.event === event).map(r => [r.day, r.n]));
+    return Array.from({ length: d.days }, (_, i) => byDay.get(new Date(Date.now() - (d.days - 1 - i) * 864e5).toISOString().slice(0, 10)) || 0);
+  };
+  const spark = values => {
+    const max = Math.max(1, ...values), w = 100 / Math.max(1, values.length - 1);
+    const pts = values.map((v, i) => `${(i * w).toFixed(2)},${(28 - (v / max) * 26).toFixed(2)}`).join(' ');
+    return `<svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" style="color:var(--lav)"/></svg>`;
+  };
+  const gh = Object.fromEntries(d.github.map(r => [r.metric, r.value]));
+  const stat = (label, value, event) => `<div class="stat"><b>${value.toLocaleString()}</b><span>${label}</span>${event ? spark(series(event)) : ''}</div>`;
+  const table = (head, rows) => rows.length
+    ? `<table><tr>${head.map((h, i) => `<th${i === head.length - 1 ? ' class="n"' : ''}>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map((c, i) => `<td${i === r.length - 1 ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`
+    : '<p class="empty">Nothing yet.</p>';
+  const channels = event => d.totals.filter(t => t.event === event).map(t => [t.channel || '—', t.n]);
+
+  $('#out').innerHTML = `
+    <h2>Last ${d.days} days</h2>
+    <div class="grid">
+      ${stat('Website visits', sum('view'), 'view')}
+      ${stat('Unique visitors', sum('visitor'), 'visitor')}
+      ${stat('Disk image downloads', sum('dmg'), 'dmg')}
+      ${stat('Terminal installs', sum('curl_ok'), 'curl_ok')}
+      ${stat('Terminal install failures', sum('curl_fail'), 'curl_fail')}
+      ${stat('Homebrew installs', sum('brew'), 'brew')}
+      ${stat('Star button clicks', sum('star_click'), 'star_click')}
+      ${stat('Feedback received', d.feedback.filter(f => f.created_at.slice(0, 10) >= d.since).length)}
+    </div>
+
+    <h2>GitHub, latest copy</h2>
+    <div class="grid">
+      ${stat('Stars', gh.stars ?? 0)}
+      ${stat('Forks', gh.forks ?? 0)}
+      ${stat('GitHub downloads of NotchFun.dmg (website + Terminal)', gh.gh_downloads_notchfun_dmg ?? 0)}
+      ${stat('GitHub downloads of versioned files (Homebrew + app updates)', gh.gh_downloads_versioned ?? 0)}
+    </div>
+
+    <h2>Where it came from</h2>
+    <div class="cols">
+      <div>${table(['Download button', 'Clicks'], channels('dmg'))}</div>
+      <div>${table(['Referring site', 'Visits'], channels('view'))}</div>
+      <div>${table(['Terminal install failed at', 'Count'], channels('curl_fail'))}</div>
+      <div>${table(['Terminal installs by Mac', 'Count'], channels('curl_ok'))}</div>
+      <div>${table(['Star click from', 'Clicks'], channels('star_click'))}</div>
+      <div>${table(['Copied', 'Clicks'], [['Terminal command', sum('copy_curl')], ['Homebrew command', sum('copy_brew')], ['Install section seen', sum('install_seen')]])}</div>
+      <div>${table(['Country (downloads + installs)', 'Count'], d.countries.map(c => [c.country || 'Unknown', c.n]))}</div>
+      <div>${table(['Version', 'Count'], d.versions.map(v => [`${v.version} · ${{ brew: 'Homebrew', curl_ok: 'Terminal', curl_start: 'Terminal started', curl_fail: 'Terminal failed' }[v.event] || v.event}`, v.n]))}</div>
+      <div>${table(['GitHub referrer (14 days)', 'Views'], d.github.filter(r => r.metric.startsWith('gh_ref14:')).map(r => [r.metric.slice(9), r.value]))}</div>
+    </div>
+
+    <h2>Feedback</h2>
+    ${d.feedback.length ? d.feedback.map(f => `
+      <div class="fb">
+        <div class="meta"><span class="tag ${f.kind === 'bug' ? 'bug' : ''}">${esc(f.kind)}</span><span>${esc(new Date(f.created_at).toLocaleString())}</span><span>${f.email ? `<a href="mailto:${esc(f.email)}" style="color:var(--lav)">${esc(f.email)}</a>` : 'no email'}</span><span>${esc(f.source)}${f.app_version ? ' · ' + esc(f.app_version) : ''}${f.macos ? ' · macOS ' + esc(f.macos) : ''}</span>${f.emailed ? '' : '<span class="err">not emailed</span>'}</div>
+        <p>${esc(f.message)}</p>
+      </div>`).join('') : '<p class="empty">No feedback yet.</p>'}
+  `;
+}
+</script>
+</body>
+</html>

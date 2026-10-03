@@ -1,0 +1,22 @@
+# NotchFun's backend. See README.md in this folder.
+name = "notchfun"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notchfun"
+database_id = "b3e16ab2-b5c9-4041-923a-4014583792c3"
+
+# 00:10 UTC every day: copy GitHub's numbers and clear yesterday's visitor hashes.
+[triggers]
+crons = ["10 0 * * *"]
+
+[observability]
+enabled = true

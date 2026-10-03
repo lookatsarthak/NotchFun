@@ -137,7 +137,7 @@
     <a href="#community">Community</a>
   </nav>
   <div class="mb-right">
-    <a class="mb-star" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
+    <a class="mb-star" data-starfrom="menubar" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16"><use href="#i-github"/></svg><span data-stars>GitHub</span>
     </a>
     <a class="mb-download" href="#install" aria-label="Download"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg><span>Download</span></a>
@@ -162,14 +162,14 @@
       </h1>
       <p class="lede reveal">Music, files, everything you copy and the rest of your day — living in the notch you forgot about.</p>
       <div class="cta reveal">
-        <a class="btn btn-primary magnetic" data-download href="https://github.com/lookatsarthak/NotchFun/releases/latest/download/NotchFun.dmg">
+        <a class="btn btn-primary magnetic" data-download data-dl="hero" href="https://notchfun.lookatsarthak.workers.dev/d/hero">
           <span class="btn-icon dl-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path class="dl-arrow" d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path class="dl-tray" d="M5 16v3h14v-3"/></svg>
           </span>
           <span class="roll" data-label="Download for Mac"><span>Download for Mac</span></span>
           <span class="shine" aria-hidden="true"></span>
         </a>
-        <a class="btn btn-ghost magnetic" data-star href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
+        <a class="btn btn-ghost magnetic" data-star data-starfrom="hero" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
           <span class="btn-icon star-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.9l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z"/></svg></span>
           <span class="roll" data-label="Star on GitHub"><span>Star on GitHub</span></span>
         </a>
@@ -417,7 +417,7 @@
 
       <div class="other-ways">
         <span class="ow-label">Other ways</span>
-        <a class="ow-btn" href="https://github.com/lookatsarthak/NotchFun/releases/latest/download/NotchFun.dmg">
+        <a class="ow-btn" data-dl="install" href="https://notchfun.lookatsarthak.workers.dev/d/install">
           <svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5M5 16v3h14v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span><b>Download the app</b><small data-dmgsize>Disk image</small></span>
         </a>
@@ -450,18 +450,18 @@
     <div class="section-head">
       <p class="eyebrow">Community</p>
       <h2 class="reveal-lines"><span class="line"><span>Tell us what</span></span><span class="line"><span>it should do next.</span></span></h2>
-      <p class="section-lede reveal">Requests and reports live on GitHub, where you can follow along. A free GitHub account is all you need.</p>
+      <p class="section-lede reveal">Ideas and bug reports come straight to the person who makes NotchFun. No account needed.</p>
     </div>
     <div class="comm-grid">
-      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun/issues/new?template=1-feature-request-form.yml" target="_blank" rel="noopener">
+      <a class="comm reveal" data-feedback="idea" href="feedback.html?kind=idea">
         <svg viewBox="0 0 24 24"><use href="#i-spark"/></svg>
         <h3>Request a feature</h3><p>Something you wish the notch did?</p><span class="go">Suggest it →</span>
       </a>
-      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun/issues/new?template=1-bug-report-form.yml" target="_blank" rel="noopener">
+      <a class="comm reveal" data-feedback="bug" href="feedback.html?kind=bug">
         <svg viewBox="0 0 24 24"><use href="#i-bug"/></svg>
         <h3>Report a bug</h3><p>Something off? Tell us what happened.</p><span class="go">Report it →</span>
       </a>
-      <a class="comm reveal" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
+      <a class="comm reveal" data-starfrom="community" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24"><use href="#i-star"/></svg>
         <h3>Star it</h3><p>The easiest way to help people find it.</p><span class="go"><span data-stars2>Star on GitHub</span> →</span>
       </a>
@@ -483,7 +483,7 @@
       </details>
       <details class="reveal"><summary>Which Macs does it run on?</summary><p>Any Mac on macOS 26 Tahoe or later — Apple Silicon, or an Intel Mac that runs Tahoe. On macOS 15 Sequoia, NotchFun 1.2.1 still works.</p></details>
       <details class="reveal"><summary>What permissions does it need?</summary><p>Only what the features you turn on need: Calendar for events, Camera for the mirror, Accessibility for pasting and the volume popup. Setup asks at the moment it matters.</p></details>
-      <details class="reveal"><summary>Does anything leave my Mac?</summary><p>No accounts, no analytics. It checks GitHub for updates, and if you turn on lyrics it looks up the current song on LRCLIB. Your clipboard never leaves your Mac.</p></details>
+      <details class="reveal"><summary>Does anything leave my Mac?</summary><p>The app has no accounts and no analytics. It checks GitHub for updates, and if you turn on lyrics it looks up the current song on LRCLIB. Your clipboard never leaves your Mac. This website and the installer count downloads anonymously — no cookies, nothing that identifies you.</p></details>
     </div>
   </section>
 </main>
@@ -491,7 +491,7 @@
 <footer class="foot">
   <div class="foot-brand"><img src="assets/icon.png" alt=""><div><b>NotchFun</b><span>The notch, but fun.</span></div></div>
   <div class="foot-links">
-    <a href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">GitHub</a>
+    <a data-starfrom="footer" href="https://github.com/lookatsarthak/NotchFun" target="_blank" rel="noopener">GitHub</a>
     <a href="https://github.com/lookatsarthak/NotchFun/releases" target="_blank" rel="noopener">Releases</a>
     <a href="https://github.com/lookatsarthak/NotchFun/issues" target="_blank" rel="noopener">Issues</a>
     <a href="https://github.com/lookatsarthak/NotchFun/blob/main/LICENSE" target="_blank" rel="noopener">GPLv3</a>

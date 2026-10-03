@@ -6,6 +6,8 @@
 // disk-image drag); CSS springs, sampled from the app's own, move the notch itself.
 
 import { animate, createTimeline, createDrawable, stagger } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
+import { track, downloadURL } from './api.js';
+import { feedbackDialog } from './feedback.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -763,6 +765,29 @@ function buttons() {
   });
 }
 
+// ------------------------------------------------------------------ counts
+
+// Anonymous counts for the maintainer (see api.js for exactly what, and how to opt out).
+function counts() {
+  $$('[data-dl]').forEach(a => (a.href = downloadURL(a.dataset.dl)));
+
+  const params = new URLSearchParams(location.search);
+  let from = params.get('utm_source') || params.get('ref') || '';
+  if (!from && document.referrer) {
+    try { const host = new URL(document.referrer).hostname; if (host !== location.hostname) from = host; } catch {}
+  }
+  track('view', from.toLowerCase().slice(0, 64));
+
+  const installSeen = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) { track('install_seen'); installSeen.disconnect(); }
+  }, { threshold: 0.4 });
+  installSeen.observe($('#install'));
+
+  $$('[data-copytext]').forEach(b => b.addEventListener('click', () => track('copy_curl', 'install')));
+  $('[data-brew]').addEventListener('click', () => track('copy_brew', 'install'));
+  $$('[data-starfrom]').forEach(a => a.addEventListener('click', () => track('star_click', a.dataset.starfrom)));
+}
+
 // ------------------------------------------------------------------ GitHub
 
 async function gh(path) {
@@ -905,6 +930,8 @@ starCount();
 timelineLine();
 propSwitches();
 buttons();
+counts();
+feedbackDialog();
 dock();
 render();
 introHero();

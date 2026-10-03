@@ -1,0 +1,15 @@
+{
+  "name": "notchfun",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8787 --test-scheduled",
+    "db:local": "wrangler d1 execute notchfun --local --file schema.sql",
+    "db:remote": "wrangler d1 execute notchfun --remote --file schema.sql",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

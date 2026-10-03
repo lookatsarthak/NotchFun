@@ -100,7 +100,9 @@ curl -fsSL https://raw.githubusercontent.com/lookatsarthak/NotchFun/main/scripts
 It downloads the latest release, puts NotchFun in Applications (quitting and replacing an
 older copy if you have one), and opens it. [Read the script](scripts/install.sh) first if
 you like — it is short. There is no warning because files downloaded by `curl` are not
-flagged as coming from the internet, which is what triggers macOS's check.
+flagged as coming from the internet, which is what triggers macOS's check. It also sends
+an anonymous count of the install (NotchFun version, chip, macOS version); set
+`NOTCHFUN_NO_ANALYTICS=1` to skip it.
 
 **Homebrew**
 
@@ -142,7 +144,7 @@ NotchFun asks for permissions only for the features you enable:
 | **Calendars / Reminders** | The calendar tab |
 | **Camera** | The mirror preview, if you turn it on |
 
-Nothing is uploaded anywhere. There is no analytics, no account, and no network service.
+The app uploads nothing. It has no analytics, no account, and no network service.
 
 ## Building from source
 

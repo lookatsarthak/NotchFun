@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feedback — NotchFun</title>
+  <meta name="description" content="Send an idea or a bug report for NotchFun. No account needed.">
+  <meta name="theme-color" content="#07071A">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="fb-page">
+  <div class="fb-page-notch" aria-hidden="true"><img src="assets/favicon.png" alt=""><span>Feedback</span></div>
+  <main class="fb-page-main">
+    <a class="fb-back" href="./"><img src="assets/icon.png" alt="">NotchFun</a>
+    <h1>Tell us what you think.</h1>
+    <p class="fb-page-lede">Ideas, bugs, anything. It goes straight to the person who makes NotchFun — no account needed.</p>
+    <div class="fb-card" data-form></div>
+  </main>
+  <script type="module">
+    import { feedbackForm } from './feedback.js';
+    import { track } from './api.js';
+    // The app opens this page with its version and macOS filled in.
+    const q = new URLSearchParams(location.search);
+    const kind = q.get('kind') ?? 'idea';
+    feedbackForm(document.querySelector('[data-form]'), {
+      kind,
+      version: q.get('version') ?? '',
+      os: q.get('os') ?? '',
+      source: q.get('source') === 'app' ? 'app' : 'site',
+    });
+    track('feedback_open', ['idea', 'bug', 'other'].includes(kind) ? kind : 'idea');
+  </script>
+</body>
+</html>
