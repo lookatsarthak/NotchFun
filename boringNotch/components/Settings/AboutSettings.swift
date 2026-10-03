@@ -40,8 +40,8 @@ struct About: View {
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)
                     linkButton("Website", systemImage: "globe", url: URL(string: "https://lookatsarthak.github.io/NotchFun/"))
-                    linkButton("Report a bug", systemImage: "ladybug", url: bugReportURL)
-                    linkButton("Suggest", systemImage: "lightbulb", url: URL(string: "https://github.com/lookatsarthak/NotchFun/issues/new?template=1-feature-request-form.yml"))
+                    linkButton("Report a bug", systemImage: "ladybug", url: feedbackURL(kind: "bug"))
+                    linkButton("Suggest", systemImage: "lightbulb", url: feedbackURL(kind: "idea"))
                     Button {
                         if let url = URL(string: "https://github.com/lookatsarthak/NotchFun") {
                             NSWorkspace.shared.open(url)
@@ -77,18 +77,20 @@ struct About: View {
         .navigationTitle("About")
     }
 
-    /// The bug form on GitHub with the version and macOS already filled in, so a report
-    /// from the app never arrives without them.
-    private var bugReportURL: URL? {
+    /// The website's feedback form with the version and macOS already filled in, so a
+    /// report from the app never arrives without them. No GitHub account needed, and the
+    /// app itself sends nothing: it only opens the page in the browser.
+    private func feedbackURL(kind: String) -> URL? {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "unknown"
         let build = info?["CFBundleVersion"] as? String ?? "?"
         let os = ProcessInfo.processInfo.operatingSystemVersion
-        var components = URLComponents(string: "https://github.com/lookatsarthak/NotchFun/issues/new")
+        var components = URLComponents(string: "https://lookatsarthak.github.io/NotchFun/feedback.html")
         components?.queryItems = [
-            URLQueryItem(name: "template", value: "1-bug-report-form.yml"),
+            URLQueryItem(name: "kind", value: kind),
+            URLQueryItem(name: "source", value: "app"),
             URLQueryItem(name: "version", value: "\(version) (\(build))"),
-            URLQueryItem(name: "operating-system", value: "macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"),
+            URLQueryItem(name: "os", value: "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"),
         ]
         return components?.url
     }
