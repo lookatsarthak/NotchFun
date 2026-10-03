@@ -320,3 +320,33 @@ test('a preview copy of the site can read GitHub data but never counts or sends 
   assert.equal(total(await stats(), 'lang', 'pv'), 0);
   assert.equal((await stats()).totals.length, before);
 });
+
+test('send to my Mac: counted on the phone, and the return visit on a Mac', async () => {
+  execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--command', 'DELETE FROM counts;'], { stdio: 'ignore' });
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
+  for (const c of ['open', 'share']) assert.equal((await post('/e', { e: 'send_mac', c, p: 'ios/phone' }, { 'user-agent': IPHONE })).status, 204);
+  assert.equal((await post('/e', { e: 'send_mac', c: 'spam' }, { 'user-agent': IPHONE })).status, 400);
+  // Later, on the Mac, from the shared link (?ref=sent).
+  await post('/e', { b: [{ e: 'view', c: 'sent' }], p: 'mac/desktop' });
+  // A phone opening the sent link doesn't count as coming back on a Mac.
+  await post('/e', { b: [{ e: 'view', c: 'sent' }], p: 'ios/phone' }, { 'user-agent': IPHONE });
+  await settle();
+  const s = await stats();
+  assert.equal(total(s, 'send_mac', 'open'), 1);
+  assert.equal(total(s, 'send_mac', 'share'), 1);
+  assert.equal(s.sentBackOnMac, 1);
+});
+
+test('email templates: HTML is escaped, plain text kept, sign-in link in both', async () => {
+  const { feedbackEmail, signInEmail } = await import('../src/emails.js');
+  const f = feedbackEmail({ id: 7, kind: 'bug', source: 'app', email: 'a@b.co', version: '1.6.1 (24)', macos: '26.1', message: '<img src=x onerror=alert(1)> & more\nline two', dashboard: 'https://d/admin' });
+  assert.ok(!f.html.includes('<img src=x'), 'message markup is escaped');
+  assert.ok(f.html.includes('&lt;img src=x onerror=alert(1)&gt; &amp; more'));
+  assert.ok(f.html.includes('mailto:a@b.co'), 'Reply goes to the sender');
+  assert.match(f.text, /From: a@b.co/);
+  assert.equal(f.subject, 'Bug: <img src=x onerror=alert(1)> & more');
+  const n = feedbackEmail({ id: 8, kind: 'idea', source: 'site', email: '', message: 'Hi', dashboard: 'https://d/admin' });
+  assert.ok(!n.html.includes('mailto:'), 'no Reply button without an email');
+  const si = signInEmail({ link: 'https://d/admin/login?t=abc', minutes: 15 });
+  assert.ok(si.html.includes('https://d/admin/login?t=abc') && si.text.includes('https://d/admin/login?t=abc'));
+});

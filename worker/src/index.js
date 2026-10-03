@@ -6,6 +6,7 @@
 // The app itself never talks to this. Only the website, install.sh and Homebrew do.
 
 import ADMIN_HTML from './admin.html';
+import { feedbackEmail, signInEmail } from './emails.js';
 
 const REPO = 'lookatsarthak/NotchFun';
 const DMG_LATEST = `https://github.com/${REPO}/releases/latest/download/NotchFun.dmg`;
@@ -30,6 +31,7 @@ const SITE_EVENTS = {
   demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'clip:copy', 'clip:search', 'keys:press',
     'little:caffeine', 'little:charging', 'little:airpods', 'little:mirror', 'native:width']),
   faq_open: new Set(['free', 'warning', 'macs', 'permissions', 'privacy']),
+  send_mac: new Set(['open', 'share', 'email', 'copy']),
   changelog_more: new Set(['']),
   outbound: new Set(['github', 'releases', 'issues', 'license', 'contributing', 'install_script', 'other']),
   time: new Set(['<10s', '10-30s', '30s-2m', '2-5m', '5m+']),
@@ -263,28 +265,14 @@ async function verifyTurnstile(env, token, ip) {
 // Replying goes to the person, if they left an email.
 async function sendEmail(env, f) {
   if (!env.RESEND_API_KEY || !env.FEEDBACK_TO) return { ok: false, status: 0, error: 'RESEND_API_KEY or FEEDBACK_TO not set' };
-  const label = { idea: 'Idea', bug: 'Bug', other: 'Feedback' }[f.kind];
-  const firstLine = f.message.split('\n')[0].slice(0, 70);
-  const text = [
-    f.message,
-    '',
-    '—',
-    `From: ${f.email || 'no email given'}`,
-    `Sent from: the ${f.source === 'app' ? 'app' : 'website'}`,
-    f.version ? `NotchFun: ${f.version}` : null,
-    f.macos ? `macOS: ${f.macos}` : null,
-    `#${f.id}`,
-  ].filter(v => v !== null).join('\n');
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      from: 'NotchFun feedback <onboarding@resend.dev>',
-      to: [env.FEEDBACK_TO],
-      ...(f.email ? { reply_to: f.email } : {}),
-      subject: `${label}: ${firstLine}`,
-      text,
-    }),
+  const mail = feedbackEmail({ ...f, dashboard: 'https://notchfun.lookatsarthak.workers.dev/admin' });
+  const res = await resend(env, {
+    from: 'NotchFun feedback <onboarding@resend.dev>',
+    to: [env.FEEDBACK_TO],
+    ...(f.email ? { reply_to: f.email } : {}),
+    subject: mail.subject,
+    text: mail.text,
+    ...(env.HTML_EMAILS === '1' ? { html: mail.html } : {}),
   });
   if (res.ok) return { ok: true, status: res.status };
   const error = (await res.text()).slice(0, 300);
@@ -302,6 +290,32 @@ async function resendUnsent(env) {
     results.push({ id: row.id, ...r });
   }
   return results;
+}
+
+function resend(env, body) {
+  return fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+// Sends one sample of each email, in HTML, to the maintainer, for review before
+// HTML_EMAILS is switched on.
+async function emailPreview(env, url) {
+  const samples = [
+    feedbackEmail({ id: 42, kind: 'bug', source: 'app', email: 'someone@example.com', version: '1.6.1 (24)', macos: '26.1',
+      message: "The shelf closes while I'm still dragging a file in, if I drag slowly.\n\nHappens every time with big videos from Finder.",
+      dashboard: `${url.origin}/admin` }),
+    feedbackEmail({ id: 43, kind: 'idea', source: 'site', email: '', message: 'A timer in the notch would be lovely.', dashboard: `${url.origin}/admin` }),
+    signInEmail({ link: `${url.origin}/admin`, minutes: LINK_MINUTES }),
+  ];
+  const results = [];
+  for (const m of samples) {
+    const res = await resend(env, { from: 'NotchFun <onboarding@resend.dev>', to: [env.FEEDBACK_TO], subject: `[Preview] ${m.subject}`, html: m.html, text: m.text });
+    results.push(res.status);
+  }
+  return { sent: results };
 }
 
 // ------------------------------------------------------------------ privacy helpers
@@ -435,6 +449,7 @@ async function stats(request, env, url) {
   if (!(await authorised(request, env))) return json({ error: 'unauthorised' }, 401);
   if (url.searchParams.get('snapshot') === '1') { await rollup(env); return json(await snapshot(env)); }
   if (url.searchParams.get('resend') === '1') return json({ resent: await resendUnsent(env) });
+  if (url.searchParams.get('emailpreview') === '1') return json(await emailPreview(env, url));
   const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
   const since = daysAgo(days - 1);
   // ?os=mac (or ios, windows, android, linux, other) narrows everything to that platform.
@@ -455,6 +470,10 @@ async function stats(request, env, url) {
          AND event IN ('view', 'visitor', 'dmg', 'copy_curl', 'copy_brew', 'feedback_open', 'star_click', 'funnel', 'curl_ok', 'brew') GROUP BY platform, event, channel`, since),
     all(liveSql, today()),
   ]);
+  // People who opened a link sent with "Send to my Mac", on a Mac: the feature working.
+  const sentBack = await env.DB.prepare(
+    `SELECT COALESCE(SUM(n), 0) AS n FROM counts WHERE day >= ?1 AND event = 'view' AND channel = 'sent' AND platform LIKE 'mac/%'`,
+  ).bind(since).first();
   const steps = Object.keys(STEP);
   const funnel = Object.fromEntries(steps.map(name => [name,
     totals.filter(t => t.event === 'funnel' && t.channel === name).reduce((a, t) => a + t.n, 0)
@@ -477,7 +496,7 @@ async function stats(request, env, url) {
   for (const l of live) for (const name of steps) row(l.platform)[name] += l[name] ?? 0;
   const byPlatform = [...rows.values()].filter(r => r.platform !== '' || r.visits > 0 || r.installs > 0).sort((a, b) => (b.platform === 'mac/desktop') - (a.platform === 'mac/desktop') || b.visits - a.visits || b.landed - a.landed);
 
-  return json({ since, days, os, totals, daily, countries, versions, funnel, byPlatform, feedback: feedbackRows, github: latest, githubDaily: stars });
+  return json({ since, days, os, totals, daily, countries, versions, funnel, byPlatform, sentBackOnMac: sentBack?.n ?? 0, feedback: feedbackRows, github: latest, githubDaily: stars });
 }
 
 async function authorised(request, env) {
@@ -518,15 +537,13 @@ async function adminLink(request, env, url) {
   const link = `${url.origin}/admin/login?t=${token}`;
   if (env.DEV === '1') return json({ ok: true, link }); // local tests only; never set in production
   if (!env.RESEND_API_KEY || !env.FEEDBACK_TO) return json({ error: 'email' }, 500);
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      from: 'NotchFun numbers <onboarding@resend.dev>',
-      to: [env.FEEDBACK_TO],
-      subject: 'Your NotchFun dashboard sign-in link',
-      text: `Open this to sign in to the NotchFun dashboard on the device you asked from:\n\n${link}\n\nIt works once, for ${LINK_MINUTES} minutes. If you didn't ask for it, ignore this email.`,
-    }),
+  const mail = signInEmail({ link, minutes: LINK_MINUTES });
+  const res = await resend(env, {
+    from: 'NotchFun numbers <onboarding@resend.dev>',
+    to: [env.FEEDBACK_TO],
+    subject: mail.subject,
+    text: mail.text,
+    ...(env.HTML_EMAILS === '1' ? { html: mail.html } : {}),
   });
   return res.ok ? json({ ok: true }) : json({ error: 'email' }, 502);
 }

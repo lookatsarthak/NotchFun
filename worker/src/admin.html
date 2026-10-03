@@ -183,6 +183,8 @@ function render(d) {
       <div>${table(['FAQ opened', 'Visits'], channels('faq_open').map(([c, n]) => [FAQS[c] || c, n]))}</div>
       <div>${table(['Went to', 'Visits'], channels('outbound'))}</div>
       <div>${table(['Other', 'Visits'], [['Opened the whole changelog', sum('changelog_more')], ['Opened feedback', sum('feedback_open')]])}</div>
+      <div>${table(['Send to my Mac (not on a Mac)', 'Visits'], [['Tapped Send to my Mac', sum('send_mac', 'open')], ['Shared it (AirDrop, Messages…)', sum('send_mac', 'share')],
+        ['Emailed it to themselves', sum('send_mac', 'email')], ['Copied the link', sum('send_mac', 'copy')], ['Came back on a Mac from a sent link', d.sentBackOnMac]])}</div>
     </div>
 
     <h2>Who visits</h2>

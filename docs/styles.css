@@ -642,6 +642,19 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 
 /* ------------------------------------------------------------------ feedback */
 
+/* "Send to my Mac", for visitors who aren't on one. */
+.send-icon path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-primary:hover .send-icon svg, .btn-primary:focus-visible .send-icon svg { animation: fly 0.9s var(--settle); }
+@keyframes fly { 40% { transform: translate(3px, -3px); } 100% { transform: none; } }
+.send-lede { margin: 0 0 18px; color: var(--ink-2); line-height: 1.55; }
+.send-actions { display: grid; gap: 10px; }
+.send-btn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 18px; border: 0; border-radius: 16px;
+  background: var(--card-2); color: var(--ink); font: 600 16px var(--font); text-align: left; text-decoration: none; cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--line); transition: background 0.2s, transform 0.25s var(--settle); }
+.send-btn:first-child { background: #fff; color: #0b0920; box-shadow: none; }
+.send-btn:active { transform: scale(0.98); }
+.send-btn svg { flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
 /* The live download total under the hero buttons. */
 .dl-count b { font-weight: 700; color: var(--lav); font-variant-numeric: tabular-nums; }
 

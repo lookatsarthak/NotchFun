@@ -6,7 +6,7 @@
 // disk-image drag); CSS springs, sampled from the app's own, move the notch itself.
 
 import { animate, createTimeline, createDrawable, stagger } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
-import { API, track, downloadURL } from './api.js';
+import { API, track, downloadURL, platform } from './api.js';
 import { feedbackDialog } from './feedback.js';
 import { insights } from './insights.js';
 
@@ -758,6 +758,14 @@ function buttons() {
     roll.dataset.label = text;
     $('span', roll).textContent = text;
   };
+  // Only Macs can run NotchFun. Everyone else gets "Send to my Mac" instead of a download
+  // they can't use: the share sheet (AirDrop, Messages, Mail) or an email to themselves.
+  if (!platform.startsWith('mac/')) {
+    sendToMac(dl, label);
+    return void $('[data-star]').addEventListener('click', () => {
+      const r = $('[data-star]').getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 40);
+    });
+  }
   dl.addEventListener('click', () => {
     const r = dl.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 44);
     dl.classList.add('downloading');
@@ -767,6 +775,63 @@ function buttons() {
   });
   $('[data-star]').addEventListener('click', () => {
     const r = $('[data-star]').getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 40);
+  });
+}
+
+// ------------------------------------------------------------------ send to my Mac
+
+const SEND_URL = 'https://lookatsarthak.github.io/NotchFun/?ref=sent';
+const SEND_TEXT = 'NotchFun turns the MacBook notch into a home for music, files and your clipboard. Open this on your Mac to install it.';
+
+function sendToMac(button, label) {
+  button.removeAttribute('data-dl');
+  button.href = '#send';
+  button.classList.add('send-mac');
+  $('.btn-icon', button).outerHTML = '<span class="btn-icon send-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg></span>';
+  label('Send to my Mac');
+
+  const sheet = document.createElement('dialog');
+  sheet.className = 'fb-dialog send-sheet';
+  sheet.setAttribute('aria-labelledby', 'send-title');
+  sheet.innerHTML = `
+    <div class="fb-head"><h2 id="send-title">Send it to your Mac</h2><button class="fb-close" type="button" aria-label="Close">×</button></div>
+    <div class="fb-body">
+      <p class="send-lede">NotchFun runs on Macs with macOS 26 or later. Send yourself the link and open it there.</p>
+      <div class="send-actions">
+        <a class="send-btn" data-send="email" autofocus href="mailto:?subject=${encodeURIComponent('NotchFun for my Mac')}&body=${encodeURIComponent(`${SEND_TEXT}\n\n${SEND_URL}`)}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7"/></svg><span>Email it to myself</span></a>
+        <button class="send-btn" data-send="copy" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5v-1a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1"/></svg><span>Copy link</span></button>
+      </div>
+    </div>`;
+  document.body.append(sheet);
+  $('.fb-close', sheet).addEventListener('click', () => sheet.close());
+  sheet.addEventListener('click', e => { if (e.target === sheet) sheet.close(); });
+  $('[data-send="email"]', sheet).addEventListener('click', () => track('send_mac', 'email'));
+  $('[data-send="copy"]', sheet).addEventListener('click', async e => {
+    const b = e.currentTarget;
+    try { await navigator.clipboard.writeText(SEND_URL); $('span', b).textContent = 'Copied. Paste it anywhere you’ll see on your Mac'; }
+    catch { $('span', b).textContent = SEND_URL; }
+    track('send_mac', 'copy');
+  });
+
+  button.addEventListener('click', async e => {
+    e.preventDefault();
+    const r = button.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 30);
+    track('send_mac', 'open');
+    const data = { title: 'NotchFun', text: SEND_TEXT, url: SEND_URL };
+    if (navigator.share && (!navigator.canShare || navigator.canShare(data))) {
+      try {
+        await navigator.share(data);
+        track('send_mac', 'share');
+        label('Sent. Open it on your Mac');
+        setTimeout(() => label('Send to my Mac'), 5000);
+        return;
+      } catch (err) {
+        if (err?.name === 'AbortError') return; // they closed the share sheet
+      }
+    }
+    sheet.showModal();
   });
 }
 
