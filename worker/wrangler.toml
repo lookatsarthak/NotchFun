@@ -15,6 +15,12 @@ database_name = "notchfun"
 database_id = "b3e16ab2-b5c9-4041-923a-4014583792c3"
 
 # 00:10 UTC every day: copy GitHub's numbers and clear yesterday's visitor hashes.
+# The NotchFun Stats GitHub App (read-only, installed on NotchFun only). Not secrets;
+# the app's private key is the GITHUB_APP_KEY secret.
+[vars]
+GITHUB_APP_ID = "5176861"
+GITHUB_APP_INSTALLATION = "167565357"
+
 [triggers]
 crons = ["10 0 * * *"]
 

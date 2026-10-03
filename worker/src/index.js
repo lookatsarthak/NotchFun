@@ -241,7 +241,8 @@ const country = request => (/^[A-Z]{2}$/.test(request.cf?.country ?? '') ? reque
 async function snapshot(env) {
   const day = today();
   const headers = { 'user-agent': 'notchfun-api', accept: 'application/vnd.github+json' };
-  if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  const { token, via } = await githubToken(env);
+  if (token) headers.authorization = `Bearer ${token}`;
   const gh = async path => {
     const r = await fetch(`https://api.github.com/repos/${REPO}${path}`, { headers });
     if (r.ok) return r.json();
@@ -263,7 +264,7 @@ async function snapshot(env) {
     rows.push([day, 'gh_downloads_notchfun_dmg', latestName], [day, 'gh_downloads_versioned', versioned]);
   }
 
-  if (env.GITHUB_TOKEN) {
+  if (token) {
     const views = await gh('/traffic/views?per=day');
     for (const v of views?.views ?? []) rows.push([v.timestamp.slice(0, 10), 'gh_views', v.count], [v.timestamp.slice(0, 10), 'gh_view_uniques', v.uniques]);
     const clones = await gh('/traffic/clones?per=day');
@@ -279,14 +280,40 @@ async function snapshot(env) {
     env.DB.prepare('DELETE FROM salts WHERE day < ?1').bind(day),
     env.DB.prepare('DELETE FROM limits WHERE hour < ?1').bind(new Date(Date.now() - 864e5).toISOString().slice(0, 13)),
   ]);
-  return rows.length;
+  return { rows: rows.length, via };
+}
+
+// GitHub access through the NotchFun Stats GitHub App: a JWT signed with the app's key buys a
+// one-hour token for its single installation (NotchFun, read-only). Nothing expires on our
+// side. A personal token in GITHUB_TOKEN still works as a fallback.
+async function githubToken(env) {
+  if (env.GITHUB_APP_KEY && env.GITHUB_APP_ID && env.GITHUB_APP_INSTALLATION) {
+    try {
+      const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+      const part = obj => b64url(new TextEncoder().encode(JSON.stringify(obj)));
+      const now = Math.floor(Date.now() / 1000);
+      const unsigned = `${part({ alg: 'RS256', typ: 'JWT' })}.${part({ iat: now - 60, exp: now + 540, iss: String(env.GITHUB_APP_ID) })}`;
+      const der = Uint8Array.from(atob(env.GITHUB_APP_KEY.replace(/-----[^-]+-----|\s/g, '')), c => c.charCodeAt(0));
+      const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+      const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(unsigned));
+      const res = await fetch(`https://api.github.com/app/installations/${env.GITHUB_APP_INSTALLATION}/access_tokens`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${unsigned}.${b64url(signature)}`, accept: 'application/vnd.github+json', 'user-agent': 'notchfun-api' },
+      });
+      if (res.ok) return { token: (await res.json()).token, via: 'app' };
+      console.error('github app', res.status, (await res.text()).slice(0, 200));
+    } catch (err) {
+      console.error('github app', err);
+    }
+  }
+  return env.GITHUB_TOKEN ? { token: env.GITHUB_TOKEN, via: 'token' } : { token: null, via: 'none' };
 }
 
 // ------------------------------------------------------------------ stats for the maintainer
 
 async function stats(request, env, url) {
   if (!(await authorised(request, env))) return json({ error: 'unauthorised' }, 401);
-  if (url.searchParams.get('snapshot') === '1') return json({ rows: await snapshot(env) });
+  if (url.searchParams.get('snapshot') === '1') return json(await snapshot(env));
   if (url.searchParams.get('resend') === '1') return json({ resent: await resendUnsent(env) });
   const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
   const since = daysAgo(days - 1);

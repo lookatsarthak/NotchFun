@@ -29,7 +29,12 @@ Set with `npx wrangler secret put NAME`:
 - `RESEND_API_KEY`: a Resend key with sending access only
 - `FEEDBACK_TO`: where feedback is emailed; never sent to the browser
 - `ADMIN_TOKEN`: for `/admin` and `/stats`; kept in `~/.config/notchfun/admin-token`
-- `GITHUB_TOKEN`: fine-grained, read-only, NotchFun only, with Administration read for traffic
+- `GITHUB_APP_KEY`: the private key of the **NotchFun Stats** GitHub App (read-only, installed on
+  NotchFun only), in PKCS#8. The app ID and installation ID are plain vars in `wrangler.toml`.
+  The backend signs a JWT with it and gets a fresh one-hour token each run, so nothing expires.
+  To replace it: generate a new key on the app's settings page, then
+  `openssl pkcs8 -topk8 -nocrypt -in key.pem | npx wrangler secret put GITHUB_APP_KEY`.
+  (`GITHUB_TOKEN`, a personal token, still works as a fallback but isn't set.)
 
 ## Working on it
 
