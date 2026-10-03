@@ -46,7 +46,8 @@ const language = () => (navigator.language || '').toLowerCase().split('-')[0].re
 // the window for sections taller than the window.
 function sections() {
   const named = [
-    ['[data-hero]', 'hero'], ...$$('[data-chapter]').map(el => [el, el.dataset.chapter]),
+    // section[…], because <body> carries data-chapter too (the chapter on screen).
+    ['[data-hero]', 'hero'], ...$$('section[data-chapter]').map(el => [el, el.dataset.chapter]),
     ['#native', 'native'], ['#install', 'install'], ['#changelog', 'changelog'],
     ['#community', 'community'], ['.faq', 'faq'], ['.foot', 'footer'],
   ];
@@ -85,7 +86,7 @@ function outbound(href) {
 }
 
 function clicks() {
-  const chapterOf = el => el.closest('[data-chapter]')?.dataset.chapter;
+  const chapterOf = el => el.closest('section[data-chapter]')?.dataset.chapter;
 
   document.addEventListener('click', e => {
     const t = e.target instanceof Element ? e.target : null;
