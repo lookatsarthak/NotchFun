@@ -75,21 +75,23 @@ export function feedbackForm(root, { kind = 'idea', version = '', os = '', sourc
   const done = root.querySelector('.fb-done');
 
   // Turnstile hands over a one-use token; a submit waits for it if it isn't here yet.
+  // A failed check rejects at once rather than leaving the button on "Sending…".
   let widget = null, token = null, waiting = [];
+  const settle = (t, err) => waiting.splice(0).forEach(w => (err ? w.reject(err) : w.resolve(t)));
   const turnstile = loadTurnstile().then(ts => {
     widget = ts.render(root.querySelector('.fb-turnstile'), {
       sitekey: TURNSTILE_SITEKEY,
       appearance: 'interaction-only',
       theme: 'dark',
       action: 'feedback',
-      callback: t => { token = t; waiting.splice(0).forEach(fn => fn(t)); },
+      callback: t => { token = t; settle(t); },
       'expired-callback': () => { token = null; },
-      'error-callback': () => { token = null; },
+      'error-callback': () => { token = null; settle(null, new Error('verify')); },
     });
     return ts;
   }).catch(() => null);
   const getToken = () => token ? Promise.resolve(token) : new Promise((resolve, reject) => {
-    waiting.push(resolve);
+    waiting.push({ resolve, reject });
     setTimeout(() => reject(new Error('verify')), 20000);
   });
 
