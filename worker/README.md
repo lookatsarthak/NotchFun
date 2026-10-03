@@ -10,7 +10,7 @@ The app never talks to it. Only the website, `install.sh` and the Homebrew cask 
 | `GET /i?s=start\|ok\|fail` | Pings from `install.sh`: version, chip, macOS major, and the step a failure stopped at. |
 | `POST /e` | Website counts: views and referrer, install section seen, copy, star and feedback clicks. |
 | `POST /feedback` | The feedback form. Checked with Turnstile, 5 an hour per visitor, emailed with Resend. |
-| `GET /admin` | The numbers. Asks for the admin token. |
+| `GET /admin` | The numbers. Signed out, it offers to email a one-use sign-in link to `FEEDBACK_TO`; the link starts a 90-day session cookie in that browser. |
 | `GET /stats` | The same as JSON, with `Authorization: Bearer <admin token>`. |
 | `GET /stats?resend=1` | Retries feedback whose email failed, and returns Resend's error if it fails again. |
 | `GET /stats?snapshot=1` | Runs the daily GitHub copy now. |
@@ -28,7 +28,7 @@ Set with `npx wrangler secret put NAME`:
 - `TURNSTILE_SECRET`: the Turnstile widget's secret key
 - `RESEND_API_KEY`: a Resend key with sending access only
 - `FEEDBACK_TO`: where feedback is emailed; never sent to the browser
-- `ADMIN_TOKEN`: for `/admin` and `/stats`; kept in `~/.config/notchfun/admin-token`
+- `ADMIN_TOKEN`: for `/stats` from scripts (`Authorization: Bearer …`); kept in `~/.config/notchfun/admin-token`
 - `GITHUB_APP_KEY`: the private key of the **NotchFun Stats** GitHub App (read-only, installed on
   NotchFun only), in PKCS#8. The app ID and installation ID are plain vars in `wrangler.toml`.
   The backend signs a JWT with it and gets a fresh one-hour token each run, so nothing expires.

@@ -75,7 +75,10 @@ export default {
       if (request.method === 'POST' && first === 'e') return siteEvent(request, env, ctx, cors);
       if (request.method === 'POST' && first === 'feedback') return feedback(request, env, ctx, cors);
       if (request.method === 'GET' && first === 'stats') return stats(request, env, url);
-      if (request.method === 'GET' && first === 'admin') return new Response(ADMIN_HTML, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+      if (first === 'admin' && second === 'link' && request.method === 'POST') return adminLink(request, env, url);
+      if (first === 'admin' && second === 'login') return adminLogin(request, env, url);
+      if (first === 'admin' && second === 'logout' && request.method === 'POST') return adminLogout(request, env);
+      if (request.method === 'GET' && first === 'admin') return new Response(ADMIN_HTML, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-frame-options': 'DENY' } });
       if (request.method === 'GET' && first === '') return new Response('NotchFun API\n', { headers: { 'content-type': 'text/plain' } });
       return new Response('Not found\n', { status: 404 });
     } catch (err) {
@@ -430,6 +433,11 @@ async function stats(request, env, url) {
 }
 
 async function authorised(request, env) {
+  const session = cookie(request, SESSION_COOKIE);
+  if (session) {
+    const row = await env.DB.prepare('SELECT expires FROM admin_sessions WHERE hash = ?1').bind(await sha256(session)).first();
+    if (row && row.expires > Date.now()) return true;
+  }
   if (!env.ADMIN_TOKEN) return false;
   const enc = new TextEncoder();
   const [a, b] = await Promise.all([
@@ -437,6 +445,92 @@ async function authorised(request, env) {
     crypto.subtle.digest('SHA-256', enc.encode(`Bearer ${env.ADMIN_TOKEN}`)),
   ]);
   return crypto.subtle.timingSafeEqual(a, b);
+}
+
+// ------------------------------------------------------------------ maintainer sign-in
+
+// No password: the dashboard emails a one-use link to FEEDBACK_TO (the maintainer's own
+// inbox), and following it starts a 90-day session in that browser. The link opens a page
+// with a button rather than signing in on GET, so mail scanners that open links can't use
+// it up.
+const SESSION_COOKIE = '__Host-nf_admin';
+const LINK_MINUTES = 15;
+const SESSION_DAYS = 90;
+
+async function adminLink(request, env, url) {
+  if (request.headers.get('origin') !== url.origin) return json({ error: 'origin' }, 403);
+  const hour = new Date().toISOString().slice(0, 13);
+  const { n } = await env.DB.prepare(
+    `INSERT INTO limits (key, hour, n) VALUES ('admin-link', ?1, 1)
+     ON CONFLICT (key, hour) DO UPDATE SET n = n + 1 RETURNING n`,
+  ).bind(hour).first();
+  if (n > 3) return json({ error: 'rate' }, 429);
+  const token = randomToken();
+  await env.DB.prepare('INSERT INTO admin_links (hash, expires) VALUES (?1, ?2)').bind(await sha256(token), Date.now() + LINK_MINUTES * 60e3).run();
+  const link = `${url.origin}/admin/login?t=${token}`;
+  if (env.DEV === '1') return json({ ok: true, link }); // local tests only; never set in production
+  if (!env.RESEND_API_KEY || !env.FEEDBACK_TO) return json({ error: 'email' }, 500);
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      from: 'NotchFun numbers <onboarding@resend.dev>',
+      to: [env.FEEDBACK_TO],
+      subject: 'Your NotchFun dashboard sign-in link',
+      text: `Open this to sign in to the NotchFun dashboard on the device you asked from:\n\n${link}\n\nIt works once, for ${LINK_MINUTES} minutes. If you didn't ask for it, ignore this email.`,
+    }),
+  });
+  return res.ok ? json({ ok: true }) : json({ error: 'email' }, 502);
+}
+
+async function adminLogin(request, env, url) {
+  const page = (body, status = 200) => new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>NotchFun numbers</title>
+<style>body{margin:0;min-height:100svh;display:grid;place-items:center;background:#0b0a1c;color:#f3f1ff;font:16px/1.5 -apple-system,system-ui,sans-serif;text-align:center;padding:24px}
+button,a{font:inherit;font-weight:600;border:0;border-radius:999px;padding:12px 24px;background:#b9a4ff;color:#120f2a;cursor:pointer;text-decoration:none;display:inline-block}p{color:#a9a4c9}</style>${body}`,
+    { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer' } });
+
+  if (request.method === 'GET') {
+    const t = url.searchParams.get('t') ?? '';
+    if (!/^[A-Za-z0-9_-]{43}$/.test(t)) return page('<main><h1>That link is broken.</h1><p>Ask for a new one from the dashboard.</p><a href="/admin">Open the dashboard</a></main>', 400);
+    return page(`<main><h1>Sign in to NotchFun numbers</h1><p>This browser stays signed in for ${SESSION_DAYS} days.</p><form method="post"><input type="hidden" name="t" value="${t}"><button>Sign in</button></form></main>`);
+  }
+  if (request.method !== 'POST') return new Response('Method not allowed\n', { status: 405 });
+  const t = String((await request.formData()).get('t') ?? '');
+  const hash = await sha256(t);
+  const row = await env.DB.prepare('UPDATE admin_links SET used = 1 WHERE hash = ?1 AND used = 0 AND expires > ?2 RETURNING hash').bind(hash, Date.now()).first();
+  if (!row) return page('<main><h1>That link has expired or was already used.</h1><p>Ask for a new one; it takes a few seconds.</p><a href="/admin">Open the dashboard</a></main>', 400);
+  const session = randomToken();
+  await env.DB.batch([
+    env.DB.prepare('INSERT INTO admin_sessions (hash, expires) VALUES (?1, ?2)').bind(await sha256(session), Date.now() + SESSION_DAYS * 864e5),
+    env.DB.prepare('DELETE FROM admin_sessions WHERE expires < ?1').bind(Date.now()),
+    env.DB.prepare('DELETE FROM admin_links WHERE expires < ?1').bind(Date.now()),
+  ]);
+  return new Response(null, { status: 303, headers: {
+    location: '/admin',
+    'set-cookie': `${SESSION_COOKIE}=${session}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; Secure; SameSite=Strict`,
+    'cache-control': 'no-store',
+  } });
+}
+
+async function adminLogout(request, env) {
+  const session = cookie(request, SESSION_COOKIE);
+  if (session) await env.DB.prepare('DELETE FROM admin_sessions WHERE hash = ?1').bind(await sha256(session)).run();
+  return new Response(null, { status: 204, headers: { 'set-cookie': `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict` } });
+}
+
+function cookie(request, name) {
+  const match = (request.headers.get('cookie') ?? '').split(/;\s*/).find(c => c.startsWith(`${name}=`));
+  return match ? match.slice(name.length + 1) : null;
+}
+
+function randomToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+async function sha256(text) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // ------------------------------------------------------------------ plumbing

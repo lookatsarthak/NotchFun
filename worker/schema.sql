@@ -65,3 +65,15 @@ CREATE TABLE IF NOT EXISTS journeys (
   steps INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, hash)
 );
+
+-- Maintainer sign-in by email link: one-use links (15 minutes) and the sessions they start
+-- (90 days). Only hashes are stored.
+CREATE TABLE IF NOT EXISTS admin_links (
+  hash    TEXT PRIMARY KEY,
+  expires INTEGER NOT NULL,
+  used    INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  hash    TEXT PRIMARY KEY,
+  expires INTEGER NOT NULL
+);
