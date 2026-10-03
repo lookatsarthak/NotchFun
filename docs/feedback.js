@@ -13,7 +13,7 @@ const ERRORS = {
   message: 'Write a little more — at least a few words.',
   email: "That email doesn't look right. Leave it empty if you don't want a reply.",
   verify: "We couldn't check you're not a bot. Try again in a moment.",
-  rate: "That's a lot of messages in an hour. Try again a bit later.",
+  rate: "Lots of messages from this network in the last hour. Try again a bit later.",
   network: "Couldn't send. Check your connection and try again.",
 };
 

@@ -217,7 +217,8 @@ async function feedback(request, env, ctx, cors) {
     `INSERT INTO limits (key, hour, n) VALUES (?1, ?2, 1)
      ON CONFLICT (key, hour) DO UPDATE SET n = n + 1 RETURNING n`,
   ).bind(key, hour).first();
-  if (n > 5) return json({ error: 'rate' }, 429, cors);
+  // Per network + browser, so people sharing one Wi-Fi share it; Turnstile is the real bot check.
+  if (n > 20) return json({ error: 'rate' }, 429, cors);
 
   const { id } = await env.DB.prepare(
     `INSERT INTO feedback (created_at, kind, message, email, app_version, macos, source)

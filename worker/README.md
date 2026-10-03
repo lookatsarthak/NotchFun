@@ -9,7 +9,7 @@ The app never talks to it. Only the website, `install.sh` and the Homebrew cask 
 | `GET /brew/:version` | The Homebrew cask's `url`. Counts the install, redirects to that version's disk image. |
 | `GET /i?s=start\|ok\|fail` | Pings from `install.sh`: version, chip, macOS major, and the step a failure stopped at. |
 | `POST /e` | Website counts: views and referrer, install section seen, copy, star and feedback clicks. |
-| `POST /feedback` | The feedback form. Checked with Turnstile, 5 an hour per visitor, emailed with Resend. |
+| `POST /feedback` | The feedback form. Checked with Turnstile, 20 an hour per network and browser, emailed with Resend. |
 | `GET /admin` | The numbers. Signed out, it offers to email a one-use sign-in link to `FEEDBACK_TO`; the link starts a 90-day session cookie in that browser. |
 | `GET /stats` | The same as JSON, with `Authorization: Bearer <admin token>`. |
 | `GET /stats?resend=1` | Retries feedback whose email failed, and returns Resend's error if it fails again. |

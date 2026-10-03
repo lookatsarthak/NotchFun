@@ -119,12 +119,12 @@ test('feedback without an email, and with junk version fields', async () => {
   assert.equal(f.source, 'site');
 });
 
-test('feedback is limited to 5 an hour from one visitor', async () => {
+test('feedback is limited to 20 an hour from one visitor', async () => {
   const body = { kind: 'idea', message: 'Rate limit check', token: 't' };
   const headers = { 'user-agent': 'Rate limit browser' };
   const codes = [];
-  for (let i = 0; i < 7; i++) codes.push((await post('/feedback', body, headers)).status);
-  assert.deepEqual(codes, [200, 200, 200, 200, 200, 429, 429]);
+  for (let i = 0; i < 22; i++) codes.push((await post('/feedback', body, headers)).status);
+  assert.deepEqual(codes, [...Array(20).fill(200), 429, 429]);
 });
 
 test('CORS preflight for the feedback form', async () => {
