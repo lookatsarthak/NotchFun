@@ -61,7 +61,7 @@ const FAQ = ['free', 'warning', 'macs', 'permissions', 'privacy'];
 function outbound(href) {
   let url;
   try { url = new URL(href, location.href); } catch { return null; }
-  if (url.origin === location.origin) return null;
+  if (!/^https?:$/.test(url.protocol) || url.origin === location.origin) return null; // mailto: etc. aren't visits elsewhere
   const path = url.pathname;
   if (url.hostname !== 'github.com' && url.hostname !== 'raw.githubusercontent.com') return 'other';
   if (/install\.sh$/.test(path)) return 'install_script';

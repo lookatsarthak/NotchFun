@@ -782,6 +782,8 @@ function buttons() {
 
 const SEND_URL = 'https://lookatsarthak.github.io/NotchFun/?ref=sent';
 const SEND_TEXT = 'NotchFun turns the MacBook notch into a home for music, files and your clipboard. Open this on your Mac to install it.';
+const sentOnce = new Set();
+const trackSend = c => { if (!sentOnce.has(c)) { sentOnce.add(c); track('send_mac', c); } };
 
 function sendToMac(button, label) {
   button.removeAttribute('data-dl');
@@ -820,23 +822,27 @@ function sendToMac(button, label) {
   to.addEventListener('input', () => (email.href = mailto()));
   to.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); email.click(); } });
   email.href = mailto();
-  email.addEventListener('click', () => { email.href = mailto(); track('send_mac', 'email'); });
+  email.addEventListener('click', () => { email.href = mailto(); trackSend('email'); });
   $('[data-send="copy"]', sheet).addEventListener('click', async e => {
     const b = e.currentTarget;
-    try { await navigator.clipboard.writeText(SEND_URL); $('span', b).textContent = 'Copied. Paste it anywhere you’ll see on your Mac'; }
+    try { await navigator.clipboard.writeText(SEND_URL); $('span', b).textContent = 'Link copied'; }
     catch { $('span', b).textContent = SEND_URL; }
-    track('send_mac', 'copy');
+    trackSend('copy');
   });
 
-  button.addEventListener('click', async e => {
-    e.preventDefault();
-    const r = button.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 30);
-    track('send_mac', 'open');
-    const data = { title: 'NotchFun', text: SEND_TEXT, url: SEND_URL };
-    if (navigator.share && (!navigator.canShare || navigator.canShare(data))) {
+  // Phones and tablets get their own share sheet (AirDrop, Messages, Mail). Only the link
+  // is shared: with text alongside, AirDrop can arrive on the Mac as a note instead of
+  // opening the page, and Messages shows the link's preview card anyway. Desktops get the
+  // panel: a Windows share sheet can't reach a Mac.
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const send = async e => {
+    e?.preventDefault();
+    trackSend('open');
+    const data = { title: 'NotchFun', url: SEND_URL };
+    if (touch && navigator.share && (!navigator.canShare || navigator.canShare(data))) {
       try {
         await navigator.share(data);
-        track('send_mac', 'share');
+        trackSend('share');
         label('Sent. Open it on your Mac');
         setTimeout(() => label('Send to my Mac'), 5000);
         return;
@@ -845,7 +851,28 @@ function sendToMac(button, label) {
       }
     }
     sheet.showModal();
-  });
+  };
+  button.addEventListener('click', e => { const r = button.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 30); send(e); });
+
+  // The round button in the phone's menu bar does the same, with the same icon.
+  const bar = $('.mb-download');
+  if (bar) {
+    bar.href = '#send';
+    bar.setAttribute('aria-label', 'Send to my Mac');
+    $('svg', bar).outerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="send-glyph"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg>';
+    $('span', bar).textContent = 'Send to my Mac';
+    bar.addEventListener('click', send);
+  }
+
+  // The install steps are for the Mac; say so, and offer the same way across.
+  const box = $('.install-box');
+  if (box) {
+    const note = document.createElement('div');
+    note.className = 'send-note';
+    note.innerHTML = '<p><b>You\u2019re not on a Mac right now.</b> These steps are for your Mac, so send yourself the link and do them there.</p><button type="button" class="send-btn" data-send="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg><span>Send to my Mac</span></button>';
+    box.prepend(note);
+    $('button', note).addEventListener('click', send);
+  }
 }
 
 // ------------------------------------------------------------------ counts
