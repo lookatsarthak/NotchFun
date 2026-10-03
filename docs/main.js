@@ -6,7 +6,7 @@
 // disk-image drag); CSS springs, sampled from the app's own, move the notch itself.
 
 import { animate, createTimeline, createDrawable, stagger } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
-import { track, downloadURL } from './api.js';
+import { API, track, downloadURL } from './api.js';
 import { feedbackDialog } from './feedback.js';
 import { insights } from './insights.js';
 
@@ -791,10 +791,13 @@ function counts() {
 
 // ------------------------------------------------------------------ GitHub
 
+// Through the backend, which asks GitHub once every 10 minutes for everyone; straight
+// from GitHub only if the backend can't be reached.
 async function gh(path) {
   const key = `gh:${path}`;
   try { const c = sessionStorage.getItem(key); if (c) return JSON.parse(c); } catch {}
-  const res = await fetch(`https://api.github.com/repos/${REPO}${path}`, { headers: { Accept: 'application/vnd.github+json' } });
+  let res = await fetch(`${API}/gh/${path ? 'releases' : 'repo'}`).catch(() => null);
+  if (!res?.ok) res = await fetch(`https://api.github.com/repos/${REPO}${path}`, { headers: { Accept: 'application/vnd.github+json' } });
   if (!res.ok) throw new Error(res.status);
   const data = await res.json();
   try { sessionStorage.setItem(key, JSON.stringify(data)); } catch {}

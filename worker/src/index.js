@@ -71,6 +71,7 @@ export default {
       if (read && first === 'd') return download(request, env, ctx, second, url);
       if (read && first === 'brew') return brew(request, env, ctx, second, url);
       if (request.method === 'GET' && first === 'i') return installPing(request, env, ctx, url);
+      if (request.method === 'GET' && first === 'gh' && (second === 'repo' || second === 'releases')) return githubPublic(env, ctx, second, cors);
       if (request.method === 'POST' && first === 'e') return siteEvent(request, env, ctx, cors);
       if (request.method === 'POST' && first === 'feedback') return feedback(request, env, ctx, cors);
       if (request.method === 'GET' && first === 'stats') return stats(request, env, url);
@@ -369,6 +370,38 @@ async function githubToken(env) {
   return env.GITHUB_TOKEN ? { token: env.GITHUB_TOKEN, via: 'token' } : { token: null, via: 'none' };
 }
 
+// The website's changelog and star count, fetched once every 10 minutes for everyone
+// instead of by each visitor. GitHub allows only 60 anonymous calls an hour per network,
+// which a group visiting from one office would use up in minutes.
+async function githubPublic(env, ctx, which, cors) {
+  const cache = caches.default;
+  const key = new Request(`https://cache.notchfun/gh/${which}`);
+  const hit = await cache.match(key);
+  if (hit) return withHeaders(hit, cors);
+  const { token } = await githubToken(env);
+  const res = await fetch(`https://api.github.com/repos/${REPO}${which === 'repo' ? '' : '/releases?per_page=6'}`, {
+    headers: { 'user-agent': 'notchfun-api', accept: 'application/vnd.github+json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+  });
+  if (!res.ok) return json({ error: 'github', status: res.status }, 502, cors);
+  const data = await res.json();
+  const slim = which === 'repo'
+    ? { stargazers_count: data.stargazers_count, forks_count: data.forks_count }
+    : data.map(r => ({
+        tag_name: r.tag_name, name: r.name, body: r.body, draft: r.draft, prerelease: r.prerelease,
+        published_at: r.published_at, created_at: r.created_at, html_url: r.html_url,
+        assets: r.assets.map(a => ({ name: a.name, size: a.size, browser_download_url: a.browser_download_url })),
+      }));
+  const out = new Response(JSON.stringify(slim), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=600' } });
+  ctx.waitUntil(cache.put(key, out.clone()));
+  return withHeaders(out, cors);
+}
+
+function withHeaders(res, headers) {
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(headers)) out.headers.set(k, v);
+  return out;
+}
+
 // ------------------------------------------------------------------ stats for the maintainer
 
 async function stats(request, env, url) {
@@ -413,7 +446,7 @@ function corsHeaders(request) {
   if (!origin || !ORIGINS.has(origin)) return {};
   return {
     'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
     'access-control-allow-headers': 'content-type',
     'access-control-max-age': '86400',
     vary: 'origin',
