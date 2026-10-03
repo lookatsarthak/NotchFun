@@ -798,7 +798,9 @@ function sendToMac(button, label) {
     <div class="fb-body">
       <p class="send-lede">NotchFun runs on Macs with macOS 26 or later. Send yourself the link and open it there.</p>
       <div class="send-actions">
-        <a class="send-btn" data-send="email" autofocus href="mailto:?subject=${encodeURIComponent('NotchFun for my Mac')}&body=${encodeURIComponent(`${SEND_TEXT}\n\n${SEND_URL}`)}">
+        <label class="fb-field send-field"><span class="fb-label">Your email <small>so it's filled in for you</small></span>
+          <input type="email" name="send-to" autofocus autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com"></label>
+        <a class="send-btn" data-send="email" href="#">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7"/></svg><span>Email it to myself</span></a>
         <button class="send-btn" data-send="copy" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5v-1a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1"/></svg><span>Copy link</span></button>
@@ -807,7 +809,18 @@ function sendToMac(button, label) {
   document.body.append(sheet);
   $('.fb-close', sheet).addEventListener('click', () => sheet.close());
   sheet.addEventListener('click', e => { if (e.target === sheet) sheet.close(); });
-  $('[data-send="email"]', sheet).addEventListener('click', () => track('send_mac', 'email'));
+  // Their own mail app opens with To, subject and the link filled in; they tap Send. Nothing
+  // is sent or kept by the site, so the address never leaves their device.
+  const to = $('[name="send-to"]', sheet);
+  const mailto = () => {
+    const address = /^[^\s@,;?&]+@[^\s@,;?&]+\.[^\s@,;?&]+$/.test(to.value.trim()) ? to.value.trim() : '';
+    return `mailto:${address}?subject=${encodeURIComponent('NotchFun for my Mac')}&body=${encodeURIComponent(`${SEND_TEXT}\n\n${SEND_URL}`)}`;
+  };
+  const email = $('[data-send="email"]', sheet);
+  to.addEventListener('input', () => (email.href = mailto()));
+  to.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); email.click(); } });
+  email.href = mailto();
+  email.addEventListener('click', () => { email.href = mailto(); track('send_mac', 'email'); });
   $('[data-send="copy"]', sheet).addEventListener('click', async e => {
     const b = e.currentTarget;
     try { await navigator.clipboard.writeText(SEND_URL); $('span', b).textContent = 'Copied. Paste it anywhere you’ll see on your Mac'; }
