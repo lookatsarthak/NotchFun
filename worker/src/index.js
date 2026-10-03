@@ -87,7 +87,7 @@ export default {
       if (read && first === 'd') return download(request, env, ctx, second, url);
       if (read && first === 'brew') return brew(request, env, ctx, second, url);
       if (request.method === 'GET' && first === 'i') return installPing(request, env, ctx, url);
-      if (request.method === 'GET' && first === 'gh' && (second === 'repo' || second === 'releases')) return githubPublic(env, ctx, second, cors);
+      if (request.method === 'GET' && first === 'gh' && (second === 'repo' || second === 'releases' || second === 'downloads')) return githubPublic(env, ctx, second, cors);
       if (request.method === 'POST' && first === 'e') return siteEvent(request, env, ctx, cors);
       if (request.method === 'POST' && first === 'feedback') return feedback(request, env, ctx, cors);
       if (request.method === 'GET' && first === 'stats') return stats(request, env, url);
@@ -150,7 +150,7 @@ async function installPing(request, env, ctx, url) {
 // One event as {e, c}, or up to 12 as {b: [{e, c}, ...]}. Anything not in SITE_EVENTS is
 // refused; in a batch, the whole batch is.
 async function siteEvent(request, env, ctx, cors) {
-  if (!cors['access-control-allow-origin'] || BOT.test(request.headers.get('user-agent') ?? '')) return new Response(null, { status: 204, headers: cors });
+  if (!ORIGINS.has(request.headers.get('origin')) || BOT.test(request.headers.get('user-agent') ?? '')) return new Response(null, { status: 204, headers: cors });
   let body;
   try { body = JSON.parse((await request.text()).slice(0, 4000)); } catch { return new Response(null, { status: 400, headers: cors }); }
   const list = Array.isArray(body?.b) ? body.b : [body];
@@ -212,7 +212,7 @@ async function count(env, { event, channel = '', version = '', country = '', pla
 // ------------------------------------------------------------------ feedback
 
 async function feedback(request, env, ctx, cors) {
-  if (!cors['access-control-allow-origin']) return json({ error: 'origin' }, 403, cors);
+  if (!ORIGINS.has(request.headers.get('origin'))) return json({ error: 'origin' }, 403, cors);
   let body;
   try { body = JSON.parse((await request.text()).slice(0, 20000)); } catch { return json({ error: 'bad_request' }, 400, cors); }
   // A field people can't see. Bots fill it in; they get a cheerful "ok" and nothing is kept.
@@ -401,12 +401,17 @@ async function githubPublic(env, ctx, which, cors) {
   const hit = await cache.match(key);
   if (hit) return withHeaders(hit, cors);
   const { token } = await githubToken(env);
-  const res = await fetch(`https://api.github.com/repos/${REPO}${which === 'repo' ? '' : '/releases?per_page=6'}`, {
+  const path = which === 'repo' ? '' : which === 'downloads' ? '/releases?per_page=100' : '/releases?per_page=6';
+  const res = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
     headers: { 'user-agent': 'notchfun-api', accept: 'application/vnd.github+json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
   });
   if (!res.ok) return json({ error: 'github', status: res.status }, 502, cors);
   const data = await res.json();
-  const slim = which === 'repo'
+  // Every download of every release file: the website and Terminal (NotchFun.dmg), and
+  // Homebrew and in-app updates (NotchFun-<version>.dmg).
+  const slim = which === 'downloads'
+    ? { downloads: data.reduce((sum, r) => sum + r.assets.reduce((a, x) => a + x.download_count, 0), 0), releases: data.length }
+    : which === 'repo'
     ? { stargazers_count: data.stargazers_count, forks_count: data.forks_count }
     : data.map(r => ({
         tag_name: r.tag_name, name: r.name, body: r.body, draft: r.draft, prerelease: r.prerelease,
@@ -578,9 +583,12 @@ async function sha256(text) {
 
 // ------------------------------------------------------------------ plumbing
 
+// The preview copy of the site may read data but never count (api.js).
+const PREVIEW_ORIGIN = /^https:\/\/notchfun-preview\.lookatsarthak\.workers\.dev$/;
+
 function corsHeaders(request) {
   const origin = request.headers.get('origin');
-  if (!origin || !ORIGINS.has(origin)) return {};
+  if (!origin || (!ORIGINS.has(origin) && !PREVIEW_ORIGIN.test(origin))) return {};
   return {
     'access-control-allow-origin': origin,
     'access-control-allow-methods': 'GET, POST, OPTIONS',

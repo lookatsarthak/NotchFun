@@ -136,7 +136,8 @@ function dock() {
   const root = document.documentElement;
   const ns = parseFloat(root.style.getPropertyValue('--ns')) || 1;
   const openW = parseFloat(getComputedStyle(root).getPropertyValue('--open-w')) || 640;
-  heroScale = Math.max(ns, Math.min(1.6, (root.clientWidth - 64) / openW, (innerHeight * 0.42) / 190));
+  // Height counts too, so on a 13" MacBook the headline and buttons still fit above the fold.
+  heroScale = Math.max(ns, Math.min(1.6, (root.clientWidth - 64) / openW, (innerHeight * 0.3) / 190));
   root.style.setProperty('--hero-s', heroScale.toFixed(3));
   const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
   const eased = 1 - Math.pow(1 - p, 3);
@@ -245,7 +246,10 @@ function setupReveals() {
   const io = new IntersectionObserver(entries => {
     for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
   }, { rootMargin: '0px 0px -12% 0px' });
-  $$('.reveal, .reveal-lines').forEach(el => io.observe(el));
+  // The hero is what's on screen at load; it fades in straight away rather than waiting
+  // to be scrolled into view (on a short window the buttons sit in the bottom strip).
+  $$('[data-hero] .reveal').forEach(el => requestAnimationFrame(() => el.classList.add('in')));
+  $$('.reveal, .reveal-lines').forEach(el => el.closest('[data-hero]') && el.classList.contains('reveal') ? null : io.observe(el));
 }
 
 function introHero() {
@@ -867,6 +871,31 @@ async function changelog() {
   }
 }
 
+// The total downloads of every release file, counted up from zero the first time it's on
+// screen. Left out entirely if the backend can't be reached.
+async function downloadCount() {
+  const wrap = $('[data-downloads]');
+  let total;
+  try {
+    const res = await fetch(`${API}/gh/downloads`);
+    if (!res.ok) return;
+    ({ downloads: total } = await res.json());
+  } catch { return; }
+  if (!Number.isFinite(total) || total <= 0) return;
+  const out = $('[data-downloads-n]');
+  const show = n => (out.textContent = Math.round(n).toLocaleString());
+  wrap.hidden = false;
+  if (reduced) return show(total);
+  show(0);
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    const counter = { n: 0 };
+    animate(counter, { n: total, duration: 1400, ease: 'out(4)', onUpdate: () => show(counter.n) });
+  });
+  io.observe(wrap);
+}
+
 async function starCount() {
   try {
     const repo = await gh('');
@@ -931,6 +960,7 @@ bento();
 install();
 changelog();
 starCount();
+downloadCount();
 timelineLine();
 propSwitches();
 buttons();

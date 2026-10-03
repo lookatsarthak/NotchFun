@@ -307,3 +307,16 @@ test('platforms: tagged on every count, filterable, compared side by side', asyn
   assert.equal(bogus.os, null, 'unknown platforms mean all');
   assert.equal(total(bogus, 'view'), 3);
 });
+
+test('a preview copy of the site can read GitHub data but never counts or sends feedback', async () => {
+  const PREVIEW = 'https://notchfun-preview.lookatsarthak.workers.dev';
+  const before = (await stats()).totals.length;
+  assert.equal((await post('/e', { b: [{ e: 'lang', c: 'pv' }] }, { origin: PREVIEW })).status, 204);
+  assert.equal((await post('/feedback', { kind: 'idea', message: 'from preview', token: 't' }, { origin: PREVIEW })).status, 403);
+  const pre = await fetch(BASE + '/feedback', { method: 'OPTIONS', headers: { origin: PREVIEW, 'access-control-request-method': 'GET' } });
+  assert.equal(pre.headers.get('access-control-allow-origin'), PREVIEW, 'reads are allowed');
+  assert.equal((await fetch(BASE + '/feedback', { method: 'OPTIONS', headers: { origin: 'https://evil.workers.dev' } })).headers.get('access-control-allow-origin'), null);
+  await settle();
+  assert.equal(total(await stats(), 'lang', 'pv'), 0);
+  assert.equal((await stats()).totals.length, before);
+});

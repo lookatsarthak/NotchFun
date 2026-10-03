@@ -7,12 +7,15 @@
 // off on this browser for good, and the browser's Do Not Track setting is honoured.
 
 const LIVE = location.hostname === 'lookatsarthak.github.io';
+// A preview copy (notchfun-preview.lookatsarthak.workers.dev), for reviewing changes before
+// they go live: it reads the real data but never counts anything.
+const PREVIEW = location.hostname === 'notchfun-preview.lookatsarthak.workers.dev';
 
-export const API = LIVE ? 'https://notchfun.lookatsarthak.workers.dev' : 'http://127.0.0.1:8787';
+export const API = LIVE || PREVIEW ? 'https://notchfun.lookatsarthak.workers.dev' : 'http://127.0.0.1:8787';
 // Off the real site, Cloudflare's test key, which always passes without showing anything.
 export const TURNSTILE_SITEKEY = LIVE ? '0x4AAAAAAFM1evCblBTBJiE4' : '1x00000000000000000000BB';
 
-export const noTrack = (() => {
+export const noTrack = PREVIEW || (() => {
   try {
     if (new URLSearchParams(location.search).has('notrack')) localStorage.setItem('nf-notrack', '1');
     return localStorage.getItem('nf-notrack') === '1' || navigator.doNotTrack === '1';
