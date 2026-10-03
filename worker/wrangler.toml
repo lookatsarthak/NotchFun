@@ -20,6 +20,8 @@ database_id = "b3e16ab2-b5c9-4041-923a-4014583792c3"
 [vars]
 GITHUB_APP_ID = "5176861"
 GITHUB_APP_INSTALLATION = "167565357"
+# Send the HTML versions of the emails (src/emails.js) alongside the plain text.
+HTML_EMAILS = "1"
 
 [triggers]
 crons = ["10 0 * * *"]
