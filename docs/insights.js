@@ -3,7 +3,7 @@
 // so the numbers read as "how many visits did X". No cookies, no stored identifiers; see
 // api.js for the opt-out.
 
-import { track, trackMany, noTrack } from './api.js';
+import { track, trackMany, noTrack, platform } from './api.js';
 
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const sent = new Set();
@@ -17,26 +17,13 @@ const once = (event, channel = '') => {
 /** Called once the page is set up. `view` is the referring site, sent with the visit. */
 export function insights(from) {
   if (noTrack) return;
-  trackMany([['view', from], ['device', device()], ['lang', language()]]);
+  trackMany([['view', from], ['device', platform], ['lang', language()]]);
   sections();
   clicks();
   timeOnPage();
 }
 
 // ------------------------------------------------------------------ who
-
-function device() {
-  const ua = navigator.userAgent;
-  const touch = navigator.maxTouchPoints > 1;
-  const os = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch) ? 'ios'
-    : /Macintosh|Mac OS X/.test(ua) ? 'mac'
-    : /Android/.test(ua) ? 'android'
-    : /Windows/.test(ua) ? 'windows'
-    : /Linux|CrOS/.test(ua) ? 'linux' : 'other';
-  const short = Math.min(screen.width, screen.height);
-  const form = !touch ? 'desktop' : short < 600 ? 'phone' : 'tablet';
-  return `${os}/${form}`;
-}
 
 const language = () => (navigator.language || '').toLowerCase().split('-')[0].replace(/[^a-z]/g, '').slice(0, 3) || 'other';
 

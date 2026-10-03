@@ -46,6 +46,22 @@ const stepFor = (event, channel) =>
   : (event === 'section' && channel === 'install') || event === 'install_seen' ? STEP.install
   : event === 'copy_curl' || event === 'copy_brew' || event === 'dmg' ? STEP.action
   : 0;
+
+// Platform as os/form. The page works it out (it can tell an iPad from a Mac); otherwise
+// it's read from the browser's user agent. install.sh and Homebrew only run on Macs.
+const PLATFORM = /^(mac|ios|windows|android|linux|other)\/(phone|tablet|desktop)$/;
+const OSES = new Set(['mac', 'ios', 'windows', 'android', 'linux', 'other']);
+function platformOf(request, claimed) {
+  if (typeof claimed === 'string' && PLATFORM.test(claimed)) return claimed;
+  const ua = request.headers.get('user-agent') ?? '';
+  if (/iPad/.test(ua)) return 'ios/tablet';
+  if (/iPhone|iPod/.test(ua)) return 'ios/phone';
+  if (/Android/.test(ua)) return /Mobile/.test(ua) ? 'android/phone' : 'android/tablet';
+  if (/Macintosh|Mac OS X/.test(ua)) return 'mac/desktop';
+  if (/Windows/.test(ua)) return 'windows/desktop';
+  if (/Linux|CrOS|X11/.test(ua)) return 'linux/desktop';
+  return ua ? 'other/desktop' : '';
+}
 const DMG_CHANNELS = new Set(['hero', 'install', 'readme', 'other']);
 const INSTALL_STEPS = { start: 'curl_start', ok: 'curl_ok', fail: 'curl_fail' };
 const FAIL_REASONS = new Set(['old_macos', 'not_mac', 'download', 'mount', 'copy', 'open', 'other']);
@@ -98,9 +114,10 @@ export default {
 // ad blocker. The redirect never waits on the database: counting happens after it's sent.
 function download(request, env, ctx, channel, url) {
   if (request.method === 'GET' && url.searchParams.get('nt') !== '1') {
+    const platform = platformOf(request, url.searchParams.get('p'));
     ctx.waitUntil(Promise.all([
-      count(env, { event: 'dmg', channel: DMG_CHANNELS.has(channel) ? channel : 'other', country: country(request) }),
-      journey(env, request, STEP.action),
+      count(env, { event: 'dmg', channel: DMG_CHANNELS.has(channel) ? channel : 'other', country: country(request), platform }),
+      journey(env, request, STEP.action, platform),
     ]).catch(console.error));
   }
   return redirect(DMG_LATEST);
@@ -109,7 +126,7 @@ function download(request, env, ctx, channel, url) {
 // Homebrew's cask downloads through here, so brew installs are counted exactly.
 function brew(request, env, ctx, version, url) {
   if (!VERSION.test(version ?? '')) return new Response('Unknown version\n', { status: 404 });
-  if (request.method === 'GET' && url.searchParams.get('nt') !== '1') ctx.waitUntil(count(env, { event: 'brew', version, country: country(request) }).catch(console.error));
+  if (request.method === 'GET' && url.searchParams.get('nt') !== '1') ctx.waitUntil(count(env, { event: 'brew', version, country: country(request), platform: 'mac/desktop' }).catch(console.error));
   return redirect(dmgFor(version));
 }
 
@@ -123,7 +140,7 @@ async function installPing(request, env, ctx, url) {
     const macos = /^\d{2}$/.test(q.get('m') ?? '') ? q.get('m') : '';
     const channel = event === 'curl_fail' ? (FAIL_REASONS.has(reason) ? reason : 'other') : [arch, macos].filter(Boolean).join('/');
     const version = VERSION.test(q.get('v') ?? '') ? q.get('v') : '';
-    ctx.waitUntil(count(env, { event, channel, version, country: country(request) }).catch(console.error));
+    ctx.waitUntil(count(env, { event, channel, version, country: country(request), platform: 'mac/desktop' }).catch(console.error));
   }
   return new Response(null, { status: 204 });
 }
@@ -148,47 +165,48 @@ async function siteEvent(request, env, ctx, cors) {
     events.push({ event, channel });
   }
 
+  const platform = platformOf(request, body.p);
   ctx.waitUntil((async () => {
     const where = country(request);
     let steps = 0;
     for (const { event, channel } of events) {
-      await count(env, { event, channel, country: where });
+      await count(env, { event, channel, country: where, platform });
       steps |= stepFor(event, channel);
     }
     if (events.some(e => e.event === 'view')) {
       const hash = await visitorHash(env, request);
       const res = await env.DB.prepare('INSERT OR IGNORE INTO visitors (day, hash) VALUES (?1, ?2)').bind(today(), hash).run();
-      if (res.meta.changes === 1) await count(env, { event: 'visitor', country: where });
+      if (res.meta.changes === 1) await count(env, { event: 'visitor', country: where, platform });
     }
-    if (steps) await journey(env, request, steps);
+    if (steps) await journey(env, request, steps, platform);
   })().catch(console.error));
   return new Response(null, { status: 204, headers: cors });
 }
 
-async function journey(env, request, steps) {
+async function journey(env, request, steps, platform = '') {
   const hash = await visitorHash(env, request);
   await env.DB.prepare(
-    `INSERT INTO journeys (day, hash, steps) VALUES (?1, ?2, ?3)
-     ON CONFLICT (day, hash) DO UPDATE SET steps = steps | ?3`,
-  ).bind(today(), hash, steps).run();
+    `INSERT INTO journeys (day, hash, steps, platform) VALUES (?1, ?2, ?3, ?4)
+     ON CONFLICT (day, hash) DO UPDATE SET steps = steps | ?3, platform = CASE WHEN platform = '' THEN ?4 ELSE platform END`,
+  ).bind(today(), hash, steps, platform).run();
 }
 
 // Folds finished days' journeys into funnel counts, then forgets them.
 async function rollup(env) {
   const day = today();
   const stmts = Object.entries(STEP).map(([name, bit]) => env.DB.prepare(
-    `INSERT INTO counts (day, event, channel, version, country, n)
-     SELECT day, 'funnel', ?1, '', '', COUNT(*) FROM journeys WHERE day < ?2 AND steps & ?3 GROUP BY day
-     ON CONFLICT (day, event, channel, version, country) DO UPDATE SET n = n + excluded.n`,
+    `INSERT INTO counts (day, event, channel, version, country, platform, n)
+     SELECT day, 'funnel', ?1, '', '', platform, COUNT(*) FROM journeys WHERE day < ?2 AND steps & ?3 GROUP BY day, platform
+     ON CONFLICT (day, event, channel, version, country, platform) DO UPDATE SET n = n + excluded.n`,
   ).bind(name, day, bit));
   await env.DB.batch([...stmts, env.DB.prepare('DELETE FROM journeys WHERE day < ?1').bind(day)]);
 }
 
-async function count(env, { event, channel = '', version = '', country = '' }) {
+async function count(env, { event, channel = '', version = '', country = '', platform = '' }) {
   await env.DB.prepare(
-    `INSERT INTO counts (day, event, channel, version, country, n) VALUES (?1, ?2, ?3, ?4, ?5, 1)
-     ON CONFLICT (day, event, channel, version, country) DO UPDATE SET n = n + 1`,
-  ).bind(today(), event, channel, version, country).run();
+    `INSERT INTO counts (day, event, channel, version, country, platform, n) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)
+     ON CONFLICT (day, event, channel, version, country, platform) DO UPDATE SET n = n + 1`,
+  ).bind(today(), event, channel, version, country, platform).run();
 }
 
 // ------------------------------------------------------------------ feedback
@@ -414,23 +432,47 @@ async function stats(request, env, url) {
   if (url.searchParams.get('resend') === '1') return json({ resent: await resendUnsent(env) });
   const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
   const since = daysAgo(days - 1);
+  // ?os=mac (or ios, windows, android, linux, other) narrows everything to that platform.
+  const os = OSES.has(url.searchParams.get('os')) ? url.searchParams.get('os') : null;
+  const like = os ? `${os}/%` : '%';
   const all = (sql, ...args) => env.DB.prepare(sql).bind(...args).all().then(r => r.results);
-  const [totals, daily, countries, versions, feedbackRows, latest, stars] = await Promise.all([
-    all('SELECT event, channel, SUM(n) AS n FROM counts WHERE day >= ?1 GROUP BY event, channel ORDER BY event, n DESC', since),
-    all('SELECT day, event, SUM(n) AS n FROM counts WHERE day >= ?1 GROUP BY day, event ORDER BY day', since),
-    all(`SELECT country, SUM(n) AS n FROM counts WHERE day >= ?1 AND event IN ('dmg', 'brew', 'curl_ok') GROUP BY country ORDER BY n DESC LIMIT 20`, since),
-    all(`SELECT event, version, SUM(n) AS n FROM counts WHERE day >= ?1 AND version != '' GROUP BY event, version ORDER BY version DESC`, since),
+  const liveSql = `SELECT platform, SUM(steps & 1 > 0) AS landed, SUM(steps & 2 > 0) AS features, SUM(steps & 4 > 0) AS install, SUM(steps & 8 > 0) AS action
+     FROM journeys WHERE day = ?1 GROUP BY platform`;
+  const [totals, daily, countries, versions, feedbackRows, latest, stars, perPlatform, live] = await Promise.all([
+    all('SELECT event, channel, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 GROUP BY event, channel ORDER BY event, n DESC', since, like),
+    all('SELECT day, event, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 GROUP BY day, event ORDER BY day', since, like),
+    all(`SELECT country, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 AND event IN ('dmg', 'brew', 'curl_ok') GROUP BY country ORDER BY n DESC LIMIT 20`, since, like),
+    all(`SELECT event, version, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 AND version != '' GROUP BY event, version ORDER BY version DESC`, since, like),
     all('SELECT * FROM feedback ORDER BY id DESC LIMIT 100'),
     all('SELECT metric, value FROM snapshots WHERE day = (SELECT MAX(day) FROM snapshots WHERE metric = ?1)', 'stars'),
     all(`SELECT day, metric, value FROM snapshots WHERE day >= ?1 AND metric IN ('stars', 'gh_views', 'gh_view_uniques', 'gh_clones') ORDER BY day`, since),
+    all(`SELECT platform, event, channel, SUM(n) AS n FROM counts WHERE day >= ?1
+         AND event IN ('view', 'visitor', 'dmg', 'copy_curl', 'copy_brew', 'feedback_open', 'star_click', 'funnel', 'curl_ok', 'brew') GROUP BY platform, event, channel`, since),
+    all(liveSql, today()),
   ]);
-  const live = await env.DB.prepare(
-    `SELECT SUM(steps & 1 > 0) AS landed, SUM(steps & 2 > 0) AS features, SUM(steps & 4 > 0) AS install, SUM(steps & 8 > 0) AS action
-     FROM journeys WHERE day = ?1`,
-  ).bind(today()).first();
-  const funnel = Object.fromEntries(Object.keys(STEP).map(name => [name,
-    totals.filter(t => t.event === 'funnel' && t.channel === name).reduce((a, t) => a + t.n, 0) + (live?.[name] ?? 0)]));
-  return json({ since, days, totals, daily, countries, versions, funnel, feedback: feedbackRows, github: latest, githubDaily: stars });
+  const steps = Object.keys(STEP);
+  const funnel = Object.fromEntries(steps.map(name => [name,
+    totals.filter(t => t.event === 'funnel' && t.channel === name).reduce((a, t) => a + t.n, 0)
+    + live.filter(l => !os || l.platform.startsWith(`${os}/`)).reduce((a, l) => a + (l[name] ?? 0), 0)]));
+
+  // One row per platform for the comparison table, all platforms regardless of ?os.
+  const rows = new Map();
+  const row = platform => rows.get(platform) ?? rows.set(platform, { platform, visits: 0, visitors: 0, landed: 0, features: 0, install: 0, action: 0, downloads: 0, copies: 0, installs: 0, feedback: 0, stars: 0 }).get(platform);
+  for (const r of perPlatform) {
+    const x = row(r.platform);
+    if (r.event === 'view') x.visits += r.n;
+    if (r.event === 'visitor') x.visitors += r.n;
+    if (r.event === 'dmg') x.downloads += r.n;
+    if (r.event === 'copy_curl' || r.event === 'copy_brew') x.copies += r.n;
+    if (r.event === 'feedback_open') x.feedback += r.n;
+    if (r.event === 'star_click') x.stars += r.n;
+    if (r.event === 'curl_ok' || r.event === 'brew') x.installs += r.n;
+    if (r.event === 'funnel' && steps.includes(r.channel)) x[r.channel] += r.n;
+  }
+  for (const l of live) for (const name of steps) row(l.platform)[name] += l[name] ?? 0;
+  const byPlatform = [...rows.values()].filter(r => r.platform !== '' || r.visits > 0 || r.installs > 0).sort((a, b) => (b.platform === 'mac/desktop') - (a.platform === 'mac/desktop') || b.visits - a.visits || b.landed - a.landed);
+
+  return json({ since, days, os, totals, daily, countries, versions, funnel, byPlatform, feedback: feedbackRows, github: latest, githubDaily: stars });
 }
 
 async function authorised(request, env) {

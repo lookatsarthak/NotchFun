@@ -28,6 +28,7 @@
   .stat span { color: var(--ink2); font-size: 13px; }
   .stat svg { display: block; width: 100%; height: 28px; margin-top: 8px; }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+  .wide { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
   th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
   th { color: var(--ink2); font-weight: 500; font-size: 13px; }
@@ -56,6 +57,9 @@
       <select id="days" aria-label="Period">
         <option value="1">Today</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option>
       </select>
+      <select id="os" aria-label="Platform">
+        <option value="">All platforms</option><option value="mac">Mac</option><option value="ios">iPhone &amp; iPad</option><option value="android">Android</option><option value="windows">Windows</option><option value="linux">Linux</option><option value="other">Other</option>
+      </select>
       <button class="ghost" id="signout" type="button">Sign out</button>
     </div>
   </header>
@@ -67,11 +71,12 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 // Signed in with a cookie from the emailed link; nothing to type. (The admin token still
 // works as a header, for scripts.)
 $('#days').addEventListener('change', load);
+$('#os').addEventListener('change', load);
 $('#signout').addEventListener('click', async () => { await fetch('/admin/logout', { method: 'POST' }); location.reload(); });
 load();
 
 async function load() {
-  const res = await fetch(`/stats?days=${$('#days').value}`, { credentials: 'same-origin' });
+  const res = await fetch(`/stats?days=${$('#days').value}&os=${$('#os').value}`, { credentials: 'same-origin' });
   if (res.status === 401) return signIn();
   if (!res.ok) { $('#out').innerHTML = `<p class="err">Could not load (${res.status}). Try again in a moment.</p>`; return; }
   $('#controls').hidden = false;
@@ -111,6 +116,10 @@ const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 
   'little:mirror': 'Little things: Mirror', 'native:width': 'Width slider' };
 const FAQS = { free: 'Is it really free?', warning: 'Why does macOS warn me?', macs: 'Which Macs?', permissions: 'What permissions?', privacy: 'Does anything leave my Mac?' };
 const TIMES = ['<10s', '10-30s', '30s-2m', '2-5m', '5m+'];
+const PLATFORMS = { 'mac/desktop': 'Mac', 'ios/phone': 'iPhone', 'ios/tablet': 'iPad', 'android/phone': 'Android phone', 'android/tablet': 'Android tablet',
+  'windows/desktop': 'Windows', 'windows/tablet': 'Windows tablet', 'linux/desktop': 'Linux', 'linux/tablet': 'Linux tablet', '': 'Unknown' };
+const platformName = p => PLATFORMS[p] ?? (p.startsWith('other/') ? 'Other' : p);
+const OS_NAMES = { mac: 'Mac', ios: 'iPhone & iPad', android: 'Android', windows: 'Windows', linux: 'Linux', other: 'Other' };
 
 function render(d) {
   const sum = (event, channel) => d.totals.filter(t => t.event === event && (channel === undefined || t.channel === channel)).reduce((a, t) => a + t.n, 0);
@@ -129,6 +138,11 @@ function render(d) {
     ? `<table><tr>${head.map((h, i) => `<th${i === head.length - 1 ? ' class="n"' : ''}>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map((c, i) => `<td${i === r.length - 1 ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`
     : `<table><tr>${head.map((h, i) => `<th${i === head.length - 1 ? ' class="n"' : ''}>${h}</th>`).join('')}</tr><tr><td class="empty" colspan="${head.length}">Nothing yet</td></tr></table>`;
   const channels = event => d.totals.filter(t => t.event === event).map(t => [t.channel || '—', t.n]);
+  const pct = (n, base) => (base && n ? ` <span class="v">· ${Math.round((n / base) * 100)}%</span>` : '');
+  const platformTable = list => list.length
+    ? `<div class="wide"><table><tr><th>Platform</th><th class="n">Visits</th><th class="n">Saw features</th><th class="n">Reached Install</th><th class="n">Copied or downloaded</th><th class="n">Installed</th><th class="n">Feedback</th><th class="n">Stars</th></tr>${
+        list.map(r => `<tr><td>${esc(platformName(r.platform))}</td><td class="n">${r.visits}</td><td class="n">${r.features}${pct(r.features, r.landed)}</td><td class="n">${r.install}${pct(r.install, r.landed)}</td><td class="n">${r.action}${pct(r.action, r.landed)}</td><td class="n">${r.installs}</td><td class="n">${r.feedback}</td><td class="n">${r.stars}</td></tr>`).join('')}</table></div>`
+    : '<table><tr><th>Platform</th></tr><tr><td class="empty">Nothing yet</td></tr></table>';
   const bars = (rows, base) => rows.length && base
     ? `<div class="bars">${rows.map(([label, n]) => {
         const pct = Math.round((n / base) * 100);
@@ -137,7 +151,11 @@ function render(d) {
     : '<p class="empty">Nothing yet.</p>';
 
   $('#out').innerHTML = `
-    <h2>Last ${d.days} days</h2>
+    <h2>By platform</h2>
+    <p class="note">All platforms, last ${d.days} days. Only Macs can install, so the Mac row is the one to grow.</p>
+    ${platformTable(d.byPlatform)}
+
+    <h2>Last ${d.days} days${d.os ? ` · ${OS_NAMES[d.os]} only` : ''}</h2>
     <div class="grid">
       ${stat('Website visits', sum('view'), 'view')}
       ${stat('Unique visitors', sum('visitor'), 'visitor')}

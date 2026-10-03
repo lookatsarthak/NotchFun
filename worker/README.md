@@ -18,6 +18,9 @@ The app never talks to it. Only the website, `install.sh` and the Homebrew cask 
 Every day at 00:10 UTC it copies GitHub's stars, traffic, referrers and per-file download
 counts (GitHub keeps traffic for only 14 days) and deletes the previous day's visitor hashes.
 
+Every count carries a platform (`mac/desktop`, `ios/phone`, `windows/desktop` and so on), so the
+dashboard can compare platforms and filter by one (`/stats?os=mac`).
+
 Nothing stored identifies anyone. Unique visitors are counted with a hash of IP and browser
 salted with a random value that is deleted after the day ends.
 
@@ -46,4 +49,5 @@ npm test           # end-to-end checks against the dev server
 npm run deploy
 ```
 
-Schema changes: edit `schema.sql`, then run it locally and with `npm run db:remote`.
+Schema changes: edit `schema.sql` (for new databases) and add a file to `migrations/` for the
+existing one; run it with `npx wrangler d1 execute notchfun --remote --file migrations/<file>`.

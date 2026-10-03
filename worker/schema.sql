@@ -2,15 +2,17 @@
 -- Nothing here identifies a person. Visitor hashes use a salt that is thrown away
 -- after a day, so the same visitor can't be followed from one day to the next.
 
--- One row per (day, event, channel, version, country), counting up.
+-- One row per (day, event, channel, version, country, platform), counting up. Platform is
+-- os/form, e.g. mac/desktop or ios/phone ('' when unknown).
 CREATE TABLE IF NOT EXISTS counts (
-  day     TEXT NOT NULL,
-  event   TEXT NOT NULL,
-  channel TEXT NOT NULL DEFAULT '',
-  version TEXT NOT NULL DEFAULT '',
-  country TEXT NOT NULL DEFAULT '',
-  n       INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (day, event, channel, version, country)
+  day      TEXT NOT NULL,
+  event    TEXT NOT NULL,
+  channel  TEXT NOT NULL DEFAULT '',
+  version  TEXT NOT NULL DEFAULT '',
+  country  TEXT NOT NULL DEFAULT '',
+  platform TEXT NOT NULL DEFAULT '',
+  n        INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, event, channel, version, country, platform)
 );
 
 -- Today's visitor hashes, only to count unique visitors. Cleared daily.
@@ -60,9 +62,10 @@ CREATE TABLE IF NOT EXISTS snapshots (
 -- 2 saw the features, 4 reached Install, 8 copied or downloaded). Rolled up into counts
 -- and deleted every night, like the visitor hashes.
 CREATE TABLE IF NOT EXISTS journeys (
-  day   TEXT NOT NULL,
-  hash  TEXT NOT NULL,
-  steps INTEGER NOT NULL DEFAULT 0,
+  day      TEXT NOT NULL,
+  hash     TEXT NOT NULL,
+  steps    INTEGER NOT NULL DEFAULT 0,
+  platform TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (day, hash)
 );
 

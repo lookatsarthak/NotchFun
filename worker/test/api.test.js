@@ -266,3 +266,44 @@ test('expired links are refused', async () => {
   const res = await fetch(BASE + '/admin/login', { method: 'POST', body: new URLSearchParams({ t: new URL(link).searchParams.get('t') }), redirect: 'manual' });
   assert.equal(res.status, 400);
 });
+
+test('platforms: tagged on every count, filterable, compared side by side', async () => {
+  execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--command',
+    'DELETE FROM counts; DELETE FROM journeys; DELETE FROM visitors;'], { stdio: 'ignore' });
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
+  const WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36';
+  // A Windows visitor who reads to Install; the page says which platform it is.
+  await post('/e', { b: [{ e: 'view', c: '' }, { e: 'section', c: 'music' }, { e: 'section', c: 'install' }], p: 'windows/desktop' }, { 'user-agent': WIN });
+  // An iPhone visitor whose page didn't say: worked out from the browser.
+  await post('/e', { b: [{ e: 'view', c: '' }] }, { 'user-agent': IPHONE });
+  // A Mac visitor sending a made-up platform, which is ignored for the browser's own.
+  await post('/e', { b: [{ e: 'view', c: '' }, { e: 'section', c: 'music' }], p: 'mac/fridge' }, { 'user-agent': UA });
+  await get('/d/hero?p=mac%2Fdesktop');
+  await get('/i?s=ok&v=1.6.1&a=arm64&m=26', { 'user-agent': 'curl/8.7.1' });
+  await get('/brew/1.6.1', { 'user-agent': 'Homebrew/4.6' });
+  await settle();
+
+  const all = await stats();
+  const by = Object.fromEntries(all.byPlatform.map(r => [r.platform, r]));
+  assert.equal(by['windows/desktop'].visits, 1);
+  assert.equal(by['windows/desktop'].install, 1, 'reached Install');
+  assert.equal(by['windows/desktop'].action, 0);
+  assert.equal(by['ios/phone'].visits, 1);
+  assert.equal(by['mac/desktop'].visits, 1);
+  assert.equal(by['mac/desktop'].features, 1);
+  assert.equal(by['mac/desktop'].action, 1, 'the download was from the same Mac browser');
+  assert.equal(by['mac/desktop'].installs, 2, 'Terminal and Homebrew installs are Macs');
+  assert.ok(!by['mac/fridge']);
+
+  const win = await (await get('/stats?os=windows', { authorization: `Bearer ${ADMIN}` })).json();
+  assert.equal(win.os, 'windows');
+  assert.equal(total(win, 'view'), 1);
+  assert.equal(total(win, 'dmg'), 0);
+  assert.deepEqual(win.funnel, { landed: 1, features: 1, install: 1, action: 0 });
+  const mac = await (await get('/stats?os=mac', { authorization: `Bearer ${ADMIN}` })).json();
+  assert.equal(total(mac, 'dmg'), 1);
+  assert.equal(total(mac, 'curl_ok'), 1);
+  const bogus = await (await get('/stats?os=amiga', { authorization: `Bearer ${ADMIN}` })).json();
+  assert.equal(bogus.os, null, 'unknown platforms mean all');
+  assert.equal(total(bogus, 'view'), 3);
+});

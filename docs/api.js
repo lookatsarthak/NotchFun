@@ -21,13 +21,29 @@ export const noTrack = (() => {
   }
 })();
 
+// Platform as os/form, sent with every count so behaviour can be compared across Mac,
+// iPhone, Windows and so on. iPads report themselves as Macs, so touch decides; a
+// touchscreen laptop still has a mouse or trackpad as its main pointer, so it's a desktop.
+export const platform = (() => {
+  const ua = navigator.userAgent;
+  const touch = navigator.maxTouchPoints > 1;
+  const os = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch) ? 'ios'
+    : /Macintosh|Mac OS X/.test(ua) ? 'mac'
+    : /Android/.test(ua) ? 'android'
+    : /Windows/.test(ua) ? 'windows'
+    : /Linux|CrOS|X11/.test(ua) ? 'linux' : 'other';
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const form = !coarse ? 'desktop' : Math.min(screen.width, screen.height) < 600 ? 'phone' : 'tablet';
+  return `${os}/${form}`;
+})();
+
 export function track(event, channel = '') {
-  send({ e: event, c: channel });
+  send({ e: event, c: channel, p: platform });
 }
 
 /** Several events in one request: [[event, channel], ...], at most 12. */
 export function trackMany(events) {
-  send({ b: events.map(([e, c = '']) => ({ e, c })) });
+  send({ b: events.map(([e, c = '']) => ({ e, c })), p: platform });
 }
 
 function send(body) {
@@ -40,5 +56,5 @@ function send(body) {
 // Download links point at the backend, which counts the click and hands over the GitHub
 // file. The maintainer's own clicks (with ?notrack) are passed through uncounted.
 export function downloadURL(channel) {
-  return `${API}/d/${channel}${noTrack ? '?nt=1' : ''}`;
+  return `${API}/d/${channel}?${noTrack ? 'nt=1' : `p=${encodeURIComponent(platform)}`}`;
 }
