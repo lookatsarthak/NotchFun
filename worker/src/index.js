@@ -20,7 +20,7 @@ const CHAPTERS = 'music|shelf|clip|cal|keys|little';
 const SITE_EVENTS = {
   view: null, // channel is the referring domain
   install_seen: new Set(['']),
-  copy_curl: new Set(['', 'install']),
+  copy_curl: new Set(['', 'install', 'hero', 'after_download']),
   copy_brew: new Set(['', 'install']),
   star_click: new Set(['hero', 'menubar', 'community', 'footer']),
   feedback_open: new Set(['idea', 'bug', 'other']),
@@ -32,6 +32,8 @@ const SITE_EVENTS = {
     'little:caffeine', 'little:charging', 'little:airpods', 'little:mirror', 'native:width']),
   faq_open: new Set(['free', 'warning', 'macs', 'permissions', 'privacy']),
   send_mac: new Set(['open', 'share', 'email', 'copy']),
+  see_how: new Set(['hero']),
+  dl_help: new Set(['oneline', 'faq']),
   changelog_more: new Set(['']),
   outbound: new Set(['github', 'releases', 'issues', 'license', 'contributing', 'install_script', 'other']),
   time: new Set(['<10s', '10-30s', '30s-2m', '2-5m', '5m+']),

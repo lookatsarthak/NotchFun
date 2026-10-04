@@ -174,7 +174,7 @@
           <span class="roll" data-label="Star on GitHub"><span>Star on GitHub</span></span>
         </a>
       </div>
-      <p class="free-note reveal">Free, open source, no account<span class="dl-count" data-downloads hidden> · <b data-downloads-n>0</b> downloads</span>.</p>
+      <p class="free-note reveal"><span data-freenote>Free, open source, no account</span><span class="dl-count" data-downloads hidden><span class="dl-sep"> · </span><b data-downloads-n>0</b> downloads</span></p>
     </div>
 
     <a class="scroll-hint" href="#features" aria-label="See it work"><span></span></a>
@@ -331,54 +331,6 @@
     </section>
   </div>
 
-  <!-- ============ BENTO ============ -->
-  <section class="native" id="native">
-    <div class="section-head">
-      <p class="eyebrow">Made for the Mac</p>
-      <h2 class="reveal-lines"><span class="line"><span>Quiet by default.</span></span><span class="line"><span>Thoughtful all the way down.</span></span></h2>
-    </div>
-    <div class="bento">
-      <article class="card c-shortcut reveal">
-        <div class="card-visual keys-demo" aria-hidden="true"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>I</kbd></div>
-        <h3>Open it from the keyboard</h3>
-        <p>⇧⌘I, or any shortcut you like.</p>
-      </article>
-      <article class="card c-shortcuts reveal">
-        <div class="card-visual actions" aria-hidden="true">
-          <span>Set Caffeine</span><span>Open Notch</span><span>Paste as Plain Text</span><span>Close Notch</span><span>Set Clipboard History</span>
-        </div>
-        <h3>Works with Shortcuts</h3>
-        <p>Five actions for automations and Spotlight.</p>
-      </article>
-      <article class="card c-width reveal">
-        <div class="card-visual width-demo" aria-hidden="true"><span class="wd-notch"><i></i></span></div>
-        <h3>As wide as you like</h3>
-        <p>Drag the slider — it resizes the notch up top.</p>
-        <input type="range" min="500" max="900" value="640" step="10" data-width aria-label="Open notch width">
-      </article>
-      <article class="card c-private reveal">
-        <div class="card-visual lock-demo" aria-hidden="true">
-          <svg viewBox="0 0 48 48"><path class="shackle" d="M16 22v-6a8 8 0 0 1 16 0v6"/><rect x="11" y="22" width="26" height="19" rx="5"/><circle cx="24" cy="31.5" r="2.5"/></svg>
-        </div>
-        <h3>No account. No tracking.</h3>
-        <p>What you copy stays on your Mac. Passwords are never saved.</p>
-      </article>
-      <article class="card c-full reveal">
-        <div class="card-visual mini-screen" aria-hidden="true"><span class="ms-notch"></span><span class="ms-video"></span></div>
-        <h3>Steps aside in full screen</h3>
-        <p>Watching something? The notch gets out of the way.</p>
-      </article>
-      <article class="card c-updates reveal">
-        <div class="card-visual update-demo" aria-hidden="true">
-          <span class="ud-ring"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="ud-progress" cx="20" cy="20" r="16"/><path class="ud-check" d="M13.5 20.5l4.5 4.5 8.5-9"/></svg></span>
-          <span class="ud-versions"><span class="ud-old">1.5.1</span><span class="ud-arrow">→</span><span class="ud-new">1.5.2</span></span>
-        </div>
-        <h3>Updates itself</h3>
-        <p>Quietly, in the background. Installs the next time you quit.</p>
-      </article>
-    </div>
-  </section>
-
   <!-- ============ INSTALL ============ -->
   <section class="install" id="install">
     <div class="section-head">
@@ -427,6 +379,54 @@
         </button>
       </div>
       <p class="install-fine">Needs macOS 26 or later. The app download and Homebrew show a one-time security prompt — <a href="#faq-warning">here's why</a>.</p>
+    </div>
+  </section>
+
+  <!-- ============ BENTO ============ -->
+  <section class="native" id="native">
+    <div class="section-head">
+      <p class="eyebrow">Made for the Mac</p>
+      <h2 class="reveal-lines"><span class="line"><span>Quiet by default.</span></span><span class="line"><span>Thoughtful all the way down.</span></span></h2>
+    </div>
+    <div class="bento">
+      <article class="card c-shortcut reveal">
+        <div class="card-visual keys-demo" aria-hidden="true"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>I</kbd></div>
+        <h3>Open it from the keyboard</h3>
+        <p>⇧⌘I, or any shortcut you like.</p>
+      </article>
+      <article class="card c-shortcuts reveal">
+        <div class="card-visual actions" aria-hidden="true">
+          <span>Set Caffeine</span><span>Open Notch</span><span>Paste as Plain Text</span><span>Close Notch</span><span>Set Clipboard History</span>
+        </div>
+        <h3>Works with Shortcuts</h3>
+        <p>Five actions for automations and Spotlight.</p>
+      </article>
+      <article class="card c-width reveal">
+        <div class="card-visual width-demo" aria-hidden="true"><span class="wd-notch"><i></i></span></div>
+        <h3>As wide as you like</h3>
+        <p>Drag the slider — it resizes the notch up top.</p>
+        <input type="range" min="500" max="900" value="640" step="10" data-width aria-label="Open notch width">
+      </article>
+      <article class="card c-private reveal">
+        <div class="card-visual lock-demo" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path class="shackle" d="M16 22v-6a8 8 0 0 1 16 0v6"/><rect x="11" y="22" width="26" height="19" rx="5"/><circle cx="24" cy="31.5" r="2.5"/></svg>
+        </div>
+        <h3>No account. No tracking.</h3>
+        <p>What you copy stays on your Mac. Passwords are never saved.</p>
+      </article>
+      <article class="card c-full reveal">
+        <div class="card-visual mini-screen" aria-hidden="true"><span class="ms-notch"></span><span class="ms-video"></span></div>
+        <h3>Steps aside in full screen</h3>
+        <p>Watching something? The notch gets out of the way.</p>
+      </article>
+      <article class="card c-updates reveal">
+        <div class="card-visual update-demo" aria-hidden="true">
+          <span class="ud-ring"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="ud-progress" cx="20" cy="20" r="16"/><path class="ud-check" d="M13.5 20.5l4.5 4.5 8.5-9"/></svg></span>
+          <span class="ud-versions"><span class="ud-old">1.5.1</span><span class="ud-arrow">→</span><span class="ud-new">1.5.2</span></span>
+        </div>
+        <h3>Updates itself</h3>
+        <p>Quietly, in the background. Installs the next time you quit.</p>
+      </article>
     </div>
   </section>
 

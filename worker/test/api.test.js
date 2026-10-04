@@ -350,3 +350,17 @@ test('email templates: HTML is escaped, plain text kept, sign-in link in both', 
   const si = signInEmail({ link: 'https://d/admin/login?t=abc', minutes: 15 });
   assert.ok(si.html.includes('https://d/admin/login?t=abc') && si.text.includes('https://d/admin/login?t=abc'));
 });
+
+test('funnel buttons: hero one-line install, after-download help, see how it works', async () => {
+  for (const [e, c] of [['copy_curl', 'hero'], ['copy_curl', 'after_download'], ['dl_help', 'oneline'], ['dl_help', 'faq'], ['see_how', 'hero']]) {
+    assert.equal((await post('/e', { e, c, p: 'mac/desktop' })).status, 204, `${e} ${c}`);
+  }
+  for (const bad of [{ e: 'dl_help', c: 'nope' }, { e: 'see_how', c: 'footer' }, { e: 'copy_curl', c: 'anywhere' }]) {
+    assert.equal((await post('/e', bad)).status, 400);
+  }
+  await settle();
+  const s = await stats();
+  assert.equal(total(s, 'copy_curl', 'hero'), 1);
+  assert.equal(total(s, 'dl_help', 'oneline'), 1);
+  assert.equal(total(s, 'see_how', 'hero'), 1);
+});

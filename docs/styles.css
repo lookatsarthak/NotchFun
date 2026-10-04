@@ -642,6 +642,15 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 
 /* ------------------------------------------------------------------ feedback */
 
+/* The hero's second button and the after-download panel. */
+.line-icon path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dl-steps { margin: 0 0 18px; padding-left: 22px; display: grid; gap: 10px; color: var(--ink-2); line-height: 1.55; }
+.dl-steps li::marker { color: var(--lav); font-weight: 700; }
+.dl-steps b { color: var(--ink); }
+.dl-steps a { color: var(--lav); }
+.dl-alt { display: grid; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dl-alt p { margin: 0; color: var(--ink-2); font-size: 15px; }
+
 /* "Send to my Mac", for visitors who aren't on one. */
 .send-icon path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .btn-primary:hover .send-icon svg, .btn-primary:focus-visible .send-icon svg { animation: fly 0.9s var(--settle); }
@@ -664,6 +673,9 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 
 /* The live download total under the hero buttons. */
 .dl-count b { font-weight: 700; color: var(--lav); font-variant-numeric: tabular-nums; }
+.free-note.stacked .dl-count { display: block; margin-top: 4px; }
+.free-note.stacked .dl-count[hidden] { display: none; }
+.free-note.stacked .dl-sep { display: none; }
 
 .fb-form { display: grid; gap: 16px; }
 .fb-form[hidden], .fb-done[hidden] { display: none; }

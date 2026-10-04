@@ -762,10 +762,13 @@ function buttons() {
   // they can't use: the share sheet (AirDrop, Messages, Mail) or an email to themselves.
   if (!platform.startsWith('mac/')) {
     sendToMac(dl, label);
-    return void $('[data-star]').addEventListener('click', () => {
-      const r = $('[data-star]').getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 40);
-    });
+    seeHowItWorks($('[data-star]'));
+    $('[data-freenote]').textContent = 'A free Mac app. Send it to yourself and install it there.';
+    $('.free-note').classList.add('stacked');
+    return;
   }
+  installWithOneLine($('[data-star]'));
+  afterDownload();
   dl.addEventListener('click', () => {
     const r = dl.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 44);
     dl.classList.add('downloading');
@@ -773,9 +776,92 @@ function buttons() {
     setTimeout(() => { dl.classList.remove('downloading'); label('Check your Downloads'); }, 2200);
     setTimeout(() => label('Download for Mac'), 6500);
   });
-  $('[data-star]').addEventListener('click', () => {
-    const r = $('[data-star]').getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 40);
+}
+
+// ------------------------------------------------------------------ install paths
+
+// The hero's second button. On a Mac it's the smoothest install (Terminal, no security
+// prompt); elsewhere it takes people into the tour, since they can't install anyway.
+function heroSecondary(button, text, iconPath, href) {
+  button.removeAttribute('data-star');
+  button.removeAttribute('data-starfrom');
+  button.removeAttribute('target');
+  button.href = href;
+  $('.btn-icon', button).outerHTML = `<span class="btn-icon line-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${iconPath}"/></svg></span>`;
+  const roll = $('.roll', button);
+  roll.dataset.label = text;
+  $('span', roll).textContent = text;
+}
+
+function installWithOneLine(button) {
+  heroSecondary(button, 'Install with one line', 'M4.5 6.5 9 11l-4.5 4.5M11.5 17h8', '#install');
+  button.addEventListener('click', e => {
+    e.preventDefault();
+    const r = button.getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 30);
+    oneLine('hero');
   });
+}
+
+function seeHowItWorks(button) {
+  heroSecondary(button, 'See how it works', 'M12 4.5v14M6 12.5l6 6 6-6', '#features');
+  button.addEventListener('click', e => {
+    e.preventDefault();
+    track('see_how', 'hero');
+    $('#features').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+  });
+}
+
+// Copies the Terminal line, goes to the install steps and shows what to do next.
+async function oneLine(from) {
+  const code = $('.cmd.big code').textContent;
+  const copy = $('.cmd.big [data-copytext]');
+  let copied = true;
+  try { await navigator.clipboard.writeText(code); } catch { copied = false; }
+  track('copy_curl', from);
+  $('#install').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  const next = $('[data-copiednext]');
+  if (copied) {
+    copy.textContent = 'Copied';
+    copy.classList.add('done');
+    setTimeout(() => { copy.textContent = 'Copy'; copy.classList.remove('done'); }, 2400);
+    next.hidden = false;
+    if (!reduced) animate(next, { opacity: [0, 1], y: [-6, 0], duration: 450, delay: 500, ease: 'out(3)' });
+  }
+}
+
+// After a disk-image download starts: what to do with it, including the one-time
+// security prompt, and the Terminal line as the way around that prompt.
+function afterDownload() {
+  const sheet = document.createElement('dialog');
+  sheet.className = 'fb-dialog dl-sheet';
+  sheet.setAttribute('aria-labelledby', 'dl-title');
+  sheet.innerHTML = `
+    <div class="fb-head"><h2 id="dl-title">Downloading NotchFun</h2><button class="fb-close" type="button" aria-label="Close">×</button></div>
+    <div class="fb-body">
+      <ol class="dl-steps">
+        <li>Open <b>NotchFun.dmg</b> from your Downloads.</li>
+        <li>Drag <b>NotchFun</b> into <b>Applications</b>, then open it.</li>
+        <li>The first time, macOS asks before opening it: click <b>Done</b>, then <b>System Settings → Privacy &amp; Security → Open Anyway</b>. <a href="#faq-warning" data-help="faq">Why?</a></li>
+      </ol>
+      <div class="dl-alt">
+        <p>Rather skip that step? One line in Terminal installs it with no prompt.</p>
+        <button class="send-btn" type="button" data-help="oneline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5 9 11l-4.5 4.5M11.5 17h8"/></svg><span>Install with one line instead</span></button>
+      </div>
+    </div>`;
+  document.body.append(sheet);
+  $('.fb-close', sheet).addEventListener('click', () => sheet.close());
+  sheet.addEventListener('click', e => { if (e.target === sheet) sheet.close(); });
+  $('[data-help="oneline"]', sheet).addEventListener('click', () => { track('dl_help', 'oneline'); sheet.close(); oneLine('after_download'); });
+  $('[data-help="faq"]', sheet).addEventListener('click', e => {
+    e.preventDefault();
+    track('dl_help', 'faq');
+    sheet.close();
+    const faq = $('#faq-warning');
+    faq.open = true;
+    faq.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+  });
+  // The download carries on underneath; the panel opens a moment later.
+  $$('[data-dl]').forEach(a => a.addEventListener('click', () => setTimeout(() => sheet.open || sheet.showModal(), 700)));
 }
 
 // ------------------------------------------------------------------ send to my Mac

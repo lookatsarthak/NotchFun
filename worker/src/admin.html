@@ -108,7 +108,7 @@ function signIn() {
 }
 
 const SECTIONS = [['hero', 'Top of the page'], ['music', '01 Now playing'], ['shelf', '02 Shelf'], ['clip', '03 Clipboard'], ['cal', '04 Calendar'],
-  ['keys', '05 Volume & brightness'], ['little', '06 Little things'], ['native', 'Made for the Mac'], ['install', 'Install'],
+  ['keys', '05 Volume & brightness'], ['little', '06 Little things'], ['install', 'Install'], ['native', 'Made for the Mac'],
   ['changelog', 'Changelog'], ['community', 'Community'], ['faq', 'Questions'], ['footer', 'Bottom of the page']];
 const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 'music:prev': 'Music: previous', 'shelf:drag': 'Shelf: dragged a file',
   'clip:copy': 'Clipboard: copied', 'clip:search': 'Clipboard: searched', 'keys:press': 'Volume keys: pressed',
@@ -182,6 +182,8 @@ function render(d) {
       <div>${table(['Watched a video to the end', 'Visits'], channels('video_end'))}</div>
       <div>${table(['FAQ opened', 'Visits'], channels('faq_open').map(([c, n]) => [FAQS[c] || c, n]))}</div>
       <div>${table(['Went to', 'Visits'], channels('outbound'))}</div>
+      <div>${table(['Getting it installed', 'Visits'], [['Hero: Install with one line (Mac)', sum('copy_curl', 'hero')], ['Install section: copied the line', sum('copy_curl', 'install')],
+        ['After downloading: switched to one line', sum('dl_help', 'oneline')], ['After downloading: asked why macOS warns', sum('dl_help', 'faq')], ['Hero: See how it works (not Mac)', sum('see_how', 'hero')]])}</div>
       <div>${table(['Other', 'Visits'], [['Opened the whole changelog', sum('changelog_more')], ['Opened feedback', sum('feedback_open')]])}</div>
       <div>${table(['Send to my Mac (not on a Mac)', 'Visits'], [['Tapped Send to my Mac', sum('send_mac', 'open')], ['Shared it (AirDrop, Messages…)', sum('send_mac', 'share')],
         ['Emailed it to themselves', sum('send_mac', 'email')], ['Copied the link', sum('send_mac', 'copy')], ['Came back on a Mac from a sent link', d.sentBackOnMac]])}</div>
