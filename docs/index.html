@@ -18,6 +18,35 @@
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // How big to draw the notch: shared with main.js, and applied here before the first
+    // paint so the hero is laid out at its real size and doesn't jump when the scripts load.
+    window.nfNotchSize = () => {
+      const root = document.documentElement;
+      const openW = parseFloat(getComputedStyle(root).getPropertyValue('--open-w')) || 640;
+      const ns = Math.min(1, (root.clientWidth - 20) / openW);
+      // Height counts too, so on a 13" MacBook the headline and buttons still fit above the fold.
+      const hero = Math.max(ns, Math.min(1.6, (root.clientWidth - 64) / openW, (innerHeight * 0.3) / 190));
+      return { ns, hero };
+    };
+    {
+      const { ns, hero } = nfNotchSize();
+      const style = document.documentElement.style;
+      style.setProperty('--ns', ns.toFixed(3));
+      style.setProperty('--hero-s', hero.toFixed(3));
+      style.setProperty('--ts', hero.toFixed(4));
+      style.setProperty('--dock', '0');
+    }
+  </script>
+  <!-- Connect to the animation library's CDN and the backend early, and start fetching the
+       page's scripts while the HTML is still arriving. -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://notchfun.lookatsarthak.workers.dev" crossorigin>
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js">
+  <link rel="modulepreload" href="main.js">
+  <link rel="modulepreload" href="api.js">
+  <link rel="modulepreload" href="feedback.js">
+  <link rel="modulepreload" href="insights.js">
 </head>
 <body>
 
@@ -129,7 +158,7 @@
 
 <!-- A Mac menu bar, with the notch in the middle of it, as on the real thing. -->
 <header class="menubar">
-  <a class="mb-brand" href="#top"><img src="assets/favicon.png" alt=""><b>NotchFun</b></a>
+  <a class="mb-brand" href="#top" aria-label="NotchFun"><img src="assets/favicon.png" alt=""><b>NotchFun</b></a>
   <nav class="mb-links">
     <a href="#features">Features</a>
     <a href="#install">Install</a>
@@ -158,10 +187,10 @@
       <p class="kicker" aria-live="polite"><span class="kicker-lead">It</span> <span class="kicker-roll" data-kicker><span>plays your music.</span></span></p>
       <h1 class="headline">
         <span class="line"><span>The notch,</span></span>
-        <span class="line"><span><em>but fun.</em></span></span>
+        <span class="line" style="--l: 1"><span><em>but fun.</em></span></span>
       </h1>
-      <p class="lede reveal">Music, files, everything you copy and the rest of your day — living in the notch you forgot about.</p>
-      <div class="cta reveal">
+      <p class="lede reveal" style="--i: 0">Music, files, everything you copy and the rest of your day — living in the notch you forgot about.</p>
+      <div class="cta reveal" style="--i: 1">
         <a class="btn btn-primary magnetic" data-download data-dl="hero" href="https://notchfun.lookatsarthak.workers.dev/d/hero">
           <span class="btn-icon dl-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path class="dl-arrow" d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path class="dl-tray" d="M5 16v3h14v-3"/></svg>
@@ -174,11 +203,47 @@
           <span class="roll" data-label="Star on GitHub"><span>Star on GitHub</span></span>
         </a>
       </div>
-      <p class="free-note reveal"><span data-freenote>Free, open source, no account</span><span class="dl-count" data-downloads hidden><span class="dl-sep"> · </span><b data-downloads-n>0</b> downloads</span></p>
+      <p class="free-note reveal" style="--i: 2"><span data-freenote>Free, open source, no account</span><span class="dl-count" data-downloads><span class="dl-sep"> · </span><b data-downloads-n>00</b> downloads</span></p>
     </div>
 
     <a class="scroll-hint" href="#features" aria-label="See it work"><span></span></a>
   </section>
+  <script>
+    // Before the first paint: visitors who aren't on a Mac get their hero straight away
+    // (Send to my Mac, See how it works, and a line saying why), so nothing is swapped in
+    // later or jumps. Same platform test as api.js; main.js adds what the buttons do.
+    (() => {
+      const ua = navigator.userAgent;
+      const mac = /Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad|iPod/.test(ua) && navigator.maxTouchPoints <= 1;
+      document.documentElement.dataset.mac = mac ? 'yes' : 'no';
+      const icon = (cls, d) => `<span class="btn-icon ${cls}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${d}"/></svg></span>`;
+      const set = (btn, text, cls, d, href) => {
+        btn.querySelector('.btn-icon').outerHTML = icon(cls, d);
+        const roll = btn.querySelector('.roll');
+        roll.dataset.label = text;
+        roll.querySelector('span').textContent = text;
+        btn.href = href;
+        btn.removeAttribute('target');
+        btn.removeAttribute('data-starfrom');
+      };
+      const hero = document.querySelector('[data-hero]');
+      const second = hero.querySelector('.btn-ghost');
+      if (mac) return set(second, 'Install with one line', 'line-icon', 'M4.5 6.5 9 11l-4.5 4.5M11.5 17h8', '#install');
+      const plane = 'M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z';
+      const primary = hero.querySelector('[data-download]');
+      set(primary, 'Send to my Mac', 'send-icon', plane, '#send');
+      primary.removeAttribute('data-dl');
+      primary.classList.add('send-mac');
+      set(second, 'See how it works', 'line-icon', 'M12 4.5v14M6 12.5l6 6 6-6', '#features');
+      hero.querySelector('[data-freenote]').textContent = 'A free Mac app. Send it to yourself and install it there.';
+      hero.querySelector('.free-note').classList.add('stacked');
+      const bar = document.querySelector('.mb-download');
+      bar.href = '#send';
+      bar.setAttribute('aria-label', 'Send to my Mac');
+      bar.querySelector('svg').outerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" class="send-glyph"><path d="${plane}"/></svg>`;
+      bar.querySelector('span').textContent = 'Send to my Mac';
+    })();
+  </script>
 
   <!-- ============ CHAPTERS ============ -->
   <div id="features" class="chapters">

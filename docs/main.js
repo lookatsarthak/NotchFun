@@ -5,8 +5,8 @@
 // is watching the notch work. anime.js does the choreography (the hello, bursts, the
 // disk-image drag); CSS springs, sampled from the app's own, move the notch itself.
 
-import { animate, createTimeline, createDrawable, stagger } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
-import { API, track, downloadURL, platform } from './api.js';
+import { animate, createTimeline, createDrawable } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
+import { API, track, downloadURL } from './api.js';
 import { feedbackDialog } from './feedback.js';
 import { insights } from './insights.js';
 
@@ -97,9 +97,10 @@ notch.addEventListener('pointerenter', () => { clearTimeout(hoverTimer); N.hover
 notch.addEventListener('pointerleave', () => { hoverTimer = setTimeout(() => { N.hover = false; render(); }, 180); });
 
 // On narrow screens the open notch is scaled to fit rather than clipped.
+// The sizes themselves come from nfNotchSize() in index.html's <head>, which also applies
+// them before the first paint.
 function fitNotch() {
-  const openW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--open-w')) || 640;
-  document.documentElement.style.setProperty('--ns', Math.min(1, (document.documentElement.clientWidth - 20) / openW).toFixed(3));
+  document.documentElement.style.setProperty('--ns', nfNotchSize().ns.toFixed(3));
 }
 addEventListener('resize', fitNotch);
 fitNotch();
@@ -134,10 +135,8 @@ let heroScale = 1;
 
 function dock() {
   const root = document.documentElement;
-  const ns = parseFloat(root.style.getPropertyValue('--ns')) || 1;
-  const openW = parseFloat(getComputedStyle(root).getPropertyValue('--open-w')) || 640;
-  // Height counts too, so on a 13" MacBook the headline and buttons still fit above the fold.
-  heroScale = Math.max(ns, Math.min(1.6, (root.clientWidth - 64) / openW, (innerHeight * 0.3) / 190));
+  const { ns, hero } = nfNotchSize();
+  heroScale = hero;
   root.style.setProperty('--hero-s', heroScale.toFixed(3));
   const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
   const eased = 1 - Math.pow(1 - p, 3);
@@ -248,14 +247,13 @@ function setupReveals() {
   }, { rootMargin: '0px 0px -12% 0px' });
   // The hero is what's on screen at load; it fades in straight away rather than waiting
   // to be scrolled into view (on a short window the buttons sit in the bottom strip).
-  $$('[data-hero] .reveal').forEach(el => requestAnimationFrame(() => el.classList.add('in')));
+  $$('[data-hero] .reveal').forEach(el => el.classList.add('in')); // already animating in via CSS
   $$('.reveal, .reveal-lines').forEach(el => el.closest('[data-hero]') && el.classList.contains('reveal') ? null : io.observe(el));
 }
 
+// The headline's rise is CSS now (styles.css, line-up), so it doesn't wait for this script.
 function introHero() {
-  const lines = $$('.headline .line > span');
-  if (reduced) { lines.forEach(l => (l.style.transform = 'none')); return; }
-  animate(lines, { translateY: ['105%', '0%'], duration: 1100, delay: stagger(110, { start: 500 }), ease: 'out(4)' });
+  if (reduced) $$('.headline .line > span').forEach(l => (l.style.transform = 'none'));
 }
 
 // ------------------------------------------------------------------ stars
@@ -760,14 +758,14 @@ function buttons() {
   };
   // Only Macs can run NotchFun. Everyone else gets "Send to my Mac" instead of a download
   // they can't use: the share sheet (AirDrop, Messages, Mail) or an email to themselves.
-  if (!platform.startsWith('mac/')) {
+  // The hero's words for this visitor were set before the first paint (the inline script
+  // after the hero in index.html); here the buttons get their behaviour.
+  if (document.documentElement.dataset.mac !== 'yes') {
     sendToMac(dl, label);
-    seeHowItWorks($('[data-star]'));
-    $('[data-freenote]').textContent = 'A free Mac app. Send it to yourself and install it there.';
-    $('.free-note').classList.add('stacked');
+    seeHowItWorks($('.hero .btn-ghost'));
     return;
   }
-  installWithOneLine($('[data-star]'));
+  installWithOneLine($('.hero .btn-ghost'));
   afterDownload();
   dl.addEventListener('click', () => {
     const r = dl.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 44);
@@ -782,19 +780,7 @@ function buttons() {
 
 // The hero's second button. On a Mac it's the smoothest install (Terminal, no security
 // prompt); elsewhere it takes people into the tour, since they can't install anyway.
-function heroSecondary(button, text, iconPath, href) {
-  button.removeAttribute('data-star');
-  button.removeAttribute('data-starfrom');
-  button.removeAttribute('target');
-  button.href = href;
-  $('.btn-icon', button).outerHTML = `<span class="btn-icon line-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${iconPath}"/></svg></span>`;
-  const roll = $('.roll', button);
-  roll.dataset.label = text;
-  $('span', roll).textContent = text;
-}
-
 function installWithOneLine(button) {
-  heroSecondary(button, 'Install with one line', 'M4.5 6.5 9 11l-4.5 4.5M11.5 17h8', '#install');
   button.addEventListener('click', e => {
     e.preventDefault();
     const r = button.getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 30);
@@ -803,7 +789,6 @@ function installWithOneLine(button) {
 }
 
 function seeHowItWorks(button) {
-  heroSecondary(button, 'See how it works', 'M12 4.5v14M6 12.5l6 6 6-6', '#features');
   button.addEventListener('click', e => {
     e.preventDefault();
     track('see_how', 'hero');
@@ -872,11 +857,6 @@ const sentOnce = new Set();
 const trackSend = c => { if (!sentOnce.has(c)) { sentOnce.add(c); track('send_mac', c); } };
 
 function sendToMac(button, label) {
-  button.removeAttribute('data-dl');
-  button.href = '#send';
-  button.classList.add('send-mac');
-  $('.btn-icon', button).outerHTML = '<span class="btn-icon send-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg></span>';
-  label('Send to my Mac');
 
   const sheet = document.createElement('dialog');
   sheet.className = 'fb-dialog send-sheet';
@@ -941,14 +921,7 @@ function sendToMac(button, label) {
   button.addEventListener('click', e => { const r = button.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 30); send(e); });
 
   // The round button in the phone's menu bar does the same, with the same icon.
-  const bar = $('.mb-download');
-  if (bar) {
-    bar.href = '#send';
-    bar.setAttribute('aria-label', 'Send to my Mac');
-    $('svg', bar).outerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="send-glyph"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg>';
-    $('span', bar).textContent = 'Send to my Mac';
-    bar.addEventListener('click', send);
-  }
+  $('.mb-download')?.addEventListener('click', send);
 
   // The install steps are for the Mac; say so, and offer the same way across.
   const box = $('.install-box');
@@ -1075,7 +1048,7 @@ async function downloadCount() {
   if (!Number.isFinite(total) || total <= 0) return;
   const out = $('[data-downloads-n]');
   const show = n => (out.textContent = Math.round(n).toLocaleString());
-  wrap.hidden = false;
+  wrap.classList.add('ready');
   if (reduced) return show(total);
   show(0);
   const io = new IntersectionObserver(([e]) => {

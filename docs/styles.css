@@ -339,6 +339,13 @@ body[data-focus="cal"] .home-music, body[data-focus="cal"] .home-art { opacity: 
 /* reveals: set up hidden, shown by main.js as they scroll in */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.8s var(--settle); transition-delay: calc(var(--i, 0) * 70ms); }
 .reveal.in { opacity: 1; transform: none; }
+/* The hero comes in with CSS, not script, so the first thing on screen doesn't wait for the
+   animation library to arrive (on a slow phone that was most of the load time). Same
+   timing as before: the headline rises at 0.5 s, line by line; the rest fades up after. */
+[data-hero] .reveal { animation: hero-in 0.7s var(--settle) both; animation-delay: calc(0.1s + var(--i, 0) * 70ms); }
+.headline .line > span { animation: line-up 1.1s cubic-bezier(0.25, 1, 0.5, 1) both; animation-delay: calc(0.5s + var(--l, 0) * 110ms); }
+@keyframes hero-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes line-up { from { transform: translateY(105%); } to { transform: none; } }
 .reveal-lines .line > span { transition: transform 0.9s var(--settle); transition-delay: calc(var(--l, 0) * 90ms); }
 .reveal-lines.in .line > span { transform: none; }
 
@@ -674,7 +681,8 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 /* The live download total under the hero buttons. */
 .dl-count b { font-weight: 700; color: var(--lav); font-variant-numeric: tabular-nums; }
 .free-note.stacked .dl-count { display: block; margin-top: 4px; }
-.free-note.stacked .dl-count[hidden] { display: none; }
+/* Space is kept for the count while it loads, so nothing below it moves when it appears. */
+.dl-count:not(.ready) { visibility: hidden; }
 .free-note.stacked .dl-sep { display: none; }
 
 .fb-form { display: grid; gap: 16px; }
