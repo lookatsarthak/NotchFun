@@ -364,3 +364,11 @@ test('funnel buttons: hero one-line install, after-download help, see how it wor
   assert.equal(total(s, 'dl_help', 'oneline'), 1);
   assert.equal(total(s, 'see_how', 'hero'), 1);
 });
+
+test('funnel: reaching either of the first two chapters counts as seeing the features', async () => {
+  const ua = { 'user-agent': 'Shelf-first browser' };
+  const before = (await stats()).funnel.features;
+  await post('/e', { b: [{ e: 'view', c: '' }, { e: 'section', c: 'shelf' }] }, ua);
+  await settle();
+  assert.equal((await stats()).funnel.features - before, 1);
+});

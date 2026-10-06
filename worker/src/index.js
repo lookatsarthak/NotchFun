@@ -46,7 +46,7 @@ const allowed = (rule, channel) => (rule instanceof RegExp ? rule.test(channel) 
 const STEP = { landed: 1, features: 2, install: 4, action: 8 };
 const stepFor = (event, channel) =>
   event === 'view' ? STEP.landed
-  : event === 'section' && channel === 'music' ? STEP.features
+  : event === 'section' && (channel === 'shelf' || channel === 'music') ? STEP.features // the first two chapters
   : (event === 'section' && channel === 'install') || event === 'install_seen' ? STEP.install
   : event === 'copy_curl' || event === 'copy_brew' || event === 'dmg' ? STEP.action
   : 0;
