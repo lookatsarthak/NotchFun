@@ -33,6 +33,10 @@ const SITE_EVENTS = {
   faq_open: new Set(['free', 'warning', 'macs', 'permissions', 'privacy']),
   send_mac: new Set(['open', 'share', 'email', 'copy']),
   see_how: new Set(['hero']),
+  // Core Web Vitals per visit, graded with Google's thresholds: good, ok (needs work), poor.
+  lcp: new Set(['good', 'ok', 'poor']),
+  inp: new Set(['good', 'ok', 'poor']),
+  cls: new Set(['good', 'ok', 'poor']),
   dl_help: new Set(['oneline', 'faq']),
   changelog_more: new Set(['']),
   outbound: new Set(['github', 'releases', 'issues', 'license', 'contributing', 'install_script', 'other']),
@@ -452,8 +456,18 @@ async function stats(request, env, url) {
   if (url.searchParams.get('snapshot') === '1') { await rollup(env); return json(await snapshot(env)); }
   if (url.searchParams.get('resend') === '1') return json({ resent: await resendUnsent(env) });
   if (url.searchParams.get('emailpreview') === '1') return json(await emailPreview(env, url));
-  const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
-  const since = daysAgo(days - 1);
+  // Either the last N days, or an exact range (?from=YYYY-MM-DD&to=YYYY-MM-DD) for comparing
+  // the weeks before and after a change.
+  const DATE = /^\d{4}-\d{2}-\d{2}$/;
+  let days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days') ?? '30', 10) || 30));
+  let since = daysAgo(days - 1);
+  let until = today();
+  if (DATE.test(url.searchParams.get('from') ?? '')) {
+    since = url.searchParams.get('from');
+    if (DATE.test(url.searchParams.get('to') ?? '') && url.searchParams.get('to') < until) until = url.searchParams.get('to');
+    if (since > until) since = until;
+    days = Math.round((Date.parse(until) - Date.parse(since)) / 864e5) + 1;
+  }
   // ?os=mac (or ios, windows, android, linux, other) narrows everything to that platform.
   const os = OSES.has(url.searchParams.get('os')) ? url.searchParams.get('os') : null;
   const like = os ? `${os}/%` : '%';
@@ -461,21 +475,21 @@ async function stats(request, env, url) {
   const liveSql = `SELECT platform, SUM(steps & 1 > 0) AS landed, SUM(steps & 2 > 0) AS features, SUM(steps & 4 > 0) AS install, SUM(steps & 8 > 0) AS action
      FROM journeys WHERE day = ?1 GROUP BY platform`;
   const [totals, daily, countries, versions, feedbackRows, latest, stars, perPlatform, live] = await Promise.all([
-    all('SELECT event, channel, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 GROUP BY event, channel ORDER BY event, n DESC', since, like),
-    all('SELECT day, event, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 GROUP BY day, event ORDER BY day', since, like),
-    all(`SELECT country, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 AND event IN ('dmg', 'brew', 'curl_ok') GROUP BY country ORDER BY n DESC LIMIT 20`, since, like),
-    all(`SELECT event, version, SUM(n) AS n FROM counts WHERE day >= ?1 AND platform LIKE ?2 AND version != '' GROUP BY event, version ORDER BY version DESC`, since, like),
+    all('SELECT event, channel, SUM(n) AS n FROM counts WHERE day BETWEEN ?1 AND ?3 AND platform LIKE ?2 GROUP BY event, channel ORDER BY event, n DESC', since, like, until),
+    all('SELECT day, event, SUM(n) AS n FROM counts WHERE day BETWEEN ?1 AND ?3 AND platform LIKE ?2 GROUP BY day, event ORDER BY day', since, like, until),
+    all(`SELECT country, SUM(n) AS n FROM counts WHERE day BETWEEN ?1 AND ?3 AND platform LIKE ?2 AND event IN ('dmg', 'brew', 'curl_ok') GROUP BY country ORDER BY n DESC LIMIT 20`, since, like, until),
+    all(`SELECT event, version, SUM(n) AS n FROM counts WHERE day BETWEEN ?1 AND ?3 AND platform LIKE ?2 AND version != '' GROUP BY event, version ORDER BY version DESC`, since, like, until),
     all('SELECT * FROM feedback ORDER BY id DESC LIMIT 100'),
     all('SELECT metric, value FROM snapshots WHERE day = (SELECT MAX(day) FROM snapshots WHERE metric = ?1)', 'stars'),
-    all(`SELECT day, metric, value FROM snapshots WHERE day >= ?1 AND metric IN ('stars', 'gh_views', 'gh_view_uniques', 'gh_clones') ORDER BY day`, since),
-    all(`SELECT platform, event, channel, SUM(n) AS n FROM counts WHERE day >= ?1
-         AND event IN ('view', 'visitor', 'dmg', 'copy_curl', 'copy_brew', 'feedback_open', 'star_click', 'funnel', 'curl_ok', 'brew') GROUP BY platform, event, channel`, since),
-    all(liveSql, today()),
+    all(`SELECT day, metric, value FROM snapshots WHERE day BETWEEN ?1 AND ?2 AND metric IN ('stars', 'gh_views', 'gh_view_uniques', 'gh_clones') ORDER BY day`, since, until),
+    all(`SELECT platform, event, channel, SUM(n) AS n FROM counts WHERE day BETWEEN ?1 AND ?2
+         AND event IN ('view', 'visitor', 'dmg', 'copy_curl', 'copy_brew', 'feedback_open', 'star_click', 'funnel', 'curl_ok', 'brew') GROUP BY platform, event, channel`, since, until),
+    until === today() ? all(liveSql, today()) : [],
   ]);
   // People who opened a link sent with "Send to my Mac", on a Mac: the feature working.
   const sentBack = await env.DB.prepare(
-    `SELECT COALESCE(SUM(n), 0) AS n FROM counts WHERE day >= ?1 AND event = 'view' AND channel = 'sent' AND platform LIKE 'mac/%'`,
-  ).bind(since).first();
+    `SELECT COALESCE(SUM(n), 0) AS n FROM counts WHERE day BETWEEN ?1 AND ?2 AND event = 'view' AND channel = 'sent' AND platform LIKE 'mac/%'`,
+  ).bind(since, until).first();
   const steps = Object.keys(STEP);
   const funnel = Object.fromEntries(steps.map(name => [name,
     totals.filter(t => t.event === 'funnel' && t.channel === name).reduce((a, t) => a + t.n, 0)
@@ -498,7 +512,7 @@ async function stats(request, env, url) {
   for (const l of live) for (const name of steps) row(l.platform)[name] += l[name] ?? 0;
   const byPlatform = [...rows.values()].filter(r => r.platform !== '' || r.visits > 0 || r.installs > 0).sort((a, b) => (b.platform === 'mac/desktop') - (a.platform === 'mac/desktop') || b.visits - a.visits || b.landed - a.landed);
 
-  return json({ since, days, os, totals, daily, countries, versions, funnel, byPlatform, sentBackOnMac: sentBack?.n ?? 0, feedback: feedbackRows, github: latest, githubDaily: stars });
+  return json({ since, until, days, os, totals, daily, countries, versions, funnel, byPlatform, sentBackOnMac: sentBack?.n ?? 0, feedback: feedbackRows, github: latest, githubDaily: stars });
 }
 
 async function authorised(request, env) {

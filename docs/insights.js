@@ -21,6 +21,7 @@ export function insights(from) {
   sections();
   clicks();
   timeOnPage();
+  pageSpeed();
 }
 
 // ------------------------------------------------------------------ who
@@ -135,5 +136,36 @@ function timeOnPage() {
     if (document.visibilityState === 'hidden') report();
     else visibleSince = performance.now();
   });
+  addEventListener('pagehide', report);
+}
+
+// ------------------------------------------------------------------ how fast
+
+// Google's Core Web Vitals for this visit, graded with its thresholds and reported once
+// when the page is hidden or left: how soon the main content shows (LCP), how quickly
+// taps and clicks get a response (INP), and how much the layout jumps (CLS). Browsers
+// that can't measure one (Safari, for some) report nothing for it rather than a guess.
+function pageSpeed() {
+  const supported = PerformanceObserver.supportedEntryTypes ?? [];
+  const watch = (type, fn, extra = {}) => {
+    if (!supported.includes(type)) return false;
+    try { new PerformanceObserver(list => list.getEntries().forEach(fn)).observe({ type, buffered: true, ...extra }); return true; }
+    catch { return false; }
+  };
+  let lcp = 0, cls = 0, inp = 0;
+  const hasLcp = watch('largest-contentful-paint', e => { lcp = e.startTime; });
+  const hasCls = watch('layout-shift', e => { if (!e.hadRecentInput) cls += e.value; });
+  const hasInp = watch('event', e => { if (e.interactionId) inp = Math.max(inp, e.duration); }, { durationThreshold: 40 });
+  // Browsers only log interactions slower than 40 ms, so a visitor who tapped or typed with
+  // nothing logged got fast responses: that's a good grade, not a missing one.
+  let interacted = false;
+  for (const type of ['pointerdown', 'keydown']) addEventListener(type, () => { interacted = true; }, { capture: true, once: true });
+  const grade = (v, good, poor) => (v <= good ? 'good' : v <= poor ? 'ok' : 'poor');
+  const report = () => {
+    if (hasLcp && lcp) once('lcp', grade(lcp, 2500, 4000));
+    if (hasCls) once('cls', grade(cls, 0.1, 0.25));
+    if (hasInp && (inp || interacted)) once('inp', grade(inp, 200, 500)); // only if they tapped, clicked or typed
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(); });
   addEventListener('pagehide', report);
 }

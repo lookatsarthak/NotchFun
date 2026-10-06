@@ -372,3 +372,31 @@ test('funnel: reaching either of the first two chapters counts as seeing the fea
   await settle();
   assert.equal((await stats()).funnel.features - before, 1);
 });
+
+test('date ranges: exact windows for before/after, today never exceeded', async () => {
+  execFileSync('npx', ['wrangler', 'd1', 'execute', 'notchfun', '--local', '--command',
+    "DELETE FROM counts; INSERT INTO counts (day, event, channel, version, country, platform, n) VALUES " +
+    "('2026-09-28','view','','','','mac/desktop',3), ('2026-09-29','view','','','','ios/phone',5), ('2026-10-01','view','','','','mac/desktop',7), " +
+    "('2026-09-29','funnel','landed','','','mac/desktop',4), ('2026-09-29','funnel','install','','','mac/desktop',1);"], { stdio: 'ignore' });
+  const get2 = q => get(`/stats?${q}`, { authorization: `Bearer ${ADMIN}` }).then(r => r.json());
+  const a = await get2('from=2026-09-28&to=2026-09-29');
+  assert.equal(a.days, 2); assert.equal(a.since, '2026-09-28'); assert.equal(a.until, '2026-09-29');
+  assert.equal(total(a, 'view'), 8, 'only the two days');
+  assert.deepEqual(a.funnel, { landed: 4, features: 0, install: 1, action: 0 }, 'no live journeys outside today');
+  const mac = await get2('from=2026-09-28&to=2026-09-29&os=mac');
+  assert.equal(total(mac, 'view'), 3);
+  const b = await get2('from=2026-09-30&to=2099-01-01');
+  assert.equal(total(b, 'view'), 7);
+  assert.equal(b.until, new Date().toISOString().slice(0, 10), 'capped at today');
+  const bad = await get2('from=yesterday');
+  assert.equal(bad.days, 30, 'junk dates fall back to the last 30 days');
+});
+
+test('page speed: graded Core Web Vitals, nothing else', async () => {
+  for (const [e, c] of [['lcp', 'good'], ['inp', 'ok'], ['cls', 'poor']]) assert.equal((await post('/e', { e, c })).status, 204);
+  assert.equal((await post('/e', { e: 'lcp', c: '1234ms' })).status, 400);
+  await settle();
+  const s = await stats();
+  assert.equal(total(s, 'lcp', 'good'), 1);
+  assert.equal(total(s, 'cls', 'poor'), 1);
+});

@@ -46,6 +46,15 @@
   .bar .fill { display: block; min-width: 2px; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--lav), var(--pink)); }
   .bar .v { text-align: right; color: var(--ink2); font-size: 13px; }
   .note { color: var(--ink2); font-size: 13px; margin: -4px 0 10px; }
+  .changes { display: grid; gap: 8px; }
+  .change { display: grid; grid-template-columns: 92px 1fr auto; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .change time { color: var(--lav); font-weight: 600; font-size: 13px; }
+  .change span { color: var(--ink); font-size: 14px; }
+  .change button { padding: 7px 14px; border-radius: 999px; font-size: 13px; }
+  #compare:empty { display: none; }
+  #compare { margin-top: 12px; }
+  .up { color: var(--green); } .down { color: var(--red); }
+  @media (max-width: 600px) { .change { grid-template-columns: 1fr auto; } .change time { grid-column: 1 / -1; } }
   .err { color: var(--red); }
 </style>
 </head>
@@ -83,6 +92,39 @@ async function load() {
   render(await res.json());
 }
 
+// Before/after for one change: two equal windows either side of its first full day.
+$('#out').addEventListener('click', async e => {
+  const b = e.target.closest('[data-compare]');
+  if (!b) return;
+  const c = CHANGES[+b.dataset.compare];
+  const shift = (day, n) => new Date(Date.parse(day) + n * 864e5).toISOString().slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const afterEnd = shift(c.day, 6) < todayStr ? shift(c.day, 6) : todayStr;
+  const box = $('#compare');
+  box.innerHTML = '<p class="empty">Comparing…</p>';
+  if (c.day > todayStr) { box.innerHTML = `<p class="empty">This change counts from ${esc(c.day)}, so there's nothing after it yet. Check back in a few days.</p>`; return; }
+  const get = (from, to) => fetch(`/stats?from=${from}&to=${to}&os=${$('#os').value}`, { credentials: 'same-origin' }).then(r => r.json());
+  const [before, after] = await Promise.all([get(shift(c.day, -7), shift(c.day, -1)), get(c.day, afterEnd)]);
+  const s = (d, ev, ch) => d.totals.filter(t => t.event === ev && (ch === undefined || t.channel === ch)).reduce((a, t) => a + t.n, 0);
+  const rate = (d, step) => (d.funnel.landed ? d.funnel[step] / d.funnel.landed : null);
+  const pctTxt = v => (v === null ? '—' : `${Math.round(v * 100)}%`);
+  const rows = [
+    ['Visitors a day', b2 => s(b2, 'visitor') / b2.days, v => v.toFixed(1)],
+    ['Saw the features', b2 => rate(b2, 'features'), pctTxt],
+    ['Reached Install', b2 => rate(b2, 'install'), pctTxt],
+    ['Copied or downloaded', b2 => rate(b2, 'action'), pctTxt],
+    ['Disk image downloads', b2 => s(b2, 'dmg'), v => v],
+    ['Installs (Terminal + Homebrew)', b2 => s(b2, 'curl_ok') + s(b2, 'brew'), v => v],
+    ['Tapped Send to my Mac', b2 => s(b2, 'send_mac', 'open'), v => v],
+    ['Came back on a Mac from a sent link', b2 => b2.sentBackOnMac, v => v],
+  ];
+  const cell = (fmt, v) => (v === null || Number.isNaN(v) ? '—' : fmt(v));
+  const delta = (x, y) => (x === null || y === null || Number.isNaN(x) || Number.isNaN(y) || x === y ? '' : `<span class="${y > x ? 'up' : 'down'}">${y > x ? '▲' : '▼'}</span>`);
+  box.innerHTML = `<table><tr><th>${esc(c.label.split(' · ')[0])}${$('#os').value ? ` · ${esc(OS_NAMES[$('#os').value])}` : ''}</th><th class="n">Before (${before.days} days)</th><th class="n">After (${after.days} day${after.days === 1 ? '' : 's'})</th></tr>${
+    rows.map(([label, f, fmt]) => { const x = f(before), y = f(after); return `<tr><td>${label}</td><td class="n">${cell(fmt, x)}</td><td class="n">${cell(fmt, y)} ${delta(x, y)}</td></tr>`; }).join('')}</table>
+    <p class="note" style="margin-top:8px">Small numbers swing a lot: with a handful of visitors a day, read these as hints, not proof.</p>`;
+});
+
 function signIn() {
   $('#controls').hidden = true;
   $('#out').innerHTML = `
@@ -119,6 +161,14 @@ const TIMES = ['<10s', '10-30s', '30s-2m', '2-5m', '5m+'];
 const PLATFORMS = { 'mac/desktop': 'Mac', 'ios/phone': 'iPhone', 'ios/tablet': 'iPad', 'android/phone': 'Android phone', 'android/tablet': 'Android tablet',
   'windows/desktop': 'Windows', 'windows/tablet': 'Windows tablet', 'linux/desktop': 'Linux', 'linux/tablet': 'Linux tablet', '': 'Unknown' };
 const platformName = p => PLATFORMS[p] ?? (p.startsWith('other/') ? 'Other' : p);
+// What shipped when, for before/after comparisons. "day" is the first full day with the
+// change live; Compare puts the 7 days before it against the 7 days from it.
+const CHANGES = [
+  { day: '2026-10-07', label: 'Install moved right after the tour · Mac hero: Install with one line · help after downloading · tour opens with Shelf' },
+  { day: '2026-10-04', label: 'Send to my Mac for phones and other computers · branded emails' },
+  { day: '2026-10-03', label: 'Link shared · hero fits short Mac screens · live download count' },
+];
+const VITALS = [['lcp', 'Main content shows (LCP)', 'good under 2.5 s'], ['inp', 'Responds to taps and clicks (INP)', 'good under 0.2 s'], ['cls', 'Layout stays put (CLS)', 'good under 0.1']];
 const OS_NAMES = { mac: 'Mac', ios: 'iPhone & iPad', android: 'Android', windows: 'Windows', linux: 'Linux', other: 'Other' };
 
 function render(d) {
@@ -154,6 +204,11 @@ function render(d) {
     <h2>By platform</h2>
     <p class="note">All platforms, last ${d.days} days. Only Macs can install, so the Mac row is the one to grow.</p>
     ${platformTable(d.byPlatform)}
+
+    <h2>What changed</h2>
+    <p class="note">Compare shows the 7 days before each change against the 7 days after${d.os ? `, ${OS_NAMES[d.os]} only` : ''}.</p>
+    <div class="changes">${CHANGES.map((c, i) => `<div class="change"><time>${new Date(c.day + 'T00:00:00Z').toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })}</time><span>${esc(c.label)}</span><button type="button" class="ghost" data-compare="${i}">Compare</button></div>`).join('')}</div>
+    <div id="compare"></div>
 
     <h2>Last ${d.days} days${d.os ? ` · ${OS_NAMES[d.os]} only` : ''}</h2>
     <div class="grid">
@@ -195,6 +250,13 @@ function render(d) {
       <div>${table(['Language', 'Visits'], channels('lang'))}</div>
       <div>${table(['Time on page', 'Visits'], TIMES.map(t => [t, sum('time', t)]))}</div>
     </div>
+
+    <h2>Page speed</h2>
+    <p class="note">Measured in visitors' own browsers, one grade per visit, using Google's thresholds. Safari doesn't report every measure.</p>
+    ${table(['Measure', 'Good', 'Needs work', 'Poor', '% good'], VITALS.map(([k, label, hint]) => {
+      const g = sum(k, 'good'), o = sum(k, 'ok'), p = sum(k, 'poor'), n = g + o + p;
+      return [`${label} — ${hint}`, g, o, p, n ? `${Math.round((g / n) * 100)}%` : '—'];
+    }))}
 
     <h2>GitHub, latest copy</h2>
     <div class="grid">
