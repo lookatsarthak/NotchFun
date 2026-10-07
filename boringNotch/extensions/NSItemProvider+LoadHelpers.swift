@@ -25,54 +25,34 @@ extension NSItemProvider {
         return nil
     }
     
-    /// Loads raw data for the given type identifier, along with the file name it came
-    /// from when there is one.
+    /// What a provider hands over as raw data.
+    enum DroppedData {
+        /// The bytes themselves (an image copied out of an app, say).
+        case bytes(Data)
+        /// A file a promise was written to, in a temporary folder its sender cleans up:
+        /// a screenshot's floating thumbnail, a Mail attachment, an image from a browser.
+        case promisedFile(URL)
+    }
+
+    /// Loads raw data, or the file a file promise was written to.
     ///
-    /// The name is returned rather than written back to `suggestedName`. That write
-    /// happened inside the load handler, on whichever thread the item arrived on, and
-    /// `NSItemProvider` is not safe to mutate across threads - the caller only wanted the
-    /// name to hand to temporary storage, so handing it back directly avoids the shared
-    /// mutable state entirely.
-    func loadData() async -> (data: Data, suggestedName: String?)? {
+    /// A promise used to arrive in SwiftUI's own `com.apple.SwiftUI.filePromises` folder, and
+    /// anything else was taken for an ordinary file and left to `extractItem()`, which only
+    /// points at it. macOS now delivers the sender's own temporary copy instead (for a
+    /// screenshot thumbnail, screencaptureui's `TemporaryItems/NSIRD_…` folder), so every
+    /// transient location counts as a promise here and the caller keeps a copy. Ordinary
+    /// files still return nil, to be referenced rather than duplicated.
+    func loadData() async -> DroppedData? {
         guard hasItemConformingToTypeIdentifier(UTType.data.identifier) else { return nil }
-        return await withCheckedContinuation { (cont: CheckedContinuation<(data: Data, suggestedName: String?)?, Never>) in
+        return await withCheckedContinuation { (cont: CheckedContinuation<DroppedData?, Never>) in
             loadItem(forTypeIdentifier: UTType.data.identifier, options: nil) { item, error in
                 if let error = error {
                     print("Error loading data for type \(UTType.data.identifier): \(error.localizedDescription)")
                     cont.resume(returning: nil)
-                    return
-                }
-                if let url = item as? URL, let data = try? Data(contentsOf: url) {
-                    if !url.absoluteString.contains("com.apple.SwiftUI.filePromises") {
-                        cont.resume(returning: nil)
-                        return
-                    }
-                    let derivedName = url.lastPathComponent
-                    
-                    let fileManager = FileManager.default
-                    let folderURL = url.deletingLastPathComponent()
-
-                    do {
-                        // Delete the file first
-                        try fileManager.removeItem(at: url)
-                        print("Deleted file: \(url.path)")
-
-                        // Check folder contents
-                        let contents = try fileManager.contentsOfDirectory(atPath: folderURL.path)
-                        if contents.isEmpty {
-                            try fileManager.removeItem(at: folderURL)
-                            print("Folder was empty, deleted folder: \(folderURL.path)")
-                        } else {
-                            print("Folder not deleted — it still contains \(contents.count) item(s).")
-                        }
-
-                    } catch {
-                        print("Error: \(error.localizedDescription)")
-                    }
-                    
-                    cont.resume(returning: (data, derivedName))
+                } else if let url = item as? URL {
+                    cont.resume(returning: url.isTransientDropLocation ? .promisedFile(url) : nil)
                 } else if let data = item as? Data {
-                    cont.resume(returning: (data, nil))
+                    cont.resume(returning: .bytes(data))
                 } else {
                     cont.resume(returning: nil)
                 }

@@ -24,6 +24,7 @@ struct ShelfDropService {
     
     private static func processProvider(_ provider: NSItemProvider) async -> ShelfItem? {
         if let actualFileURL = await provider.extractFileURL() {
+            if actualFileURL.isTransientDropLocation { return await keepCopy(of: actualFileURL) }
             if let bookmark = createBookmark(for: actualFileURL) {
                 return await ShelfItem(kind: .file(bookmark: bookmark), isTemporary: false)
             }
@@ -45,16 +46,24 @@ struct ShelfDropService {
             return await ShelfItem(kind: .text(string: text), isTemporary: false)
         }
         
-        if let loaded = await provider.loadData() {
+        switch await provider.loadData() {
+        case .bytes(let data):
             if let tempDataURL = await TemporaryFileStorageService.shared.createTempFile(
-                for: .data(loaded.data, suggestedName: loaded.suggestedName ?? provider.suggestedName)),
+                for: .data(data, suggestedName: provider.suggestedName)),
                let bookmark = createBookmark(for: tempDataURL) {
                 return await ShelfItem(kind: .file(bookmark: bookmark), isTemporary: true)
             }
             return nil
+        case .promisedFile(let url):
+            let item = await keepCopy(of: url)
+            removeSwiftUIPromise(at: url)
+            return item
+        case nil:
+            break
         }
         
         if let fileURL = await provider.extractItem() {
+            if fileURL.isTransientDropLocation { return await keepCopy(of: fileURL) }
             if let bookmark = createBookmark(for: fileURL) {
                 return await ShelfItem(kind: .file(bookmark: bookmark), isTemporary: false)
             }
@@ -63,6 +72,29 @@ struct ShelfDropService {
         return nil
     }
     
+    /// A file its sender is about to delete (see `URL.isTransientDropLocation`): the shelf
+    /// keeps its own copy, removed again with the entry, rather than a bookmark to a file
+    /// that is gone a few seconds later.
+    private static func keepCopy(of url: URL) async -> ShelfItem? {
+        guard let copy = await TemporaryFileStorageService.shared.createTempFile(for: .copy(url)) else {
+            lastFailureReason = "\(url.lastPathComponent) could not be copied to the shelf."
+            return nil
+        }
+        guard let bookmark = createBookmark(for: copy) else { return nil }
+        return await ShelfItem(kind: .file(bookmark: bookmark), isTemporary: true)
+    }
+
+    /// SwiftUI receives promises into a folder inside NotchFun's own container, which is
+    /// ours to tidy once the copy is made. Anyone else's temporary folder is left alone.
+    private static func removeSwiftUIPromise(at url: URL) {
+        guard url.path.contains("/com.apple.SwiftUI.filePromises") else { return }
+        let folder = url.deletingLastPathComponent()
+        try? FileManager.default.removeItem(at: url)
+        if (try? FileManager.default.contentsOfDirectory(atPath: folder.path))?.isEmpty == true {
+            try? FileManager.default.removeItem(at: folder)
+        }
+    }
+
     /// `try?` here is what made a failed drop indistinguishable from no drop at all:
     /// the item was discarded and nothing was written anywhere. The reason is now
     /// logged, and reported so the shelf can say something rather than silently

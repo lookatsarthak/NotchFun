@@ -29,6 +29,7 @@ final class DragDetector {
     private var isContentDragging: Bool = false
     private var hasEnteredNotchRegion: Bool = false
     private var mouseDownLocation: CGPoint = .zero
+    private var firstMoveTime: TimeInterval?
 
     private let notchRegion: CGRect
     private let dragPasteboard = NSPasteboard(name: .drag)
@@ -66,6 +67,7 @@ final class DragDetector {
             guard let self else { return }
             self.pasteboardChangeCount = self.dragPasteboard.changeCount
             self.mouseDownLocation = NSEvent.mouseLocation
+            self.firstMoveTime = nil
             self.isDragging = true
             self.isContentDragging = false
             self.hasEnteredNotchRegion = false
@@ -81,6 +83,8 @@ final class DragDetector {
             guard let self, self.isDragging else { return }
 
             if !self.isContentDragging {
+                let now = ProcessInfo.processInfo.systemUptime
+                if self.firstMoveTime == nil { self.firstMoveTime = now }
                 // The source app writes the drag pasteboard only once the pointer passes
                 // its drag threshold, so give it a few points; past that, a gesture with
                 // nothing on the pasteboard never will have, and is dropped. That keeps
@@ -89,7 +93,8 @@ final class DragDetector {
                 switch DragGesturePolicy.decide(
                     pasteboardChanged: self.dragPasteboard.changeCount != self.pasteboardChangeCount,
                     from: self.mouseDownLocation,
-                    to: NSEvent.mouseLocation
+                    to: NSEvent.mouseLocation,
+                    elapsed: now - (self.firstMoveTime ?? now)
                 ) {
                 case .keepWatching:
                     return

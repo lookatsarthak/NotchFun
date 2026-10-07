@@ -13,6 +13,8 @@ enum TempFileType {
     case data(Data, suggestedName: String?)
     case text(String)
     case url(URL)
+    /// A copy of a file its sender is about to delete, keeping its name.
+    case copy(URL)
 }
 
 class TemporaryFileStorageService {
@@ -95,6 +97,19 @@ class TemporaryFileStorageService {
                 return nil
             }
             
+        case .copy(let source):
+            let dirURL = tempDir.appendingPathComponent(uuid, isDirectory: true)
+            let fileURL = dirURL.appendingPathComponent(source.lastPathComponent)
+            do {
+                try FileManager.default.createDirectory(at: dirURL, withIntermediateDirectories: true)
+                // A file copy, not a read into memory: screen recordings can be large.
+                try source.accessSecurityScopedResource { try FileManager.default.copyItem(at: $0, to: fileURL) }
+                return fileURL
+            } catch {
+                NSLog("Shelf: could not keep a copy of \(source.lastPathComponent): \(error.localizedDescription)")
+                return nil
+            }
+
         case .url(let url):
             let filename = "\(url.host ?? uuid).webloc"
             let dirURL = tempDir.appendingPathComponent(uuid, isDirectory: true)
