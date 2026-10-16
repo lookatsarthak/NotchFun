@@ -71,4 +71,47 @@ struct OnboardingPlanTests {
         // Finished this version.
         #expect(!OnboardingPlan.shouldShow(completedVersion: OnboardingPlan.version, firstLaunch: false, inProgress: false))
     }
+
+    @Test("The recommended features: Now playing, Shelf, Clipboard history and the volume popup")
+    func recommendedFeatures() {
+        let features = OnboardingRecommendation.features
+        #expect(features.nowPlaying && features.shelf && features.clipboardHistory && features.mediaKeyHUD)
+        #expect(!features.caffeine && !features.calendar && !features.mirror && !features.accessoryBattery)
+    }
+
+    @Test("The recommended preferences: login, hover and the face on; the menu bar icon off")
+    func recommendedPreferences() {
+        let preferences = OnboardingRecommendation.preferences
+        #expect(preferences.launchAtLogin && preferences.opensOnHover && preferences.idleFace)
+        #expect(!preferences.menubarIcon)
+    }
+
+    @Test("Following the recommendations asks for Accessibility only, and tries all three tasks")
+    func recommendedFlow() {
+        let choices = OnboardingRecommendation.choices
+        #expect(OnboardingPlan.permissions(for: choices) == [.accessibility])
+        #expect(OnboardingPlan.steps(for: choices) == [.hello, .features, .permissions, .preferences, .tryIt, .done])
+        #expect(OnboardingPlan.tasks(for: choices) == [.openNotch, .dragToShelf, .copyText])
+    }
+
+    @Test("Recommendations apply once, in a first setup only")
+    func recommendationsApplyOnce() {
+        #expect(OnboardingRecommendation.shouldApply(completedVersion: 0, alreadyApplied: false))
+        // Back and forward again, or quit and resumed: never re-applied over a change.
+        #expect(!OnboardingRecommendation.shouldApply(completedVersion: 0, alreadyApplied: true))
+        // Existing users, including anyone running setup again from Settings.
+        #expect(!OnboardingRecommendation.shouldApply(completedVersion: OnboardingPlan.version, alreadyApplied: false))
+    }
+
+    @Test("The last screen names what is waiting on Accessibility, and nothing once it is allowed")
+    func accessibilityReminder() {
+        let both = OnboardingPlan.accessibilityReminder(mediaKeyHUD: true, clipboardHistory: true, accessibilityGranted: false)
+        #expect(both?.contains("volume popup") == true && both?.contains("clipboard") == true && both?.contains("Settings → HUD") == true)
+        let popup = OnboardingPlan.accessibilityReminder(mediaKeyHUD: true, clipboardHistory: false, accessibilityGranted: false)
+        #expect(popup?.contains("Settings → HUD") == true && popup?.contains("clipboard") == false)
+        let paste = OnboardingPlan.accessibilityReminder(mediaKeyHUD: false, clipboardHistory: true, accessibilityGranted: false)
+        #expect(paste?.contains("clipboard") == true && paste?.contains("HUD") == false)
+        #expect(OnboardingPlan.accessibilityReminder(mediaKeyHUD: false, clipboardHistory: false, accessibilityGranted: false) == nil)
+        #expect(OnboardingPlan.accessibilityReminder(mediaKeyHUD: true, clipboardHistory: true, accessibilityGranted: true) == nil)
+    }
 }

@@ -78,7 +78,7 @@ The newest addition, and the reason this fork exists.
   discarded before they ever reach memory. History lives only on your Mac, in files
   readable solely by your user account.
 
-It's off by default. Turn it on in **Settings → Clipboard**.
+Setup switches it on for you, and you can turn it off there or in **Settings → Clipboard**.
 
 ## Install
 

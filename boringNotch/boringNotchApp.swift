@@ -87,6 +87,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    /// Opening NotchFun while it is already running (from Applications, Spotlight or
+    /// Launchpad) shows Settings, or setup if it is unfinished. Without the menu bar icon,
+    /// which new installs start without, and with the gear in the notch switched off,
+    /// this would otherwise be the only way back in. `hasVisibleWindows` is no guide here:
+    /// the notch's own panels always count as visible.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if onboardingWindowController != nil || Defaults[.onboardingResumeStep] != nil {
+            showOnboardingWindow()
+        } else {
+            SettingsWindowController.shared.showWindow()
+        }
+        return false
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
         if let observer = screenLockedObserver {
@@ -744,7 +758,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 clipboardHistory: Defaults[.clipboardHistoryEnabled],
                 calendar: Defaults[.showCalendar],
                 mirror: Defaults[.showMirror],
-                mediaKeyHUD: Defaults[.hudReplacement],
+                // The choice made in setup, not yet written to the real setting; reading
+                // only the setting would drop the permissions step on resume.
+                mediaKeyHUD: Defaults[.onboardingPendingHUDChoice] ?? Defaults[.hudReplacement],
                 opensOnHover: Defaults[.openNotchOnHover]
             )
             let start = restart

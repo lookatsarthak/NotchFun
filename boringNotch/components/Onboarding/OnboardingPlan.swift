@@ -20,6 +20,62 @@ struct OnboardingChoices: Equatable, Sendable {
     var opensOnHover = true
 }
 
+/// What setup starts with for someone setting NotchFun up for the first time.
+///
+/// These are setup's recommendations, not the app's defaults. Each screen applies its
+/// share as it first appears, where every choice can be seen and changed, and only in a
+/// first setup. The built-in defaults stay as they were, so an update never switches
+/// anything for people who already use NotchFun: clipboard history does not start
+/// recording, and the menu bar icon does not disappear.
+enum OnboardingRecommendation {
+    /// The feature grid.
+    struct Features: Equatable, Sendable {
+        var nowPlaying = true
+        var shelf = true
+        var clipboardHistory = true
+        var caffeine = false
+        var calendar = false
+        var mirror = false
+        var accessoryBattery = false
+        var mediaKeyHUD = true
+    }
+
+    /// The preferences screen. Automatic updates and "every display" are left out: their
+    /// built-in defaults (on, and off) are already the recommendation.
+    struct Preferences: Equatable, Sendable {
+        var launchAtLogin = true
+        var opensOnHover = true
+        /// The face in the closed notch while nothing is playing. A small, steady sign
+        /// that NotchFun is there; without it the notch looks like nothing is installed.
+        var idleFace = true
+        /// Settings stays one click away through the gear in the open notch, and opening
+        /// NotchFun again from Applications shows it too.
+        var menubarIcon = false
+    }
+
+    static let features = Features()
+    static let preferences = Preferences()
+
+    /// The feature recommendations as setup's sequencing sees them.
+    static var choices: OnboardingChoices {
+        OnboardingChoices(
+            shelf: features.shelf,
+            clipboardHistory: features.clipboardHistory,
+            calendar: features.calendar,
+            mirror: features.mirror,
+            mediaKeyHUD: features.mediaKeyHUD,
+            opensOnHover: preferences.opensOnHover
+        )
+    }
+
+    /// Whether a screen should apply its recommendations now: only in a first setup, and
+    /// only once, so going Back and forward again, or quitting and resuming, never undoes
+    /// a choice made in between.
+    static func shouldApply(completedVersion: Int, alreadyApplied: Bool) -> Bool {
+        completedVersion == 0 && !alreadyApplied
+    }
+}
+
 enum OnboardingStep: String, CaseIterable, Sendable {
     case hello
     case features
@@ -89,6 +145,27 @@ enum OnboardingPlan {
         let steps = steps(for: choices)
         guard let index = steps.firstIndex(of: step), index > 0 else { return nil }
         return steps[index - 1]
+    }
+
+    /// What the last screen says when something chosen in setup is waiting on
+    /// Accessibility, or nil when nothing is.
+    ///
+    /// Setup lets people skip the permission, which is right, but a volume popup switched
+    /// on and then skipped simply never appeared, and nothing said why. The popup is only
+    /// switched on at the end of setup, and only with Accessibility, so someone who allows
+    /// it afterwards still has to turn the popup on in Settings.
+    static func accessibilityReminder(mediaKeyHUD: Bool, clipboardHistory: Bool, accessibilityGranted: Bool) -> String? {
+        guard !accessibilityGranted else { return nil }
+        switch (mediaKeyHUD, clipboardHistory) {
+        case (true, true):
+            return "The volume popup and pasting from clipboard history need Accessibility. If you allow it later, turn the popup on in Settings → HUD."
+        case (true, false):
+            return "The volume and brightness popup needs Accessibility. If you allow it later, turn the popup on in Settings → HUD."
+        case (false, true):
+            return "Pasting from clipboard history needs Accessibility."
+        case (false, false):
+            return nil
+        }
     }
 
     /// Where to pick up after setup was quit part-way. A saved step that no longer

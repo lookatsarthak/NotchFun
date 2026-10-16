@@ -4,6 +4,7 @@
 //
 
 import Defaults
+import LaunchAtLogin
 import SwiftUI
 
 /// First-run setup: hello, pick features, the permissions those features need, a few
@@ -97,7 +98,7 @@ struct OnboardingView: View {
         case .tryIt:
             TryItStep(tasks: OnboardingPlan.tasks(for: choices), opensOnHover: opensOnHover, state: tryIt)
         case .done:
-            DoneStep()
+            DoneStep(wantsMediaKeyHUD: hudChoice)
                 .modifier(HeroPlacement())
         }
     }
@@ -164,7 +165,46 @@ struct OnboardingView: View {
     // MARK: Navigation
 
     private func go(to next: OnboardingStep) {
+        applyRecommendations(for: next)
         withAnimation(NotchMotion.page) { step = next }
+    }
+
+    /// Starts a first setup on the recommended choices for a screen, switched just before
+    /// it shows so the person sees exactly what is on and can change it. Before, not as
+    /// it appears: a screen's switches read their settings when it is built, and a change
+    /// made after that is stored but not redrawn. See OnboardingRecommendation.
+    private func applyRecommendations(for next: OnboardingStep) {
+        let completed = Defaults[.onboardingCompletedVersion]
+        switch next {
+        case .features:
+            guard OnboardingRecommendation.shouldApply(
+                completedVersion: completed, alreadyApplied: Defaults[.onboardingOfferedFeatures]
+            ) else { return }
+            Defaults[.onboardingOfferedFeatures] = true
+            let recommended = OnboardingRecommendation.features
+            BoringViewCoordinator.shared.musicLiveActivityEnabled = recommended.nowPlaying
+            Defaults[.boringShelf] = recommended.shelf
+            Defaults[.clipboardHistoryEnabled] = recommended.clipboardHistory
+            Defaults[.caffeineButtonInNotch] = recommended.caffeine
+            Defaults[.showCalendar] = recommended.calendar
+            Defaults[.showMirror] = recommended.mirror
+            Defaults[.showAccessoryBattery] = recommended.accessoryBattery
+            // Held until setup ends, like every popup choice; see OnboardingChoices.
+            hudChoice = recommended.mediaKeyHUD
+        case .preferences:
+            // The stored name predates the other preferences; see the key.
+            guard OnboardingRecommendation.shouldApply(
+                completedVersion: completed, alreadyApplied: Defaults[.onboardingOfferedLaunchAtLogin]
+            ) else { return }
+            Defaults[.onboardingOfferedLaunchAtLogin] = true
+            let recommended = OnboardingRecommendation.preferences
+            if LaunchAtLogin.isEnabled != recommended.launchAtLogin { LaunchAtLogin.isEnabled = recommended.launchAtLogin }
+            Defaults[.openNotchOnHover] = recommended.opensOnHover
+            Defaults[.showNotHumanFace] = recommended.idleFace
+            Defaults[.menubarIcon] = recommended.menubarIcon
+        default:
+            return
+        }
     }
 
     private func advance() {

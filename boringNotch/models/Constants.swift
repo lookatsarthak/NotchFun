@@ -84,9 +84,13 @@ extension Defaults.Keys {
     /// The step setup was on when last seen, while it is unfinished; nil otherwise. Lets
     /// setup resume where it was quit instead of starting over.
     static let onboardingResumeStep = Key<String?>("onboardingResumeStep", default: nil)
-    /// Set once setup has switched Launch at login on for a first-time user, so it is
-    /// only ever done once and never overrides a choice made later.
+    /// Set once setup has applied the recommended preferences (Launch at login among
+    /// them) for a first-time user, so it is only ever done once and never overrides a
+    /// choice made later. The stored name predates the other preferences joining it.
     static let onboardingOfferedLaunchAtLogin = Key<Bool>("onboardingOfferedLaunchAtLogin", default: false)
+    /// Set once setup has applied the recommended features for a first-time user; the
+    /// same once-only rule as above. See OnboardingRecommendation.
+    static let onboardingOfferedFeatures = Key<Bool>("onboardingOfferedFeatures", default: false)
     /// The volume and brightness popup choice made in setup, until setup finishes.
     ///
     /// The real setting is only written at the end (switching it on before Accessibility

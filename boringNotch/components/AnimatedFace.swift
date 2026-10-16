@@ -52,14 +52,21 @@ struct MinimalFaceFeatures: View {
         //
         // SwiftUI cancels a `.task` when the view goes away, so this cannot leak however
         // many times the face appears.
+        //
+        // The blink is a cut, not an animation. The face shows whenever nothing is playing,
+        // which is most of the day, and an animated blink redrew the notch at the display's
+        // refresh rate for every close and open: measured, the face took NotchFun's idle CPU
+        // from 10 ms a minute to 190-430. A real blink lasts about a tenth of a second, and
+        // at four points tall an animated one looks no different. The gap varies, as real
+        // blinking does, rather than ticking like a metronome.
         .task {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(3))
+                try? await Task.sleep(for: .milliseconds(Int.random(in: 3500...6000)))
                 guard !Task.isCancelled else { return }
-                withAnimation(NotchMotion.control) { isBlinking = true }
-                try? await Task.sleep(for: .milliseconds(100))
+                isBlinking = true
+                try? await Task.sleep(for: .milliseconds(120))
                 guard !Task.isCancelled else { return }
-                withAnimation(NotchMotion.control) { isBlinking = false }
+                isBlinking = false
             }
         }
     }
@@ -73,7 +80,6 @@ struct Eye: View {
             .fill(Color.white)
             .frame(width: 4, height: isBlinking ? 1 : 4)
             .frame(maxWidth: 15, maxHeight: 15) // Adjusted max size
-            .animation(NotchMotion.control, value: isBlinking)
     }
 }
 

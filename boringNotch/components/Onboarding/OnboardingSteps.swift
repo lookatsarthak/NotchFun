@@ -413,6 +413,7 @@ struct PreferencesStep: View {
         return updater.automaticallyChecksForUpdates && updater.automaticallyDownloadsUpdates
     }()
     @Default(.openNotchOnHover) private var opensOnHover
+    @Default(.showNotHumanFace) private var idleFace
     @Default(.menubarIcon) private var menubarIcon
     @Default(.showOnAllDisplays) private var showOnAllDisplays
 
@@ -449,6 +450,12 @@ struct PreferencesStep: View {
                     .pickerStyle(.segmented)
                     .frame(width: 170)
                 }
+                row("face.smiling", "Smiley face", "Sits in the notch while nothing's playing.") {
+                    Toggle("", isOn: $idleFace)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                }
                 row("menubar.rectangle", "Menu bar icon", "Quick access to settings and Caffeine.") {
                     Toggle("", isOn: $menubarIcon)
                         .labelsHidden()
@@ -469,17 +476,6 @@ struct PreferencesStep: View {
                 }
             }
         }
-        .onAppear(perform: recommendLaunchAtLogin)
-    }
-
-    /// "Recommended" should mean on. For someone setting up for the first time, switch it
-    /// on as this screen appears, where they can see it and turn it off - the same way
-    /// automatic updates start on. Only once, and never for someone who has finished setup
-    /// before, so running setup again cannot undo a choice they made since.
-    private func recommendLaunchAtLogin() {
-        guard Defaults[.onboardingCompletedVersion] == 0, !Defaults[.onboardingOfferedLaunchAtLogin] else { return }
-        Defaults[.onboardingOfferedLaunchAtLogin] = true
-        if !LaunchAtLogin.isEnabled { LaunchAtLogin.isEnabled = true }
     }
 
     private func row<Control: View>(
@@ -745,7 +741,21 @@ final class OnboardingTryIt: ObservableObject {
 // MARK: - Done
 
 struct DoneStep: View {
+    /// The volume and brightness popup choice, held until setup finishes.
+    let wantsMediaKeyHUD: Bool
+    @Default(.clipboardHistoryEnabled) private var clipboardHistory
     @State private var burst = 0
+    /// Assumed until the helper answers, so the reminder never flashes up for someone
+    /// who has already allowed it.
+    @State private var accessibilityGranted = true
+
+    private var reminder: String? {
+        OnboardingPlan.accessibilityReminder(
+            mediaKeyHUD: wantsMediaKeyHUD,
+            clipboardHistory: clipboardHistory,
+            accessibilityGranted: accessibilityGranted
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -768,9 +778,48 @@ struct DoneStep: View {
             VStack(alignment: .leading, spacing: 12) {
                 tip("keyboard", "⇧⌘I opens the notch from the keyboard.")
                 tip("square.stack.3d.up", "Its actions are in the Shortcuts app, for automations.")
-                tip("gearshape", "Everything you chose, and a lot more, is in Settings.")
+                tip("gearshape", "Everything you chose, and a lot more, is in Settings: the gear in the open notch.")
+            }
+
+            if let reminder {
+                accessibilityReminder(reminder)
+                    .transition(.opacity)
             }
         }
+        // Re-checked while this screen shows, as on the permissions step: Accessibility is
+        // granted in System Settings, which posts nothing this app can observe. An
+        // unreachable helper (nil) is not treated as "not allowed".
+        .task {
+            while !Task.isCancelled {
+                let granted = await XPCHelperClient.shared.accessibilityAuthorizationStatus() != false
+                if granted != accessibilityGranted {
+                    withAnimation(NotchMotion.control) { accessibilityGranted = granted }
+                }
+                try? await Task.sleep(for: .seconds(1.5))
+            }
+        }
+    }
+
+    private func accessibilityReminder(_ text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "hand.raised.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.orange.opacity(0.9))
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(Color.white.opacity(0.08)))
+            Text(text)
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Button("Allow") {
+                Task { _ = await XPCHelperClient.shared.ensureAccessibilityAuthorizationStatus(promptIfNeeded: true) }
+            }
+            .buttonStyle(OnboardingPrimaryButtonStyle())
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.orange.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.orange.opacity(0.3)))
     }
 
     private func tip(_ symbol: String, _ text: String) -> some View {
