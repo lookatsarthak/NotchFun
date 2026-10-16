@@ -44,6 +44,26 @@ final class MediaChecker: Sendable {
         defaults.set(value, forKey: Self.cacheValueDefault)
     }
 
+    /// Whether Now Playing is unavailable, from probes that agree rather than from one.
+    ///
+    /// The probe publishes a test item and reads it back through mediaremoted, and while
+    /// that service is still starting - at login, just after a restart - the read can lose
+    /// the race. One such miss was cached as "unavailable" until the next macOS or app
+    /// update: Now Playing was switched off, and the choose-a-source prompt appeared on
+    /// every launch, for someone it worked fine for. So "available" is believed at once and
+    /// "unavailable" only when it repeats.
+    static func confirmedDeprecation(
+        attempts: Int = 3,
+        pause: Duration = .seconds(3),
+        probe: () async throws -> Bool
+    ) async throws -> Bool {
+        for attempt in 1...max(1, attempts) {
+            if try await !probe() { return false }
+            if attempt < attempts { try await Task.sleep(for: pause) }
+        }
+        return true
+    }
+
     func checkDeprecationStatus() async throws -> Bool {
         try await Task.detached(priority: .userInitiated) {
             guard let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl"),

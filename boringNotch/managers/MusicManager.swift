@@ -96,7 +96,9 @@ class MusicManager {
                 if let cached = self.mediaChecker.cachedDeprecationStatus() {
                     self.isNowPlayingDeprecated = cached
                 } else {
-                    let result = try await self.mediaChecker.checkDeprecationStatus()
+                    let result = try await MediaChecker.confirmedDeprecation {
+                        try await self.mediaChecker.checkDeprecationStatus()
+                    }
                     self.mediaChecker.cacheDeprecationStatus(result)
                     self.isNowPlayingDeprecated = result
                 }
