@@ -7,6 +7,31 @@
     <language>en</language>
 
     <item>
+      <title>1.6.3</title>
+      <pubDate>Sat, 17 Oct 2026 01:04:24 +0530</pubDate>
+      <sparkle:version>26</sparkle:version>
+      <sparkle:shortVersionString>1.6.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>Fixed</h3>
+<ul>
+<li><strong>Now Playing stays on after a restart.</strong> If the Mac was still starting up when NotchFun checked whether Now Playing works, it could wrongly decide it didn't, switch it off and ask you to choose a music app on every launch. It now checks again before believing that, and this update re-checks for everyone.</li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><strong>Opening NotchFun again shows Settings.</strong> From Applications, Spotlight or Launchpad, while it's already running.</li>
+<li><strong>The smiley face costs less.</strong> It blinks with a quick cut instead of an animation, which takes a fraction of the energy.</li>
+<li><strong>New setups start with recommendations.</strong> Now playing, the shelf, clipboard history, the volume and brightness popup and the smiley face start on; Caffeine and the menu bar icon start off. Your settings don't change.</li>
+<li><strong>Setup says what's waiting on Accessibility.</strong> If you skip it, the last screen says what won't work yet and lets you allow it there.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.6.3/NotchFun-1.6.3.dmg"
+        sparkle:edSignature="WtHhFFLbVkXNpFsDb+0ZGncWLkFNTSE37eW27ETarhxjibxW6qxZBbg22uXNJyOW+QyD7P2ULzq5mBjPNDbNCQ=="
+        length="6925008"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>1.6.2</title>
       <pubDate>Wed, 07 Oct 2026 13:53:51 +0530</pubDate>
       <sparkle:version>25</sparkle:version>
