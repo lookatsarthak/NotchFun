@@ -107,6 +107,7 @@ function clicks() {
 
   document.addEventListener('pointerdown', e => {
     if (e.target instanceof Element && e.target.closest('.file')) once('demo', 'shelf:drag');
+    if (e.target instanceof Element && e.target.closest('.shelf-item[data-file]')) once('demo', 'shelf:out');
   }, { capture: true });
   document.addEventListener('input', e => {
     if (!(e.target instanceof Element)) return;

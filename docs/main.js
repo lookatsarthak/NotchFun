@@ -410,6 +410,20 @@ function shelf() {
   const zone = $('[data-shelf]');
   const desk = $('[data-desk]');
   let interacted = false;
+  const hint = $('.prop-hint', desk);
+  const upHint = hint.textContent;
+
+  // Once something is on the shelf, the hint points the other way: taking files back out
+  // is the half of the shelf a first drop does not show.
+  function updateHint() {
+    const held = $$('.shelf-item[data-file]', zone).length;
+    const text = held === 0 ? upHint
+      : held === 1 ? 'Drag it back down when you need it ↓'
+      : 'Drag them back down when you need them ↓';
+    if (hint.textContent === text) return;
+    hint.textContent = text;
+    if (!reduced) animate(hint, { opacity: [0, 1], y: [4, 0], duration: 350, ease: 'out(3)' });
+  }
 
   function overNotch(x, y) {
     const r = notch.getBoundingClientRect();
@@ -419,8 +433,10 @@ function shelf() {
     const icon = $('.file-icon', file).cloneNode(true);
     const item = document.createElement('div');
     item.className = 'shelf-item';
+    item.dataset.file = file.dataset.file;
     item.append(icon, document.createTextNode(file.dataset.file));
     zone.append(item);
+    dragOut(item, file);
     zone.classList.add('has-items');
     file.classList.add('gone');
     file.classList.remove('lifted');
@@ -428,6 +444,7 @@ function shelf() {
     burst(r.left + r.width / 2, r.top + 24);
     if (!reduced) animate(item, { scale: [0.6, 1], opacity: [0, 1], duration: 600, ease: 'out(4)' });
     if ($$('.file:not(.gone)', desk).length === 0) addReset();
+    updateHint();
   }
   function addReset() {
     if ($('.put-back', desk)) return;
@@ -440,8 +457,70 @@ function shelf() {
       zone.classList.remove('has-items');
       $$('.file', desk).forEach(f => f.classList.remove('gone', 'lifted'));
       b.remove();
+      updateHint();
     };
     desk.append(b);
+  }
+
+  // Files come back out the way they went in. Drag one off the shelf and let go anywhere
+  // but the notch, and it goes back to its place on the desk; let go on the notch and it
+  // stays. Visitors try this without being asked: taking things back out is half of
+  // what a shelf is for.
+  function dragOut(item, file) {
+    let sx, sy, lastX, ghost = null;
+    item.addEventListener('pointerdown', e => {
+      if (ghost) return;
+      interacted = true;
+      e.preventDefault();
+      sx = lastX = e.clientX; sy = e.clientY;
+      item.setPointerCapture(e.pointerId);
+      // The ghost is the desk-sized file, centred on the shelf icon it was picked up from.
+      const r = item.getBoundingClientRect();
+      ghost = document.createElement('div');
+      ghost.className = 'file-ghost';
+      ghost.innerHTML = file.innerHTML;
+      Object.assign(ghost.style, { left: `${r.left + r.width / 2 - 48}px`, top: `${r.top - 8}px`, width: '96px' });
+      document.body.append(ghost);
+      item.classList.add('lifted');
+      animate(ghost, { scale: [0.8, 1.08], duration: 200, ease: 'out(3)' });
+    });
+    item.addEventListener('pointermove', e => {
+      if (!ghost) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      const tilt = Math.max(-10, Math.min(10, (e.clientX - lastX) * 0.8));
+      lastX = e.clientX;
+      ghost.style.transform = `translate(${dx}px, ${dy}px) scale(1.08) rotate(${tilt}deg)`;
+      zone.classList.toggle('hot', overNotch(e.clientX, e.clientY));
+    });
+    const end = e => {
+      if (!ghost) return;
+      const g = ghost; ghost = null;
+      zone.classList.remove('hot');
+      const m = g.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
+      const at = m ? { x: +m[1], y: +m[2] } : { x: 0, y: 0 };
+      g.style.transform = '';
+      animate(g, { x: at.x, y: at.y, scale: 1.08, duration: 0 });
+      if (overNotch(e.clientX, e.clientY)) {
+        // Dropped back on the notch: it springs back onto the shelf.
+        animate(g, { x: 0, y: 0, rotate: 0, scale: 0.8, duration: reduced ? 0 : 450, ease: 'out(4)',
+          onComplete: () => { g.remove(); item.classList.remove('lifted'); } });
+        return;
+      }
+      // Anywhere else: home to its own place on the desk, as "Put the files back" does.
+      const from = g.getBoundingClientRect(), to = file.getBoundingClientRect();
+      const home = { x: at.x + to.left - from.left - (from.width - to.width) / 2, y: at.y + to.top - from.top - (from.height - to.height) / 2 };
+      item.remove();
+      zone.classList.toggle('has-items', !!$('.shelf-item', zone));
+      $('.put-back', desk)?.remove();
+      updateHint();
+      animate(g, { x: home.x, y: home.y, rotate: 0, scale: 1, duration: reduced ? 0 : 600, ease: 'out(4)',
+        onComplete: () => { g.remove(); file.classList.remove('gone', 'lifted'); } });
+    };
+    item.addEventListener('pointerup', end);
+    item.addEventListener('pointercancel', end);
+    // An interrupted drag (the window loses focus, the page resizes) can end without a
+    // pointerup; without this the ghost would hang in mid-air.
+    item.addEventListener('lostpointercapture', end);
   }
 
   // A dragged file leaves the desk: a copy of it is lifted into a fixed layer above
@@ -499,6 +578,8 @@ function shelf() {
     };
     file.addEventListener('pointerup', end);
     file.addEventListener('pointercancel', end);
+    // As for shelf items: an interrupted drag still ends.
+    file.addEventListener('lostpointercapture', end);
   });
 
   // If someone reaches the chapter and just reads, show them once what a drag does.

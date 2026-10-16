@@ -28,7 +28,7 @@ const SITE_EVENTS = {
   section: new Set(['hero', 'music', 'shelf', 'clip', 'cal', 'keys', 'little', 'native', 'install', 'changelog', 'community', 'faq', 'footer']),
   toggle: new RegExp(`^(${CHAPTERS}):(try|real)$`),
   video_end: new RegExp(`^(${CHAPTERS})$`),
-  demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'clip:copy', 'clip:search', 'keys:press',
+  demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'shelf:out', 'clip:copy', 'clip:search', 'keys:press',
     'little:caffeine', 'little:charging', 'little:airpods', 'little:mirror', 'native:width']),
   faq_open: new Set(['free', 'warning', 'macs', 'permissions', 'privacy']),
   send_mac: new Set(['open', 'share', 'email', 'copy']),

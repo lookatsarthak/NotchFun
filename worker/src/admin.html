@@ -152,7 +152,7 @@ function signIn() {
 const SECTIONS = [['hero', 'Top of the page'], ['shelf', '01 Shelf'], ['music', '02 Now playing'], ['clip', '03 Clipboard'], ['cal', '04 Calendar'],
   ['keys', '05 Volume & brightness'], ['little', '06 Little things'], ['install', 'Install'], ['native', 'Made for the Mac'],
   ['changelog', 'Changelog'], ['community', 'Community'], ['faq', 'Questions'], ['footer', 'Bottom of the page']];
-const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 'music:prev': 'Music: previous', 'shelf:drag': 'Shelf: dragged a file',
+const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 'music:prev': 'Music: previous', 'shelf:drag': 'Shelf: dragged a file', 'shelf:out': 'Shelf: dragged a file back out',
   'clip:copy': 'Clipboard: copied', 'clip:search': 'Clipboard: searched', 'keys:press': 'Volume keys: pressed',
   'little:caffeine': 'Little things: Caffeine', 'little:charging': 'Little things: Charging', 'little:airpods': 'Little things: AirPods',
   'little:mirror': 'Little things: Mirror', 'native:width': 'Width slider' };
@@ -164,6 +164,7 @@ const platformName = p => PLATFORMS[p] ?? (p.startsWith('other/') ? 'Other' : p)
 // What shipped when, for before/after comparisons. "day" is the first full day with the
 // change live; Compare puts the 7 days before it against the 7 days from it.
 const CHANGES = [
+  { day: '2026-10-17', label: 'Shelf demo: files drag back out to the desk' },
   { day: '2026-10-07', label: 'Install moved right after the tour · Mac hero: Install with one line · help after downloading · tour opens with Shelf · faster hero on phones' },
   { day: '2026-10-04', label: 'Send to my Mac for phones and other computers · branded emails' },
   { day: '2026-10-03', label: 'Link shared · hero fits short Mac screens · live download count' },

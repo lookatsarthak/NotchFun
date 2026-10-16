@@ -171,7 +171,7 @@ test('admin page and unknown paths', async () => {
 test('behaviour: batches, allowed events only, once per kind of thing', async () => {
   const ua = { 'user-agent': 'Behaviour browser' };
   assert.equal((await post('/e', { b: [{ e: 'view', c: 'news.ycombinator.com' }, { e: 'device', c: 'mac/desktop' }, { e: 'lang', c: 'en' }] }, ua)).status, 204);
-  for (const [e, c] of [['section', 'music'], ['section', 'install'], ['toggle', 'shelf:real'], ['video_end', 'shelf'], ['demo', 'clip:search'],
+  for (const [e, c] of [['section', 'music'], ['section', 'install'], ['toggle', 'shelf:real'], ['video_end', 'shelf'], ['demo', 'clip:search'], ['demo', 'shelf:out'],
     ['faq_open', 'warning'], ['outbound', 'releases'], ['time', '30s-2m'], ['changelog_more', '']]) {
     assert.equal((await post('/e', { e, c }, ua)).status, 204, `${e} ${c}`);
   }

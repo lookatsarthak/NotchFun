@@ -411,6 +411,11 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 .file-icon.key { background: linear-gradient(160deg, #5ab0ff, #2f6df0); }
 .file-icon.img { background: conic-gradient(from 200deg at 60% 70%, #ffb86b, #ff6fae, #7b61ff, #4fd1c5, #ffb86b); }
 .shelf-item .file-icon { width: 40px; height: 50px; padding-bottom: 6px; font-size: 9px; }
+/* Files dropped on the shelf can be dragged back out to the desk. The notch's views take
+   no pointer events, so these opt back in, and only while the shelf is the view showing. */
+.shelf-item[data-file] { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.notch[data-view="shelf"] .shelf-item[data-file] { pointer-events: auto; }
+.shelf-item[data-file].lifted { visibility: hidden; }
 
 .snippets { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .ch-copy, .ch-prop { min-width: 0; }
@@ -552,7 +557,7 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 /* After copying: the next three keystrokes, right where you're looking. */
 .copied-next { margin: 12px 2px 0; padding: 12px 14px; border-radius: 12px; background: rgba(50, 215, 75, 0.1); box-shadow: inset 0 0 0 1px rgba(50, 215, 75, 0.3); font-size: 14px; line-height: 1.7; color: var(--ink-2); }
 .copied-next b { color: #fff; }
-.copied-next kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); font: 600 12px/1.5 var(--font); color: #fff; text-align: center; }
+.copied-next kbd, .step kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); font: 600 12px/1.5 var(--font); color: #fff; text-align: center; }
 .install-note { margin: 12px 2px 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .install-note a, .install-fine a { color: var(--lav); }
 .other-ways { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
