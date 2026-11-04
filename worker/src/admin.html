@@ -150,13 +150,13 @@ function signIn() {
 }
 
 const SECTIONS = [['hero', 'Top of the page'], ['shelf', '01 Shelf'], ['music', '02 Now playing'], ['clip', '03 Clipboard'], ['cal', '04 Calendar'],
-  ['keys', '05 Volume & brightness'], ['little', '06 Little things'], ['install', 'Install'], ['native', 'Made for the Mac'],
-  ['changelog', 'Changelog'], ['community', 'Community'], ['faq', 'Questions'], ['footer', 'Bottom of the page']];
-const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 'music:prev': 'Music: previous', 'shelf:drag': 'Shelf: dragged a file', 'shelf:out': 'Shelf: dragged a file back out',
+  ['keys', '05 Volume & brightness'], ['little', '06 Little things'], ['install', 'Install'], ['faq', 'Questions'], ['native', 'Make it yours'],
+  ['changelog', 'Changelog'], ['community', 'Community'], ['footer', 'Bottom of the page']];
+const DEMOS = { 'music:play': 'Music: play/pause', 'music:next': 'Music: next', 'music:prev': 'Music: previous', 'shelf:drag': 'Shelf: dragged a file', 'shelf:out': 'Shelf: dragged a file back out', 'cal:day': 'Calendar: picked a day',
   'clip:copy': 'Clipboard: copied', 'clip:search': 'Clipboard: searched', 'keys:press': 'Volume keys: pressed',
   'little:caffeine': 'Little things: Caffeine', 'little:charging': 'Little things: Charging', 'little:airpods': 'Little things: AirPods',
   'little:mirror': 'Little things: Mirror', 'native:width': 'Width slider' };
-const FAQS = { free: 'Is it really free?', warning: 'Why does macOS warn me?', macs: 'Which Macs?', permissions: 'What permissions?', privacy: 'Does anything leave my Mac?' };
+const FAQS = { free: 'Is it really free?', warning: 'Why does macOS warn me?', safe: 'Is the line safe to paste?', terminal: 'Terminal line failed?', uninstall: 'How do I uninstall it?', macs: 'Which Macs?', permissions: 'What permissions?', privacy: 'Does anything leave my Mac?' };
 const TIMES = ['<10s', '10-30s', '30s-2m', '2-5m', '5m+'];
 const PLATFORMS = { 'mac/desktop': 'Mac', 'ios/phone': 'iPhone', 'ios/tablet': 'iPad', 'android/phone': 'Android phone', 'android/tablet': 'Android tablet',
   'windows/desktop': 'Windows', 'windows/tablet': 'Windows tablet', 'linux/desktop': 'Linux', 'linux/tablet': 'Linux tablet', '': 'Unknown' };
@@ -164,6 +164,7 @@ const platformName = p => PLATFORMS[p] ?? (p.startsWith('other/') ? 'Other' : p)
 // What shipped when, for before/after comparisons. "day" is the first full day with the
 // change live; Compare puts the 7 days before it against the 7 days from it.
 const CHANGES = [
+  { day: '2026-11-05', label: 'Install rewrite: says what the line does, Paste Blocked explained · copying lands in the notch · FAQ after Install · calendar demo · closing hello · phone bar' },
   { day: '2026-10-17', label: 'Shelf demo: files drag back out to the desk' },
   { day: '2026-10-07', label: 'Install moved right after the tour · Mac hero: Install with one line · help after downloading · tour opens with Shelf · faster hero on phones' },
   { day: '2026-10-04', label: 'Send to my Mac for phones and other computers · branded emails' },

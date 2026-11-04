@@ -20,7 +20,7 @@ const CHAPTERS = 'music|shelf|clip|cal|keys|little';
 const SITE_EVENTS = {
   view: null, // channel is the referring domain
   install_seen: new Set(['']),
-  copy_curl: new Set(['', 'install', 'hero', 'after_download']),
+  copy_curl: new Set(['', 'install', 'hero', 'after_download', 'closing']),
   copy_brew: new Set(['', 'install']),
   star_click: new Set(['hero', 'menubar', 'community', 'footer']),
   feedback_open: new Set(['idea', 'bug', 'other']),
@@ -28,9 +28,9 @@ const SITE_EVENTS = {
   section: new Set(['hero', 'music', 'shelf', 'clip', 'cal', 'keys', 'little', 'native', 'install', 'changelog', 'community', 'faq', 'footer']),
   toggle: new RegExp(`^(${CHAPTERS}):(try|real)$`),
   video_end: new RegExp(`^(${CHAPTERS})$`),
-  demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'shelf:out', 'clip:copy', 'clip:search', 'keys:press',
+  demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'shelf:out', 'clip:copy', 'clip:search', 'cal:day', 'keys:press',
     'little:caffeine', 'little:charging', 'little:airpods', 'little:mirror', 'native:width']),
-  faq_open: new Set(['free', 'warning', 'macs', 'permissions', 'privacy']),
+  faq_open: new Set(['free', 'safe', 'warning', 'terminal', 'macs', 'permissions', 'privacy', 'uninstall']),
   send_mac: new Set(['open', 'share', 'email', 'copy']),
   see_how: new Set(['hero']),
   // Core Web Vitals per visit, graded with Google's thresholds: good, ok (needs work), poor.
