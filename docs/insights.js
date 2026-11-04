@@ -57,8 +57,6 @@ function sections() {
 
 // ------------------------------------------------------------------ what they try
 
-const FAQ = ['free', 'warning', 'macs', 'permissions', 'privacy'];
-
 function outbound(href) {
   let url;
   try { url = new URL(href, location.href); } catch { return null; }
@@ -88,12 +86,12 @@ function clicks() {
     const little = t.closest('[data-little]');
     if (little) once('demo', `little:${little.dataset.little}`);
     if (t.closest('[data-key]')) once('demo', 'keys:press');
+    if (t.closest('[data-day]')) once('demo', 'cal:day');
     if (t.closest('[data-copy]')) once('demo', 'clip:copy');
 
     const summary = t.closest('.faq summary');
     if (summary && !summary.parentElement.open) {
-      const i = $$('.faq details').indexOf(summary.parentElement);
-      if (FAQ[i]) once('faq_open', FAQ[i]);
+      once('faq_open', summary.parentElement.dataset.faq);
     }
     if (t.closest('.release .more, button.more')) once('changelog_more');
 
@@ -114,9 +112,9 @@ function clicks() {
     if (e.target.matches('[data-clipsearch]')) once('demo', 'clip:search');
     if (e.target.matches('[data-width]')) once('demo', 'native:width');
   }, { capture: true });
-  // Keyboard presses in the volume chapter count like clicks on its keys.
+  // Arrow keys on a focused keycap count like clicks on it.
   addEventListener('keydown', e => {
-    if (document.body.dataset.chapter === 'keys' && ['F1', 'F2', 'F11', 'F12', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) once('demo', 'keys:press');
+    if (e.target.closest?.('[data-key]') && e.key.startsWith('Arrow')) once('demo', 'keys:press');
   });
 
   $$('[data-prop] video').forEach(v => v.addEventListener('ended', () => { const c = chapterOf(v); if (c) once('video_end', c); }));

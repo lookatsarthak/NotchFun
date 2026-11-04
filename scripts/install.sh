@@ -107,4 +107,4 @@ if ! open "$APP"; then
   exit 1
 fi
 ping "s=ok&v=$VERSION"
-echo "Done. NotchFun is in your menu bar and your notch."
+echo "Done. NotchFun is in your notch."

@@ -5,7 +5,7 @@
 // is watching the notch work. anime.js does the choreography (the hello, bursts, the
 // disk-image drag); CSS springs, sampled from the app's own, move the notch itself.
 
-import { animate, createTimeline, createDrawable } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js';
+import { animate, createDrawable } from './vendor/anime-4.5.0.esm.min.js';
 import { API, track, downloadURL } from './api.js';
 import { feedbackDialog } from './feedback.js';
 import { insights } from './insights.js';
@@ -26,6 +26,7 @@ const body = document.body;
 const N = {
   hello: false,
   transient: null,      // { state: 'hud' | 'banner' }
+  peek: null,           // briefly open on one view, over everything but the greeting
   chapterView: null,    // 'home' | 'shelf' | 'clip' | 'mirror'
   chapterBanner: null,  // a banner held while a chapter shows it
   dragView: null,       // a file being dragged opens the shelf
@@ -42,10 +43,12 @@ function render() {
   let view = notch.dataset.view;
   if (N.hello) state = 'hello';
   else if (N.transient) state = N.transient.state;
+  else if (N.peek) { state = 'open'; view = N.peek; }
   else if (N.dragView) { state = 'open'; view = N.dragView; }
   else if (N.chapterView) { state = 'open'; view = N.chapterView; }
   else if (N.chapterBanner) { state = 'banner'; setBanner(N.chapterBanner); }
-  else if (N.preview || N.hover) { state = 'open'; view = view === 'mirror' ? 'home' : view; }
+  else if (N.preview) { state = 'open'; view = 'home'; }
+  else if (N.hover) { state = 'open'; view = view === 'mirror' ? 'home' : view; }
   else if (N.tour) { state = N.tour.state; view = N.tour.view || view; if (N.tour.banner) setBanner(N.tour.banner); }
   else if (N.playing) state = 'live';
 
@@ -62,7 +65,9 @@ function render() {
 
 // The magnified copies only ever show closed states; open ones stay at the top.
 function syncLoupes(state) {
-  const closed = ['closed', 'live', 'hud', 'banner'].includes(state) ? state : (N.playing ? 'live' : 'closed');
+  // The mirror has nothing to show up close, so the magnified notch doesn't play music at it.
+  const resting = N.playing && N.chapterView !== 'mirror' ? 'live' : 'closed';
+  const closed = ['closed', 'live', 'hud', 'banner'].includes(state) ? state : resting;
   const widths = { closed: 190, live: 270, hud: 330, banner: 380 };
   for (const l of $$('.loupe')) {
     l.dataset.state = closed;
@@ -91,6 +96,14 @@ function flash(t, ms = 1500) {
   transientTimer = setTimeout(() => { N.transient = null; render(); }, ms);
 }
 
+let peekTimer;
+function peek(view, ms = 3000) {
+  N.peek = view;
+  render();
+  clearTimeout(peekTimer);
+  peekTimer = setTimeout(() => { N.peek = null; render(); }, ms);
+}
+
 // Hovering the page's notch opens it, like the app's "open on hover".
 let hoverTimer;
 notch.addEventListener('pointerenter', () => { clearTimeout(hoverTimer); N.hover = true; render(); });
@@ -109,11 +122,12 @@ fitNotch();
 
 // The first thing the app does on a new Mac: open the notch and write "hello" in it.
 // The page does the same, with the app's own path.
+let drawable;
 function playHello() {
   if (reduced) return Promise.resolve();
   N.hello = true;
   render();
-  const [drawable] = createDrawable('.hello-path');
+  drawable ??= createDrawable('.hello-path')[0];
   drawable.setAttribute('draw', '0 0');
   return new Promise(resolve => {
     animate(drawable, {
@@ -124,6 +138,17 @@ function playHello() {
       onComplete: () => setTimeout(() => { N.hello = false; render(); resolve(); }, 300),
     });
   });
+}
+
+// The page ends where it began. Reaching the closing section writes hello once more,
+// which is the moment it's asking the visitor to go and get on their own Mac.
+function closingHello() {
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    if (!N.hello) playHello();
+  }, { threshold: 0.6 });
+  io.observe($('[data-closing]'));
 }
 
 // ------------------------------------------------------------------ hero
@@ -143,6 +168,8 @@ function dock() {
   root.style.setProperty('--ts', (heroScale + (ns - heroScale) * eased).toFixed(4));
   // The menu bar's links sit behind the large notch, so they arrive as it docks.
   root.style.setProperty('--dock', eased.toFixed(3));
+  // Fully faded means fully gone: nothing to tab to behind the large notch.
+  root.toggleAttribute('data-undocked', eased < 0.02);
 }
 
 function numberClips() {
@@ -172,7 +199,15 @@ function kick(text) {
 }
 
 function tour() {
-  if (reduced) { N.tour = { state: 'open', view: 'home' }; render(); return; }
+  if (reduced) {
+    // No run-through: the notch simply sits open on the home view while the hero is on
+    // screen, and closes when it isn't.
+    new IntersectionObserver(([e]) => {
+      N.tour = e.intersectionRatio > 0.35 ? { state: 'open', view: 'home' } : null;
+      render();
+    }, { threshold: [0, 0.35, 0.6] }).observe(heroEl);
+    return;
+  }
   const zone = $('[data-shelf]');
   const list = $('[data-cliplist]');
   let extra = null;
@@ -329,6 +364,7 @@ function setPlaying(on) {
   if (N.playing === on) return;
   N.playing = on;
   body.classList.toggle('playing', on);
+  $('[data-playfoot]').textContent = on ? 'Keep scrolling. The music comes with you.' : 'Hit play, then keep scrolling.';
   // Everything else follows in CSS from body.playing: the glyphs swap like an SF Symbol
   // replace, the artwork eases forward, the waveform wakes up.
   clearInterval(ticker);
@@ -351,33 +387,64 @@ $$('[data-act]').forEach(b => b.addEventListener('click', () => {
 
 // ------------------------------------------------------------------ calendar + clocks
 
+// A made-up week around today, at ordinary times, so it reads the same at any hour. Picking
+// a day in the card moves the selection in the notch's own calendar, as tapping one does
+// in the app.
+const week = {
+  '-2': [['Stand-up', 9, 30, '#64d2ff'], ['Dentist', 16, 0, '#ffd60a']],
+  '-1': [['Sprint review', 11, 0, '#bf5af2']],
+  '0': [['Design review', 10, 30, '#64d2ff'], ['Lunch with Sam', 13, 0, '#ffd60a'], ['Ship the release', 16, 30, '#bf5af2']],
+  '1': [['Stand-up', 9, 30, '#64d2ff'], ['Call with the bank', 14, 15, '#30d158']],
+  '2': [],
+};
+
 function calendar() {
   const now = new Date();
-  $('[data-month]').textContent = now.toLocaleDateString(undefined, { month: 'short' });
-  $('[data-year]').textContent = now.getFullYear();
+  const dayAt = d => { const day = new Date(now); day.setDate(now.getDate() + d); return day; };
+  const time = (d, h, m) => { const t = dayAt(d); t.setHours(h, m, 0, 0); return t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); };
+  const offsets = [-2, -1, 0, 1, 2];
   const days = $('[data-days]');
-  days.innerHTML = '';
-  for (let d = -2; d <= 2; d++) {
-    const day = new Date(now); day.setDate(now.getDate() + d);
+  const pick = $('[data-calpick]');
+  const agenda = $('[data-agenda]');
+  const events = $('[data-events]');
+
+  const show = d => {
+    const list = week[d];
+    const date = dayAt(d);
+    $('[data-month]').textContent = date.toLocaleDateString(undefined, { month: 'short' });
+    $('[data-year]').textContent = date.getFullYear();
+    offsets.forEach((o, i) => {
+      days.children[i].classList.toggle('today', o === d);
+      pick.children[i].setAttribute('aria-pressed', String(o === d));
+    });
+    const row = ([title, h, m, c]) => ({ title, c, at: time(d, h, m) });
+    events.innerHTML = list.length
+      ? list.slice(0, 2).map(row).map(e => `<div class="ev" style="--c:${e.c}"><b>${e.title}</b><span>${e.at}</span></div>`).join('')
+      : '<div class="ev-none">Nothing planned</div>';
+    agenda.innerHTML = list.length
+      ? list.map(row).map(e => `<li style="--c:${e.c}"><b>${e.title}</b><span>${e.at}</span></li>`).join('')
+      : '<li class="agenda-none">Nothing planned. Enjoy it.</li>';
+  };
+
+  offsets.forEach(d => {
+    const date = dayAt(d);
+    const weekday = date.toLocaleDateString(undefined, { weekday: 'narrow' });
     const s = document.createElement('span');
-    if (d === 0) s.className = 'today';
-    s.innerHTML = `<small>${day.toLocaleDateString(undefined, { weekday: 'narrow' })}</small>${day.getDate()}`;
+    s.innerHTML = `<small>${weekday}</small>${date.getDate()}`;
     days.append(s);
-  }
-  const at = mins => { const t = new Date(now.getTime() + mins * 60000); t.setSeconds(0); return t; };
-  const time = t => t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  const events = [
-    { t: at(12), title: 'Design review', c: '#64d2ff' },
-    { t: at(95), title: 'Lunch with Sam', c: '#ffd60a' },
-    { t: at(270), title: 'Ship the release', c: '#bf5af2' },
-  ];
-  $('[data-events]').innerHTML = events.slice(0, 2).map(e => `<div class="ev" style="--c:${e.c}"><b>${e.title}</b><span>${time(e.t)}</span></div>`).join('');
-  $('[data-nextup]').textContent = `${events[0].title} in 12 min`;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.day = d;
+    b.setAttribute('aria-label', date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }));
+    b.innerHTML = `<small>${weekday}</small>${date.getDate()}`;
+    b.addEventListener('click', () => show(d));
+    pick.append(b);
+  });
+  show(0);
 }
 function clocks() {
   const now = new Date();
   $('[data-clock]').textContent = now.toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
-  $('[data-bigtime]').textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/i, '');
 }
 
 // ------------------------------------------------------------------ bursts
@@ -409,9 +476,11 @@ function burst(x, y, radius = 52) {
 function shelf() {
   const zone = $('[data-shelf]');
   const desk = $('[data-desk]');
-  let interacted = false;
+  let interacted = false, keyboardMove = false;
   const hint = $('.prop-hint', desk);
-  const upHint = hint.textContent;
+  // A tap does the same as a drag, and on a phone it's the shorter reach.
+  const upHint = matchMedia('(pointer: coarse)').matches ? 'Tap a file to put it on the shelf ↑' : hint.textContent;
+  hint.textContent = upHint;
 
   // Once something is on the shelf, the hint points the other way: taking files back out
   // is the half of the shelf a first drop does not show.
@@ -443,8 +512,13 @@ function shelf() {
     const r = item.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + 24);
     if (!reduced) animate(item, { scale: [0.6, 1], opacity: [0, 1], duration: 600, ease: 'out(4)' });
-    if ($$('.file:not(.gone)', desk).length === 0) addReset();
+    // The keyboard can't reach the notch to take a file back, so it gets the button sooner.
+    if (keyboardMove || $$('.file:not(.gone)', desk).length === 0) addReset();
     updateHint();
+    if (keyboardMove) {
+      keyboardMove = false;
+      ($('.file:not(.gone)', desk) ?? $('.put-back', desk))?.focus();
+    }
   }
   function addReset() {
     if ($('.put-back', desk)) return;
@@ -546,9 +620,17 @@ function shelf() {
   }
 
   $$('.file', desk).forEach(file => {
-    let sx, sy, lastX, ghost = null;
+    let sx, sy, lastX, ghost = null, moved = false;
+    file.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      if (ghost) return;
+      interacted = keyboardMove = true;
+      drop(file, lift(file).ghost, true);
+    });
     file.addEventListener('pointerdown', e => {
       interacted = true;
+      moved = false;
       sx = lastX = e.clientX; sy = e.clientY;
       file.setPointerCapture(e.pointerId);
       ({ ghost } = lift(file));
@@ -557,6 +639,7 @@ function shelf() {
     file.addEventListener('pointermove', e => {
       if (!ghost) return;
       const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (Math.abs(dx) + Math.abs(dy) > 8) moved = true;
       // A little tilt in the direction of travel, as if it has some weight.
       const tilt = Math.max(-10, Math.min(10, (e.clientX - lastX) * 0.8));
       lastX = e.clientX;
@@ -572,7 +655,8 @@ function shelf() {
       zone.classList.remove('hot');
       const m = g.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
       if (m) { g.style.transform = ''; animate(g, { x: +m[1], y: +m[2], scale: 1.08, duration: 0 }); }
-      drop(file, g, overNotch(e.clientX, e.clientY));
+      // A tap counts as "put it on the shelf": on a phone the notch is a long reach.
+      drop(file, g, (e.type === 'pointerup' && !moved) || overNotch(e.clientX, e.clientY));
       N.dragView = null;
       render();
     };
@@ -604,9 +688,11 @@ function shelf() {
 
 // ------------------------------------------------------------------ clipboard
 
+let addClip = () => {};
+
 function clipboard() {
   const list = $('[data-cliplist]');
-  const colours = { Notes: '#ffd60a', Figma: '#a259ff', Terminal: '#8e8e93', Mail: '#0a84ff', Safari: '#30d158', Messages: '#34c759' };
+  const colours = { 'This page': '#b9a8ff', Notes: '#ffd60a', Figma: '#a259ff', Terminal: '#8e8e93', Mail: '#0a84ff', Safari: '#30d158', Messages: '#34c759' };
   const seed = [
     ['Q4 plan: ship clipboard pins first', 'Notes'],
     ['#7B61FF', 'Figma'],
@@ -623,13 +709,22 @@ function clipboard() {
   seed.slice(0, 3).forEach(([t, a]) => list.append(row(t, a)));
   number();
 
-  $$('[data-copy]').forEach(b => b.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(b.dataset.copy); } catch { /* the notch still shows it */ }
-    const li = row(b.dataset.copy.replace(/^https:\/\//, ''), b.dataset.app);
+  addClip = (text, app) => {
+    // A new copy lands in the whole history, not in whatever was last searched for.
+    const search = $('[data-clipsearch]');
+    if (search.value) { search.value = ''; search.dispatchEvent(new Event('input')); }
+    const li = row(text, app);
     list.prepend(li);
-    while ($$('li:not(.none)', list).length > 3) $$('li:not(.none)', list).pop().remove();
+    // Three show; older ones stay findable, which is the point of a history.
+    while ($$('li:not(.none)', list).length > 8) $$('li:not(.none)', list).pop().remove();
     number();
     if (!reduced) animate(li, { opacity: [0, 1], y: [-10, 0], duration: 500, ease: 'out(3)' });
+  };
+
+  // Only the notch's list changes. The visitor's real clipboard is theirs; nothing in a
+  // demo should replace what they had on it.
+  $$('[data-copy]').forEach(b => b.addEventListener('click', () => {
+    addClip(b.dataset.copy.replace(/^https:\/\//, ''), b.dataset.app);
     b.textContent = 'Copied';
     b.classList.add('done');
     setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1400);
@@ -640,6 +735,7 @@ function clipboard() {
     const v = e.target.value.trim().toLowerCase();
     q.textContent = v || 'Type to search';
     q.parentElement.classList.toggle('typing', !!v);
+    list.classList.toggle('searching', !!v);
     let shown = 0;
     $$('li:not(.none)', list).forEach(li => {
       const hit = !v || li.dataset.text.includes(v);
@@ -664,6 +760,7 @@ function keys() {
     const icon = what === 'vol' ? (levels.vol < 0.4 ? '#i-speaker-low' : '#i-speaker') : (levels.bright < 0.4 ? '#i-sun-low' : '#i-sun');
     $('.hud-icon use', notch).setAttribute('href', icon);
     notch.style.setProperty('--level', levels[what]);
+    $('[data-keystatus]').textContent = `${what === 'vol' ? 'Volume' : 'Brightness'} ${Math.round(levels[what] * 100)}%`;
     flash({ state: 'hud' }, 1500);
     const cap = $(`[data-key="${kind}"]`);
     cap?.classList.add('down');
@@ -671,7 +768,9 @@ function keys() {
   };
   $$('[data-key]').forEach(k => k.addEventListener('click', () => press(k.dataset.key)));
   addEventListener('keydown', e => {
-    if (body.dataset.chapter !== 'keys') return;
+    // Only from a focused key: arrow keys are how people scroll, and this page mustn't
+    // take them away part-way down.
+    if (!e.target.closest?.('[data-key]')) return;
     const map = { ArrowUp: 'vol-up', ArrowDown: 'vol-down', ArrowRight: 'bright-up', ArrowLeft: 'bright-down' };
     if (map[e.key]) { e.preventDefault(); press(map[e.key]); }
   });
@@ -682,7 +781,7 @@ function keys() {
 const little = {
   caffeine: {
     banner: { lead: '<svg viewBox="0 0 24 24" style="color:#ffd479"><use href="#i-cup"/></svg>Awake', trail: '<span data-count>59:59</span>' },
-    caption: 'Stay awake for the download. Sleep when it’s done.',
+    caption: 'Keep your Mac awake for an hour, or until you turn it off.',
   },
   airpods: {
     banner: { lead: '<svg viewBox="0 0 24 24"><use href="#i-airpods"/></svg>AirPods Pro', trail: '82%<span class="ring" style="--p:.82"></span>' },
@@ -692,12 +791,13 @@ const little = {
     banner: { lead: '<svg viewBox="0 0 24 24" style="color:#32d74b"><use href="#i-bolt"/></svg>Charging', trail: '84%<span class="ring" style="--p:.84"></span>' },
     caption: 'Plug in, it tells you. Unplug, same.',
   },
-  mirror: { view: 'mirror', caption: 'A quick look before the call. Nothing’s recorded.' },
+  mirror: { view: 'mirror', caption: 'See yourself before the meeting starts.' },
 };
 let littleTab = 'caffeine', countdown;
 function applyLittle() {
   const t = little[littleTab];
   body.classList.toggle('awake', littleTab === 'caffeine');
+  $('[data-littleprop]').classList.toggle('no-loupe', littleTab === 'mirror');
   N.chapterBanner = t.banner || null;
   N.chapterView = t.view || null;
   bannerContent = null;
@@ -711,7 +811,7 @@ function applyLittle() {
 }
 $$('[data-little]').forEach(b => b.addEventListener('click', () => {
   littleTab = b.dataset.little;
-  $$('[data-little]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  $$('[data-little]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   if (body.dataset.chapter === 'little') applyLittle();
   if (!reduced) animate('[data-littlecaption]', { opacity: [0, 1], y: [8, 0], duration: 450, ease: 'out(3)' });
 }));
@@ -765,21 +865,45 @@ function bento() {
 
 // ------------------------------------------------------------------ install
 
+// Writes to the clipboard, or, where the browser refuses, selects the text so ⌘C will do.
+async function copyOrSelect(text, code, button) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    getSelection().removeAllRanges();
+    getSelection().addRange(range);
+    button.textContent = 'Press ⌘C';
+    setTimeout(() => (button.textContent = 'Copy'), 6000);
+    return false;
+  }
+}
+
+// What happens once the line is on the clipboard. It lands in the notch's clipboard, the
+// behaviour chapter 3 just taught, and the steps stop on the one the visitor is now doing.
+function lineCopied(text) {
+  addClip(text.replace(/https:\S+\/(install\.sh)/, '…/$1'), 'This page');
+  peek('clip');
+  holdSteps();
+  const next = $('[data-copiednext]');
+  next.hidden = false;
+  if (!reduced) animate(next, { opacity: [0, 1], y: [-6, 0], duration: 450, ease: 'out(3)' });
+}
+let holdSteps = () => {};
+
 function install() {
   $$('[data-copytext]').forEach(b => b.addEventListener('click', async () => {
-    const text = b.previousElementSibling.textContent;
-    try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }
-    catch { b.textContent = 'Select & copy'; }
+    const code = b.previousElementSibling;
+    if (!await copyOrSelect(code.textContent, code, b)) return;
+    b.textContent = 'Copied';
     b.classList.add('done');
     const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 30);
     setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
     // A web page can't open Terminal with the line typed in (browsers block that, rightly),
     // so the next best thing: say exactly what to press next, right under the button.
-    if ('next' in b.dataset) {
-      const next = $('[data-copiednext]');
-      next.hidden = false;
-      if (!reduced) animate(next, { opacity: [0, 1], y: [-6, 0], duration: 450, ease: 'out(3)' });
-    }
+    if ('next' in b.dataset) lineCopied(code.textContent);
   }));
 
   // Homebrew copies its command, and says so.
@@ -789,16 +913,25 @@ function install() {
     try { await navigator.clipboard.writeText(brew.dataset.brew); label.textContent = 'Copied — paste it in Terminal'; }
     catch { label.textContent = brew.dataset.brew; }
     brew.classList.add('done');
-    setTimeout(() => { label.textContent = 'Copy the brew command'; brew.classList.remove('done'); }, 2600);
+    setTimeout(() => { label.textContent = 'Use Homebrew? Copy the brew command'; brew.classList.remove('done'); }, 2600);
   });
 
-  // The three steps play in turn: the copy button gets clicked, Spotlight finds
-  // Terminal, Return is pressed and NotchFun is ready. On a loop while on screen.
+  // The three steps play in turn: the copy button gets clicked, Spotlight finds Terminal,
+  // Return is pressed and the notch says hello. Once, each time they come into view:
+  // someone deciding whether to trust a command shouldn't have to read it past a loop.
   const box = $('[data-steps]');
   const steps = $$('.step', box);
   const typed = $('[data-s2]', box);
   if (reduced) { steps.forEach(s => s.classList.add('active')); steps[1].classList.add('found'); typed.textContent = 'Terminal'; steps[2].classList.add('done'); return; }
-  let run = 0;
+  let run = 0, held = false;
+  holdSteps = () => {
+    held = true;
+    run++;
+    steps.forEach(s => s.classList.remove('active', 'clicked', 'found', 'pressed', 'done'));
+    steps[0].classList.add('clicked');
+    steps[1].classList.add('active', 'found');
+    typed.textContent = 'Terminal';
+  };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function play() {
     const id = ++run;
@@ -812,10 +945,15 @@ function install() {
     steps[1].classList.add('found'); await sleep(1400); if (!live()) return;
     steps[1].classList.remove('active'); steps[2].classList.add('active'); await sleep(700); if (!live()) return;
     steps[2].classList.add('pressed'); await sleep(160); steps[2].classList.remove('pressed'); await sleep(350); if (!live()) return;
-    steps[2].classList.add('done'); await sleep(2800); if (!live()) return;
-    play();
+    steps[2].classList.add('done');
   }
-  new IntersectionObserver(([e]) => (e.isIntersecting ? play() : run++), { threshold: 0.35 }).observe(box);
+  let played = false;
+  new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) { if (!steps[2].classList.contains('done')) { run++; played = false; } return; }
+    if (held || played) return;
+    played = true;
+    play();
+  }, { threshold: 0.35 }).observe(box);
 }
 
 // ------------------------------------------------------------------ buttons
@@ -848,11 +986,14 @@ function buttons() {
   }
   installWithOneLine($('.hero .btn-ghost'));
   afterDownload();
+  welcomeBack();
+  // At the end of the page the button does the job, rather than sending people back to it.
+  $('[data-closecta]').addEventListener('click', e => { e.preventDefault(); oneLine('closing'); });
   dl.addEventListener('click', () => {
     const r = dl.getBoundingClientRect(); burst(r.left + 32, r.top + r.height / 2, 44);
     dl.classList.add('downloading');
-    label('Downloading…');
-    setTimeout(() => { dl.classList.remove('downloading'); label('Check your Downloads'); }, 2200);
+    label('Starting download…');
+    setTimeout(() => { dl.classList.remove('downloading'); label('Check your Downloads'); }, 1600);
     setTimeout(() => label('Download for Mac'), 6500);
   });
 }
@@ -865,6 +1006,10 @@ function installWithOneLine(button) {
   button.addEventListener('click', e => {
     e.preventDefault();
     const r = button.getBoundingClientRect(); burst(r.left + 34, r.top + r.height / 2, 30);
+    const text = $('.roll span', button);
+    const was = text.textContent;
+    text.textContent = 'Line copied';
+    setTimeout(() => (text.textContent = was), 3000);
     oneLine('hero');
   });
 }
@@ -879,20 +1024,27 @@ function seeHowItWorks(button) {
 
 // Copies the Terminal line, goes to the install steps and shows what to do next.
 async function oneLine(from) {
-  const code = $('.cmd.big code').textContent;
+  const code = $('.cmd.big code');
   const copy = $('.cmd.big [data-copytext]');
-  let copied = true;
-  try { await navigator.clipboard.writeText(code); } catch { copied = false; }
+  const copied = await copyOrSelect(code.textContent, code, copy);
   track('copy_curl', from);
-  $('#install').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-  const next = $('[data-copiednext]');
-  if (copied) {
-    copy.textContent = 'Copied';
-    copy.classList.add('done');
-    setTimeout(() => { copy.textContent = 'Copy'; copy.classList.remove('done'); }, 2400);
-    next.hidden = false;
-    if (!reduced) animate(next, { opacity: [0, 1], y: [-6, 0], duration: 450, delay: 500, ease: 'out(3)' });
-  }
+  // To the line itself, not the top of the section, so on a short window the instructions
+  // under it are on screen too.
+  $('.cmd.big').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+  if (!copied) return;
+  copy.textContent = 'Copied';
+  copy.classList.add('done');
+  setTimeout(() => { copy.textContent = 'Copy'; copy.classList.remove('done'); }, 2400);
+  // Once the scroll has arrived, so the visitor is looking when it lands.
+  setTimeout(() => lineCopied(code.textContent), reduced ? 0 : 900);
+}
+
+// Opened from the link they sent themselves: they've seen the tour. Go straight to the
+// line, and say it was expected.
+function welcomeBack() {
+  if (new URLSearchParams(location.search).get('ref') !== 'sent') return;
+  $('[data-installlede]').textContent = 'Welcome back. Your line’s ready.';
+  requestAnimationFrame(() => $('#install').scrollIntoView({ behavior: 'instant', block: 'start' }));
 }
 
 // After a disk-image download starts: what to do with it, including the one-time
@@ -907,20 +1059,31 @@ function afterDownload() {
       <ol class="dl-steps">
         <li>Open <b>NotchFun.dmg</b> from your Downloads.</li>
         <li>Drag <b>NotchFun</b> into <b>Applications</b>, then open it.</li>
-        <li>The first time, macOS asks before opening it: click <b>Done</b>, then <b>System Settings → Privacy &amp; Security → Open Anyway</b>. <a href="#faq-warning" data-help="faq">Why?</a></li>
+        <li>macOS stops it the first time. Click <b>Done</b>, not Move to Trash, then go to <b>System Settings → Privacy &amp; Security</b>, click <b>Open Anyway</b> and confirm. <a href="#faq-warning" data-help="faq">Why?</a></li>
       </ol>
       <div class="dl-alt">
-        <p>Rather skip that step? One line in Terminal installs it with no prompt.</p>
+        <p>Rather skip that step? One line in Terminal installs it without System Settings.</p>
         <button class="send-btn" type="button" data-help="oneline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5 9 11l-4.5 4.5M11.5 17h8"/></svg><span>Install with one line instead</span></button>
       </div>
     </div>`;
   document.body.append(sheet);
   $('.fb-close', sheet).addEventListener('click', () => sheet.close());
   sheet.addEventListener('click', e => { if (e.target === sheet) sheet.close(); });
-  $('[data-help="oneline"]', sheet).addEventListener('click', () => { track('dl_help', 'oneline'); sheet.close(); oneLine('after_download'); });
+  let switched = false;
+  $('[data-help="oneline"]', sheet).addEventListener('click', () => { switched = true; track('dl_help', 'oneline'); sheet.close(); oneLine('after_download'); });
+  // The security step comes minutes after this panel closes, so what to do stays on the page.
+  sheet.addEventListener('close', () => {
+    if (switched || $('.dl-recap')) return;
+    const recap = document.createElement('p');
+    recap.className = 'dl-recap';
+    recap.innerHTML = 'Next: open <b>NotchFun.dmg</b>, drag it to Applications and open it. When macOS stops it, click <b>Done</b>, then <b>System Settings → Privacy &amp; Security → Open Anyway</b>.';
+    $('.free-note').after(recap);
+    $('.other-ways').after(recap.cloneNode(true));
+  });
   $('[data-help="faq"]', sheet).addEventListener('click', e => {
     e.preventDefault();
     track('dl_help', 'faq');
+    switched = true;
     sheet.close();
     const faq = $('#faq-warning');
     faq.open = true;
@@ -947,10 +1110,10 @@ function sendToMac(button, label) {
     <div class="fb-body">
       <p class="send-lede">NotchFun runs on Macs with macOS 26 or later. Send yourself the link and open it there.</p>
       <div class="send-actions">
-        <label class="fb-field send-field"><span class="fb-label">Your email <small>so it's filled in for you</small></span>
-          <input type="email" name="send-to" autofocus autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com"></label>
+        <label class="fb-field send-field"><span class="fb-label">Your email <small>fills in the To line</small></span>
+          <input type="email" name="send-to" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com"></label>
         <a class="send-btn" data-send="email" href="#">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7"/></svg><span>Email it to myself</span></a>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7"/></svg><span>Open in my mail app</span></a>
         <button class="send-btn" data-send="copy" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5v-1a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1"/></svg><span>Copy link</span></button>
       </div>
@@ -1013,6 +1176,29 @@ function sendToMac(button, label) {
     box.prepend(note);
     $('button', note).addEventListener('click', send);
   }
+
+  // The same at the end of the page.
+  const close = $('[data-closecta]');
+  $('.roll', close).dataset.label = 'Send to my Mac';
+  $('.roll span', close).textContent = 'Send to my Mac';
+  close.href = '#send';
+  close.addEventListener('click', send);
+
+  // On a phone the one useful action stays under the thumb, except where one is already
+  // on screen.
+  const bar = document.createElement('button');
+  bar.type = 'button';
+  bar.className = 'send-bar';
+  bar.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg><span>Send to my Mac</span>';
+  bar.addEventListener('click', send);
+  body.append(bar);
+  const covering = new Set();
+  const io = new IntersectionObserver(entries => {
+    // The hero's buttons have scrolled away well before its last pixels have.
+    entries.forEach(e => (e.isIntersecting && (e.target !== heroEl || e.intersectionRatio > 0.3) ? covering.add(e.target) : covering.delete(e.target)));
+    bar.classList.toggle('show', covering.size === 0);
+  }, { threshold: [0, 0.3] });
+  [heroEl, $('.send-note'), $('[data-closing]')].forEach(el => el && io.observe(el));
 }
 
 // ------------------------------------------------------------------ counts
@@ -1045,8 +1231,10 @@ function counts() {
 async function gh(path) {
   const key = `gh:${path}`;
   try { const c = sessionStorage.getItem(key); if (c) return JSON.parse(c); } catch {}
-  let res = await fetch(`${API}/gh/${path ? 'releases' : 'repo'}`).catch(() => null);
-  if (!res?.ok) res = await fetch(`https://api.github.com/repos/${REPO}${path}`, { headers: { Accept: 'application/vnd.github+json' } });
+  // A hung request would leave "Loading…" up forever, so each gets a few seconds.
+  const signal = () => AbortSignal.timeout(6000);
+  let res = await fetch(`${API}/gh/${path ? 'releases' : 'repo'}`, { signal: signal() }).catch(() => null);
+  if (!res?.ok) res = await fetch(`https://api.github.com/repos/${REPO}${path}`, { signal: signal(), headers: { Accept: 'application/vnd.github+json' } });
   if (!res.ok) throw new Error(res.status);
   const data = await res.json();
   try { sessionStorage.setItem(key, JSON.stringify(data)); } catch {}
@@ -1083,8 +1271,9 @@ function md(src) {
 async function changelog() {
   const box = $('[data-releases]');
   try {
-    const releases = (await gh('/releases?per_page=6')).filter(r => !r.draft && !r.prerelease).slice(0, 4);
+    const releases = (await gh('/releases?per_page=6')).filter(r => !r.draft && !r.prerelease).slice(0, 1);
     box.innerHTML = '';
+    // Only the latest: the rest is one link away, and this page is selling, not archiving.
     releases.forEach((r, i) => {
       const el = document.createElement('article');
       el.className = 'release reveal';
@@ -1108,11 +1297,8 @@ async function changelog() {
     // The download button shows the real size of the disk image.
     const dmg = releases[0]?.assets?.find(a => a.name === 'NotchFun.dmg');
     if (dmg) $('[data-dmgsize]').textContent = `Disk image · ${(dmg.size / 1e6).toFixed(1)} MB`;
-    // The update card shows the real last step: previous release to the current one.
-    const v = r => r?.tag_name.replace(/^v/, '');
-    if (releases[1]) { $('.ud-old').textContent = v(releases[1]); $('.ud-new').textContent = v(releases[0]); }
   } catch {
-    box.innerHTML = '<p class="loading">Couldn\'t reach GitHub just now. <a href="https://github.com/lookatsarthak/NotchFun/releases">See the releases there →</a></p>';
+    box.innerHTML = '<p class="loading">Couldn\'t reach GitHub just now.</p>';
   }
 }
 
@@ -1152,21 +1338,6 @@ async function starCount() {
   } catch {}
 }
 
-// The timeline line draws itself as you read down the releases.
-function timelineLine() {
-  const tl = $('.timeline');
-  const path = $('.timeline-line path');
-  path.style.strokeDasharray = '100 100';
-  path.setAttribute('pathLength', '100');
-  const update = () => {
-    const r = tl.getBoundingClientRect();
-    const p = Math.min(1, Math.max(0, (innerHeight * 0.7 - r.top) / r.height));
-    path.style.strokeDashoffset = String(100 - p * 100);
-  };
-  addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
-  update();
-}
-
 // ------------------------------------------------------------------ real footage
 
 // "Try it" or "Watch the real app": the recording replaces the demo in place, and only
@@ -1176,7 +1347,7 @@ function propSwitches() {
     const video = $('video', prop);
     $$('[data-show]', prop).forEach(b => b.addEventListener('click', () => {
       const show = b.dataset.show;
-      $$('[data-show]', prop).forEach(x => x.setAttribute('aria-selected', String(x === b)));
+      $$('[data-show]', prop).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
       $$('[data-face]', prop).forEach(f => {
         const on = f.dataset.face === show;
         f.hidden = !on;
@@ -1187,6 +1358,18 @@ function propSwitches() {
       else video.pause();
     }));
   });
+}
+
+// ------------------------------------------------------------------ FAQ
+
+// A link to a question opens it; arriving at a closed answer isn't an answer.
+function faqLinks() {
+  const open = () => {
+    const el = location.hash && document.getElementById(location.hash.slice(1));
+    if (el?.tagName === 'DETAILS') el.open = true;
+  };
+  addEventListener('hashchange', open);
+  open();
 }
 
 // ------------------------------------------------------------------ go
@@ -1206,12 +1389,14 @@ install();
 changelog();
 starCount();
 downloadCount();
-timelineLine();
 propSwitches();
 buttons();
 counts();
 feedbackDialog();
+faqLinks();
+closingHello();
 dock();
 render();
 introHero();
 playHello().then(tour);
+window.nfBooted = true;
