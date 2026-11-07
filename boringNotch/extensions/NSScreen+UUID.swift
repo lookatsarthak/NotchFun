@@ -42,7 +42,7 @@ final class NSScreenUUIDCache {
     private var observer: Any?
     
     private init() {
-        rebuildCache()
+        rebuild()
         setupObserver()
     }
     
@@ -58,13 +58,15 @@ final class NSScreenUUIDCache {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            // Delivered on .main above, but the closure is nonisolated as far as the
-            // compiler is concerned, so make the hop explicit rather than assumed.
-            Task { @MainActor in self?.rebuildCache() }
+            // Delivered on .main above, so this runs now rather than after whatever else
+            // is reacting to the same change. Those readers need the new screens.
+            MainActor.assumeIsolated { self?.rebuild() }
         }
     }
     
-    private func rebuildCache() {
+    /// Reads the current screens. Also called directly by anything that reacts to a display
+    /// change and can't rely on running after this cache's own observer.
+    func rebuild() {
         var newCache: [String: NSScreen] = [:]
         
         for screen in NSScreen.screens {

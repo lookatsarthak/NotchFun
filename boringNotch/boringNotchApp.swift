@@ -71,7 +71,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var whatsNewWindow: NSWindow?
     var timer: Timer?
     var closeNotchTask: Task<Void, Never>?
-    private var previousScreens: [NSScreen]?
+    private var previousLayout: Set<ScreenSnapshot>?
+    private var repositionTask: Task<Void, Never>?
     private var onboardingWindowController: NSWindowController?
     private var mediaSourceWindowController: NSWindowController?
     /// Kept alive for the life of the process; see handleTerminationSignal().
@@ -360,6 +361,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.orderFrontRegardless()
         NotchSpaceManager.shared.notchSpace.windows.insert(window)
 
+        // Nothing in the app moves this window, so any move is the system's: put it back.
+        window.onMoved = { [weak self] in self?.repositionWindows() }
+
         // Observe when the window's screen changes so we can update drag detectors
         windowScreenDidChangeObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didChangeScreenNotification,
@@ -378,13 +382,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.alphaValue = 0
         }
 
-        let screenFrame = screen.frame
-        window.setFrameOrigin(
-            NSPoint(
-                x: screenFrame.origin.x + (screenFrame.width / 2) - window.frame.width / 2,
-                y: screenFrame.origin.y + screenFrame.height - window.frame.height
-            ))
+        window.setFrameOrigin(NotchPlacement.origin(windowSize: window.frame.size, screenFrame: screen.frame))
         window.alphaValue = 1
+    }
+
+    /// Puts any window that has drifted back at the top of its screen, and leaves the rest
+    /// alone. Unlike `adjustWindowPosition` it creates nothing and touches no notch state,
+    /// so it is safe to run as often as a display change needs.
+    @MainActor
+    private func repositionWindows() {
+        if Defaults[.showOnAllDisplays] {
+            for (uuid, window) in windows {
+                guard let screen = NSScreen.screen(withUUID: uuid) else { continue }
+                if !NotchPlacement.isPlaced(windowFrame: window.frame, on: screen.frame) {
+                    positionWindow(window, on: screen)
+                }
+            }
+        } else if let window, let screen = NSScreen.screen(withUUID: coordinator.selectedScreenUUID) {
+            if !NotchPlacement.isPlaced(windowFrame: window.frame, on: screen.frame) {
+                positionWindow(window, on: screen)
+            }
+        }
+    }
+
+    /// A display change arrives in stages, and the system can shift windows after the last
+    /// notification, so the check repeats for a moment rather than trusting one placement.
+    /// A new change restarts it.
+    @MainActor
+    private func scheduleRepositioning() {
+        repositionTask?.cancel()
+        repositionTask = Task { @MainActor [weak self] in
+            var elapsed = 0.0
+            for delay in NotchPlacement.settleDelays {
+                try? await Task.sleep(for: .seconds(delay - elapsed))
+                guard !Task.isCancelled else { return }
+                elapsed = delay
+                self?.repositionWindows()
+            }
+        }
+    }
+
+    private func currentLayout() -> Set<ScreenSnapshot> {
+        Set(NSScreen.screens.map { ScreenSnapshot(uuid: $0.displayUUID, frame: $0.frame) })
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -632,7 +671,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        previousScreens = NSScreen.screens
+        previousLayout = currentLayout()
     }
 
     func playWelcomeSound() {
@@ -641,15 +680,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func screenConfigurationDidChange() {
-        let currentScreens = NSScreen.screens
+        // First: everything below looks screens up by UUID, and a stale entry still answers
+        // with the old frame. That put the notch at the old top edge, which after mirroring
+        // to a larger resolution is the middle of the screen.
+        NSScreenUUIDCache.shared.rebuild()
 
-        let screensChanged =
-            currentScreens.count != previousScreens?.count
-            || Set(currentScreens.compactMap { $0.displayUUID })
-                != Set(previousScreens?.compactMap { $0.displayUUID } ?? [])
-            || Set(currentScreens.map { $0.frame }) != Set(previousScreens?.map { $0.frame } ?? [])
-
-        previousScreens = currentScreens
+        let layout = currentLayout()
+        let screensChanged = NotchPlacement.layoutChanged(from: previousLayout, to: layout)
+        previousLayout = layout
 
         if screensChanged {
             DispatchQueue.main.async { [weak self] in
@@ -658,6 +696,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.setupDragDetectors()
             }
         }
+        scheduleRepositioning()
     }
 
     @objc func adjustWindowPosition(changeAlpha: Bool = false) {

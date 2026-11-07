@@ -33,6 +33,9 @@ extension SkyLightOperator {
 
 class BoringNotchSkyLightWindow: NSPanel {
     private var isSkyLightEnabled: Bool = false
+    /// Called when the window has moved. `isMovable` only stops people dragging it, not the
+    /// system shifting it during a display change.
+    var onMoved: (() -> Void)?
     
     override init(
         contentRect: NSRect,
@@ -82,6 +85,10 @@ class BoringNotchSkyLightWindow: NSPanel {
             .sink { [weak self] _ in
                 self?.updateSharingType()
             }
+            .store(in: &observers)
+
+        NotificationCenter.default.publisher(for: NSWindow.didMoveNotification, object: self)
+            .sink { [weak self] _ in self?.onMoved?() }
             .store(in: &observers)
     }
     
