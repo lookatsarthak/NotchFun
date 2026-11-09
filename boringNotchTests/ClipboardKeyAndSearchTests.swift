@@ -218,3 +218,24 @@ extension PasteboardTests {
     }
 }
 
+/// Rows that slide under a resting pointer must not take the selection from the keyboard.
+@Suite("Clipboard hover vs keyboard")
+struct ClipboardHoverPolicyTests {
+    private let resting = CGPoint(x: 735, y: 820)
+
+    @Test("With no keyboard action since the pointer moved, hover selects")
+    func hoverSelects() {
+        #expect(ClipboardHoverPolicy.followsHover(pointer: resting, keyboardAnchor: nil))
+    }
+
+    @Test("A row scrolled under a still pointer after an arrow press doesn't (the bug this guards)")
+    func stillPointerIgnored() {
+        #expect(!ClipboardHoverPolicy.followsHover(pointer: resting, keyboardAnchor: resting))
+        #expect(!ClipboardHoverPolicy.followsHover(pointer: CGPoint(x: 735.5, y: 820.5), keyboardAnchor: resting))
+    }
+
+    @Test("Moving the pointer hands selection back to hover")
+    func movedPointerSelects() {
+        #expect(ClipboardHoverPolicy.followsHover(pointer: CGPoint(x: 735, y: 826), keyboardAnchor: resting))
+    }
+}

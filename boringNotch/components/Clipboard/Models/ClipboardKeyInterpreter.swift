@@ -96,3 +96,22 @@ enum ClipboardKeyInterpreter {
         return String(utf16CodeUnits: buffer, count: length)
     }
 }
+
+/// Whether hovering a row should take the selection.
+///
+/// Hover selects, so the pointer can pick a row. But the list also scrolls itself to keep
+/// a keyboard selection in view, and opening the panel grows it under the pointer: both
+/// slide rows under a pointer that hasn't moved, and SwiftUI reports that as hovering.
+/// With the pointer resting over the list, every arrow press was followed by that row
+/// "hovering" itself into the selection, so the highlight jumped about instead of stepping.
+/// Hover only counts once the pointer has really moved since the keyboard last acted.
+enum ClipboardHoverPolicy {
+    /// - Parameters:
+    ///   - pointer: where the pointer is now, in screen points.
+    ///   - keyboardAnchor: where it was when the keyboard last acted, or nil if the pointer
+    ///     has moved since.
+    static func followsHover(pointer: CGPoint, keyboardAnchor: CGPoint?) -> Bool {
+        guard let keyboardAnchor else { return true }
+        return hypot(pointer.x - keyboardAnchor.x, pointer.y - keyboardAnchor.y) >= 2
+    }
+}

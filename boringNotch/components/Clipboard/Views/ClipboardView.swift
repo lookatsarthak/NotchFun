@@ -29,6 +29,9 @@ struct ClipboardView: View {
     /// Only keyboard-driven selection scrolls the list. Hover must not, or moving the
     /// pointer while scrolling yanks the view out from under the user.
     @State private var selectionViaKeyboard = false
+    /// Where the pointer was when the keyboard last acted; hover is ignored until it moves.
+    /// See ClipboardHoverPolicy.
+    @State private var keyboardAnchor: CGPoint?
 
     // Scroll haptics, mirroring BoringCalendar: a Bool toggled at each event site and
     // consumed by .sensoryFeedback.
@@ -126,6 +129,9 @@ struct ClipboardView: View {
                         .onTapGesture { select(match.item) }
                         .onHover { hovering in
                             guard hovering else { return }
+                            let pointer = NSEvent.mouseLocation
+                            guard ClipboardHoverPolicy.followsHover(pointer: pointer, keyboardAnchor: keyboardAnchor) else { return }
+                            keyboardAnchor = nil
                             selectionViaKeyboard = false
                             selectedID = match.item.id
                             restartIdleTimer()
@@ -199,6 +205,9 @@ struct ClipboardView: View {
         clipboard.beginPresenting()
         query = ""
         selectedID = clipboard.visibleItems.first?.id
+        // Opened from the keyboard, the panel grows under wherever the pointer happens to
+        // be; that shouldn't pick a row. The newest clip stays selected until the pointer moves.
+        keyboardAnchor = NSEvent.mouseLocation
         secureInputActive = ClipboardKeyCaptureService.isSecureInputActive
         restartIdleTimer()
 
@@ -262,6 +271,7 @@ struct ClipboardView: View {
 
     private func handle(_ event: ClipboardKeyEvent) {
         restartIdleTimer()
+        keyboardAnchor = NSEvent.mouseLocation
         let results = matches
 
         switch event {
