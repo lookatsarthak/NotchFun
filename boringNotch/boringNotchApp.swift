@@ -257,21 +257,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let shouldCleanupMulti = shouldInvert ? !Defaults[.showOnAllDisplays] : Defaults[.showOnAllDisplays]
         
         if shouldCleanupMulti {
-            windows.values.forEach { window in
-                window.close()
-                NotchSpaceManager.shared.notchSpace.windows.remove(window)
-            }
+            windows.values.forEach(retire)
             windows.removeAll()
             viewModels.removeAll()
         } else if let window = window {
-            window.close()
-            NotchSpaceManager.shared.notchSpace.windows.remove(window)
+            retire(window)
             if let obs = windowScreenDidChangeObserver {
                 NotificationCenter.default.removeObserver(obs)
                 windowScreenDidChangeObserver = nil
             }
             self.window = nil
         }
+    }
+
+    /// Takes a notch window down for good.
+    ///
+    /// `close()` alone was not enough. Something outside the app's own references (AppKit
+    /// observing the window) kept every closed notch window alive, and with it the whole
+    /// SwiftUI tree inside: its observers, its layout, and the face's blink loop. A window
+    /// is closed and replaced on every screen lock and display change, so after days of
+    /// uptime dozens of invisible notches were still blinking and redrawing - measured, 21
+    /// live trees after 20 lock cycles, and 6.4% idle CPU and 488 MB after 3.5 days, against
+    /// 0.15% and 100 MB fresh. Detaching the content first frees that tree, which stops all
+    /// of its work whether or not the empty window shell is ever released.
+    private func retire(_ window: NSWindow) {
+        NotchSpaceManager.shared.notchSpace.windows.remove(window)
+        (window as? BoringNotchSkyLightWindow)?.onMoved = nil
+        window.orderOut(nil)
+        window.contentView = nil
+        window.close()
     }
 
     private func cleanupDragDetectors() {
@@ -706,8 +720,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Remove windows for screens that no longer exist
             for uuid in windows.keys where !currentScreenUUIDs.contains(uuid) {
                 if let window = windows[uuid] {
-                    window.close()
-                    NotchSpaceManager.shared.notchSpace.windows.remove(window)
+                    retire(window)
                     windows.removeValue(forKey: uuid)
                     viewModels.removeValue(forKey: uuid)
                 }

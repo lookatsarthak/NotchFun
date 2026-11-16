@@ -63,6 +63,9 @@ struct MinimalFaceFeatures: View {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(Int.random(in: 3500...6000)))
                 guard !Task.isCancelled else { return }
+                // Nobody sees a blink on a sleeping display, and each one is a SwiftUI
+                // transaction on the whole notch window.
+                guard CGDisplayIsAsleep(CGMainDisplayID()) == 0 else { continue }
                 isBlinking = true
                 try? await Task.sleep(for: .milliseconds(120))
                 guard !Task.isCancelled else { return }
