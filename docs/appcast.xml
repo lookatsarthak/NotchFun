@@ -7,6 +7,25 @@
     <language>en</language>
 
     <item>
+      <title>1.7.0</title>
+      <pubDate>Mon, 16 Nov 2026 13:44:48 +0530</pubDate>
+      <sparkle:version>29</sparkle:version>
+      <sparkle:shortVersionString>1.7.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>Improved</h3>
+<ul>
+<li><strong>NotchFun stays light however long your Mac stays on.</strong> Each time you locked your screen, an invisible copy of the notch kept running in the background. After a few days that added up to noticeable CPU, battery and memory use. Now it uses almost none, the same on day five as at launch.</li>
+<li><strong>The face doesn't blink while your display is asleep.</strong> Nobody is watching, so it waits.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v1.7.0/NotchFun-1.7.0.dmg"
+        sparkle:edSignature="IeLMwaH8QTUCIklmGlZSl02FIhSV9KeN3TFPSrelmVNO8j82z4nYzbvqPLmwpyvHW+JiOUywYiXv38vAI0t7CQ=="
+        length="6951020"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>1.6.5</title>
       <pubDate>Mon, 09 Nov 2026 23:43:20 +0530</pubDate>
       <sparkle:version>28</sparkle:version>
