@@ -20,7 +20,9 @@ struct MusicPlayerView: View {
     var body: some View {
         HStack {
             AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
-            MusicControlsView().drawingGroup().compositingGroup()
+            // No drawingGroup: it was there to cheapen the SwiftUI marquee, which is now a
+            // Core Animation layer, and a layer can't render inside a drawing group.
+            MusicControlsView().compositingGroup()
         }
         // Over the player only: the calendar beside it scrolls sideways itself.
         .horizontalSwipe(enabled: swipeToSkip) { swipe in
@@ -210,11 +212,12 @@ struct MusicControlsView: View {
     private var lyricRedrawDates: [Date] { musicManager.lyricRedrawDates() }
 
     private var musicSlider: some View {
-        // Ten times a second while playing, not at all while paused. This read
-        // `minimumInterval: rate > 0 ? 0.1 : nil`, and nil means every display frame: a
-        // paused track redrew a still slider at up to 120 fps for as long as the notch was
-        // open (about 20% CPU and 55 MB more, measured).
-        TimelineView(.animation(minimumInterval: 0.1,
+        // Once a second while playing, not at all while paused. Once a second because the
+        // time labels change once a second; ten times a second was 6% CPU with the notch
+        // open, for a bar that moves about 2 pt a second on a typical track. (Before
+        // that it read `minimumInterval: rate > 0 ? 0.1 : nil`, and nil means every display
+        // frame: a paused track redrew a still slider at up to 120 fps, about 20% CPU.)
+        TimelineView(.animation(minimumInterval: 1.0,
                                 paused: !musicManager.isPlaying || musicManager.playbackRate <= 0)) { timeline in
             MusicSliderView(
                 sliderValue: $sliderValue,

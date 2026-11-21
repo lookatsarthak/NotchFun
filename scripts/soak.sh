@@ -7,7 +7,7 @@
 #   scripts/soak.sh [--cycles N] [--phase SECONDS] [--keep] [path/to/NotchFun.app]
 #
 # With no app path it builds a measurement copy first. The copy runs under its own
-# bundle id (…notchfun.freshtest) with its own preferences, so it never touches the
+# bundle id (…notchfun.soaktest) with its own preferences, so it never touches the
 # installed app's settings or permissions. Quit the installed NotchFun first, or both
 # notches draw on top of each other (the numbers are still per process).
 #
@@ -30,7 +30,7 @@ while (( $# )); do
   esac
 done
 
-TESTID=io.github.lookatsarthak.notchfun.freshtest
+TESTID=io.github.lookatsarthak.notchfun.soaktest
 WORK="${${TMPDIR:-/tmp}%/}/notchfun-soak"
 mkdir -p "$WORK"
 

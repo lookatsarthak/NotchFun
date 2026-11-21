@@ -25,7 +25,7 @@ struct Charge: View {
                 Text("General")
             } footer: {
                 Text(
-                    "Shows the battery of the headphones or earbuds you're listening through, when they connect and while the notch is open. macOS reports both earbuds at the same level even when one is in the case, so a single figure is shown."
+                    "Shows the battery of the headphones or earbuds you're listening through, when they connect and while the notch is open. AirPods and Beats show each earbud and the case; other headphones show one figure."
                 )
                 .multilineTextAlignment(.trailing)
                 .foregroundStyle(.secondary)

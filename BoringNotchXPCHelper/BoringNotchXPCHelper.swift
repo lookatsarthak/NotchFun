@@ -209,7 +209,12 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         request.recognitionLevel = .fast
         request.usesLanguageCorrection = false
         try? VNImageRequestHandler(cgImage: image).perform([request])
-        let lines = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        // Only lines read with some confidence. A photo or a pattern otherwise turns into
+        // a label of nonsense ("Ig y even"), which is worse than no label.
+        let lines = (request.results ?? []).compactMap { observation -> String? in
+            guard let best = observation.topCandidates(1).first, best.confidence >= 0.5 else { return nil }
+            return best.string
+        }
         let text = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? nil : String(text.prefix(8000))
     }

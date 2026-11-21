@@ -60,9 +60,13 @@ struct MarqueeText: View {
                     // Its own view, keyed by the text and width, so that a new title or a
                     // pause removes it from the tree. A repeating SwiftUI animation can't be
                     // stopped by changing its value; it ends only when its view goes away.
-                    ScrollingRow(text: text, font: font, textColor: textColor, backgroundColor: backgroundColor,
-                                 textWidth: textSize.width, startDelay: minDuration)
-                        .id("\(text)|\(textSize.width)")
+                    // Core Animation, not a SwiftUI animation: the compositor moves the
+                    // text, so NotchFun does no work per frame. The SwiftUI version
+                    // (ScrollingRow below) cost about 18% CPU while a long title scrolled.
+                    LayerScrollingText(text: text, font: NSFont.preferredFont(forTextStyle: nsFont),
+                                       color: NSColor(textColor), textWidth: textSize.width,
+                                       startDelay: minDuration)
+                        .frame(width: frameWidth, height: textSize.height * 1.3, alignment: .leading)
                 } else {
                     Text(text)
                         .font(font)
@@ -119,5 +123,93 @@ private struct ScrollingRow: View {
         )
         .background(backgroundColor)
         .onAppear { animate = true }
+    }
+}
+
+
+/// The text twice, scrolling left on a loop, animated by Core Animation.
+///
+/// One `CAAnimationGroup` repeats forever: a pause of `startDelay` with the start of the
+/// text readable, then one scroll by exactly one copy's width, after which the second
+/// copy sits where the first began and the loop restarts unseen. The animation lives in
+/// the render server; NotchFun's own process does nothing until the text changes.
+private struct LayerScrollingText: NSViewRepresentable {
+    let text: String
+    let font: NSFont
+    let color: NSColor
+    let textWidth: CGFloat
+    let startDelay: Double
+
+    func makeNSView(context: Context) -> MarqueeLayerView { MarqueeLayerView() }
+
+    func updateNSView(_ view: MarqueeLayerView, context: Context) {
+        view.configure(text: text, font: font, color: color, textWidth: textWidth, startDelay: startDelay)
+    }
+}
+
+final class MarqueeLayerView: NSView {
+    private let strip = CALayer()
+    private let first = CATextLayer()
+    private let second = CATextLayer()
+    private var configuration = ""
+    private var lineHeight: CGFloat = 0
+    private static let gap: CGFloat = 20
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.masksToBounds = true
+        layer?.addSublayer(strip)
+        strip.addSublayer(first)
+        strip.addSublayer(second)
+        for textLayer in [first, second] {
+            textLayer.truncationMode = .none
+            textLayer.isWrapped = false
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var isFlipped: Bool { true }
+
+    func configure(text: String, font: NSFont, color: NSColor, textWidth: CGFloat, startDelay: Double) {
+        let key = "\(text)|\(textWidth)|\(color)|\(font.fontName)|\(font.pointSize)"
+        guard key != configuration else { return }
+        configuration = key
+
+        let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+        let attributed = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color])
+        lineHeight = ceil(font.ascender - font.descender + font.leading)
+        let width = ceil(textWidth) + 2
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (index, textLayer) in [first, second].enumerated() {
+            textLayer.string = attributed
+            textLayer.contentsScale = scale
+            textLayer.frame = CGRect(x: CGFloat(index) * (ceil(textWidth) + Self.gap), y: 0, width: width, height: lineHeight)
+        }
+        strip.frame = CGRect(x: 0, y: (bounds.height - lineHeight) / 2, width: 2 * width + Self.gap, height: lineHeight)
+        CATransaction.commit()
+
+        strip.removeAllAnimations()
+        let distance = ceil(textWidth) + Self.gap
+        let scroll = CABasicAnimation(keyPath: "position.x")
+        scroll.byValue = -distance
+        scroll.beginTime = startDelay
+        scroll.duration = Double((textWidth + 10) / 30)
+        let loop = CAAnimationGroup()
+        loop.animations = [scroll]
+        loop.duration = startDelay + scroll.duration
+        loop.repeatCount = .infinity
+        loop.isRemovedOnCompletion = false
+        strip.add(loop, forKey: "marquee")
+    }
+
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        strip.frame.origin.y = (bounds.height - lineHeight) / 2
+        CATransaction.commit()
     }
 }

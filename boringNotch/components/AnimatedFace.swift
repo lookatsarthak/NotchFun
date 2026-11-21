@@ -78,19 +78,21 @@ struct MinimalFaceFeatures: View {
             case .working:
                 while !Task.isCancelled {
                     if CGDisplayIsAsleep(CGMainDisplayID()) == 0 { sparkleTurned.toggle() }
-                    try? await Task.sleep(for: .milliseconds(400))
+                    try? await Task.sleep(for: .milliseconds(600))
                 }
             case .waiting:
-                // A nudge on arrival and every 3 seconds until you answer: the one state
-                // that keeps asking. Each nudge is a short spring, so between them nothing
-                // redraws.
+                // A nudge on arrival, every 3 s for the first half minute, then every
+                // 15 s until you answer: the one state that keeps asking. A session can
+                // wait an hour while you're away, and a nudge every 3 s was 1.3% CPU for
+                // all of it; the wide eyes say "waiting" between nudges anyway.
+                let start = Date()
                 while !Task.isCancelled {
                     if CGDisplayIsAsleep(CGMainDisplayID()) == 0 {
                         withAnimation(NotchMotion.sneak) { pulse = true }
                         try? await Task.sleep(for: .milliseconds(280))
                         withAnimation(NotchMotion.sneak) { pulse = false }
                     }
-                    try? await Task.sleep(for: .seconds(3))
+                    try? await Task.sleep(for: .seconds(Date().timeIntervalSince(start) < 30 ? 3 : 15))
                 }
             case .done:
                 // One pulse on arrival, then stillness.
