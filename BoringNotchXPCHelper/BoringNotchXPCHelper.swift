@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import ImageIO
+import Vision
 import ApplicationServices
 import IOKit
 import CoreGraphics
@@ -186,6 +188,32 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
     /// the feature can exist at all.
     ///
     /// Raw bytes go back to the app, which owns the parsing.
+    @objc func recognizeText(in imageData: NSData, with reply: @escaping (NSString?) -> Void) {
+        DispatchQueue.global(qos: .utility).async {
+            reply(Self.recognizeText(imageData as Data) as NSString?)
+        }
+    }
+
+    /// Fast mode: about 60 ms for a screenshot, and it reads typed text fully. Images are
+    /// scaled down to 2400 px first, which is plenty for text and caps the memory.
+    private static func recognizeText(_ data: Data) -> String? {
+        guard data.count < 40_000_000,
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 2400,
+                  kCGImageSourceCreateThumbnailWithTransform: true,
+              ] as CFDictionary)
+        else { return nil }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .fast
+        request.usesLanguageCorrection = false
+        try? VNImageRequestHandler(cgImage: image).perform([request])
+        let lines = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        let text = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : String(text.prefix(8000))
+    }
+
     @objc func bluetoothProfileJSON(with reply: @escaping (NSData?) -> Void) {
         Self.profileQueue.async {
             reply(Self.runSystemProfiler())

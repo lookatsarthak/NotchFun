@@ -121,6 +121,7 @@ struct ClipboardView: View {
                         ClipboardRowView(
                             item: match.item,
                             highlightRanges: match.ranges,
+                            titleOverride: match.displayTitle,
                             shortcutLabel: shortcutLabel(for: match.item, among: results, at: index),
                             isSelected: match.item.id == selectedID,
                             cleansLink: cleanLinks && URLCleaner.wouldClean(match.item.title)
@@ -185,6 +186,13 @@ struct ClipboardView: View {
             clipboard.togglePin(id: item.id)
         }
         Button("Copy") { select(item) }
+        if let text = item.imageText, !text.isEmpty {
+            Button("Copy Text") {
+                clipboard.copyPlainText(text)
+                deactivate()
+                vm.close(force: true)
+            }
+        }
         if shelfEnabled {
             Button("Add to Shelf") { addToShelf(item) }
         }

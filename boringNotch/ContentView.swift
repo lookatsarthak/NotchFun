@@ -34,6 +34,8 @@ struct ContentView: View {
     @Default(.openNotchOnHover) private var openNotchOnHover
     @Default(.swipeToSkip) private var swipeToSkip
     @Default(.persistentTrackInfo) private var persistentTrackInfo
+    @Default(.closedNotchLyrics) private var closedNotchLyrics
+    @Default(.enableLyrics) private var enableLyrics
     @Default(.playerColorTinting) private var playerColorTinting
     @Default(.showAccessoryBattery) private var showAccessoryBattery
     @Default(.showPowerStatusNotifications) private var showPowerStatusNotifications
@@ -188,6 +190,15 @@ struct ContentView: View {
     /// The agent's expanding view doesn't push the face aside: the face is how it shows.
     private var expandingViewHidesFace: Bool {
         coordinator.expandingView.show && coordinator.expandingView.type != .agent
+    }
+
+    /// The synced lyric line under the closed notch: with the setting on, lyrics on, music
+    /// playing in the closed notch with synced lyrics, and nothing else using that space.
+    private var showsClosedNotchLyrics: Bool {
+        closedNotchLyrics && enableLyrics && vm.notchState == .closed && !vm.hideOnClosed
+            && musicManager.isPlaying && !musicManager.syncedLyrics.isEmpty
+            && coordinator.musicLiveActivityEnabled && !coordinator.expandingView.show
+            && !coordinator.sneakPeek.show
     }
 
     private var showsCaffeineBanner: Bool {
@@ -529,6 +540,11 @@ struct ContentView: View {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
                        }
 
+                      if showsClosedNotchLyrics {
+                          ClosedNotchLyricLine(width: max(0, computedChinWidth - 24))
+                              .padding(.bottom, 8)
+                      }
+
                       if coordinator.sneakPeek.show {
                           if (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && !inlineHUD && vm.notchState == .closed {
                               SystemEventIndicatorModifier(
@@ -566,7 +582,7 @@ struct ContentView: View {
                       }
                   }
               }
-              .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && sneakPeekStyles == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed))) { view in
+              .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && sneakPeekStyles == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed)) || showsClosedNotchLyrics) { view in
                   view
                       .fixedSize()
               }

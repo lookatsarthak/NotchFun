@@ -102,6 +102,15 @@ struct ClipboardSettings: View {
             }
 
             Section {
+                Defaults.Toggle(key: .clipboardImageText) {
+                    Text("Find text in copied images")
+                    Text("Search finds screenshots by the words in them, and right-click offers Copy Text. Read on this Mac; text that looks like a password is never kept.")
+                }
+            } header: {
+                Text("Images")
+            }
+
+            Section {
                 Defaults.Toggle(key: .clipboardPasteOnSelect) {
                     Text("Paste into the active app on select")
                 }

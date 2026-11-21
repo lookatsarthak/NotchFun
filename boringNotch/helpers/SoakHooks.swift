@@ -76,6 +76,9 @@ enum SoakHooks {
                 panel.cancel(nil)
             }
         }
+        on("lyricsdemo") { _ in
+            MusicManager.shared.showDemoLyrics()
+        }
         on("displaychange") { _ in
             AppDelegate.shared?.soakDisplayChange()
         }

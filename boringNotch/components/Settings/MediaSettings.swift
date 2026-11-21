@@ -101,6 +101,11 @@ struct Media: View {
                         customBadge(text: "Beta")
                     }
                 }
+                Defaults.Toggle(key: .closedNotchLyrics) {
+                    Text("Show the current line under the closed notch")
+                    Text("For songs with synced lyrics, while music plays. The line changes as the song goes; the notch is one line taller while it shows.")
+                }
+                .disabled(!enableLyrics)
             } header: {
                 Text("Media controls")
             }  footer: {

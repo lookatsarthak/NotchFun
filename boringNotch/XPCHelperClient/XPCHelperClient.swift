@@ -36,6 +36,10 @@ final class XPCHelperClient: NSObject {
     
     // MARK: - Connection Management (Main Actor Isolated)
     
+    func ensureRemoteServiceForExtensions() -> RemoteXPCService<BoringNotchXPCHelperProtocol> {
+        ensureRemoteService()
+    }
+
     private func ensureRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol> {
         if let existing = remoteService {
             return existing
@@ -271,6 +275,24 @@ final class XPCHelperClient: NSObject {
                 }
             }
             return result as Data?
+        } catch {
+            return nil
+        }
+    }
+}
+
+extension XPCHelperClient {
+    /// The text in an image, read by the helper. Nil if there is none or the helper is
+    /// unreachable.
+    func recognizeText(in data: Data) async -> String? {
+        do {
+            let service = ensureRemoteServiceForExtensions()
+            let result: NSString? = try await service.withContinuation { service, continuation in
+                service.recognizeText(in: data as NSData) { text in
+                    continuation.resume(returning: text)
+                }
+            }
+            return result as String?
         } catch {
             return nil
         }

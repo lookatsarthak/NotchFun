@@ -207,15 +207,7 @@ struct MusicControlsView: View {
         }
     }
 
-    private var lyricRedrawDates: [Date] {
-        let now = Date()
-        guard musicManager.isPlaying, !musicManager.syncedLyrics.isEmpty else { return [now] }
-        let elapsed = musicManager.elapsedTime + now.timeIntervalSince(musicManager.timestampDate) * musicManager.playbackRate
-        return [now] + Lyrics.upcomingLineDates(
-            after: elapsed, in: musicManager.syncedLyrics,
-            clockDate: musicManager.timestampDate, clockElapsed: musicManager.elapsedTime,
-            rate: musicManager.playbackRate)
-    }
+    private var lyricRedrawDates: [Date] { musicManager.lyricRedrawDates() }
 
     private var musicSlider: some View {
         // Ten times a second while playing, not at all while paused. This read

@@ -249,6 +249,38 @@ final class ClipboardStateViewModel: ObservableObject {
         // on screen (setup's "Try it"), since visibleItems only moves while presenting.
         // Nothing observes it otherwise, so it costs nothing.
         NotificationCenter.default.post(name: .clipboardHistoryDidCapture, object: nil)
+
+        if item.kind == .image { readText(of: item) }
+    }
+
+    /// Reads the text in an image clip, once, for search and Copy Text.
+    ///
+    /// In the XPC helper, not here: Apple's text recognition takes about 140 MB while it
+    /// runs, against NotchFun's 26-40 MB, and the helper hands that back when it goes
+    /// idle. Fast mode takes about 60 ms for a screenshot. Text that looks like a
+    /// password or key is dropped, by the same check copied text gets.
+    private func readText(of item: ClipboardItem) {
+        guard Defaults[.clipboardImageText], item.imageText == nil,
+              let data = imageData(of: item) else { return }
+        Task { [weak self] in
+            guard let text = await XPCHelperClient.shared.recognizeText(in: data),
+                  !text.isEmpty, !ClipboardSecretHeuristic.looksSensitive(text),
+                  let self, self.history.setImageText(text, id: item.id)
+            else { return }
+            if self.canPersist { self.persistence.scheduleSave(self.history.items) }
+            self.needsRefresh = true
+            self.refreshIfPresenting()
+        }
+    }
+
+    /// Puts text on the pasteboard as plain text, marked as NotchFun's own so it isn't
+    /// recorded again as a new clip. For Copy Text on an image.
+    func copyPlainText(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        pasteboard.setData(Data(), forType: .fromNotchFun)
+        ClipboardMonitor.shared.acknowledgeSelfCopy()
     }
 
     /// Entries with exactly this title, read from the full history rather than

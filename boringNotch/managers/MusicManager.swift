@@ -546,6 +546,35 @@ class MusicManager {
 
     /// The line being sung at `elapsed`: empty before the first line starts, the plain
     /// lyrics when there are no timings.
+    #if NOTCHFUN_SOAK
+    /// Invented synced lyrics, one line every 3 s from the current position, for testing.
+    func showDemoLyrics() {
+        let start = elapsed(at: Date())
+        let lines = ["the city hums a quiet tune", "and every window holds a light",
+                     "we walk until the morning comes", "and call the empty streets our own",
+                     "the city hums a quiet tune", "and every window holds a light"]
+        syncedLyrics = lines.enumerated().map { LyricLine(time: start + 1 + Double($0.offset) * 3, text: $0.element) }
+    }
+    #endif
+
+    /// When the shown lyric line next changes: now, then each upcoming line start on the
+    /// playback clock. For a TimelineView, so lyrics redraw once per line and at no other
+    /// time. Just now while paused or without synced lyrics.
+    func lyricRedrawDates(now: Date = Date()) -> [Date] {
+        guard isPlaying, !syncedLyrics.isEmpty else { return [now] }
+        let elapsed = elapsedTime + now.timeIntervalSince(timestampDate) * playbackRate
+        return [now] + Lyrics.upcomingLineDates(
+            after: elapsed, in: syncedLyrics,
+            clockDate: timestampDate, clockElapsed: elapsedTime, rate: playbackRate)
+    }
+
+    /// The playback position at `date`, following the clock while playing.
+    func elapsed(at date: Date) -> Double {
+        guard isPlaying else { return elapsedTime }
+        let progressed = elapsedTime + date.timeIntervalSince(timestampDate) * playbackRate
+        return min(max(progressed, 0), songDuration)
+    }
+
     func lyricLine(at elapsed: Double) -> String {
         guard !syncedLyrics.isEmpty else { return currentLyrics }
         return Lyrics.lineIndex(at: elapsed, in: syncedLyrics).map { syncedLyrics[$0].text } ?? ""

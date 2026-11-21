@@ -14,8 +14,12 @@ enum ClipboardSearchService {
 
     struct Match {
         let item: ClipboardItem
-        /// Ranges of `item.title` that matched, for highlighting.
+        /// Ranges that matched, for highlighting: in `item.title`, or in `displayTitle`
+        /// when there is one.
         let ranges: [Range<String.Index>]
+        /// For an image found by the text in it: the line that matched, shown in place of
+        /// the image's title so you can see why it's in the results.
+        var displayTitle: String? = nil
     }
 
     static func search(_ query: String, in items: [ClipboardItem]) -> [Match] {
@@ -25,6 +29,7 @@ enum ClipboardSearchService {
         }
 
         var exact: [Match] = []
+        var inImages: [Match] = []
         var fuzzy: [Match] = []
 
         for item in items {
@@ -33,13 +38,30 @@ enum ClipboardSearchService {
                 options: [.caseInsensitive, .diacriticInsensitive]
             ) {
                 exact.append(Match(item: item, ranges: [range]))
+            } else if let match = imageTextMatch(trimmed, in: item) {
+                inImages.append(match)
             } else if let ranges = subsequenceRanges(of: trimmed, in: item.title) {
                 fuzzy.append(Match(item: item, ranges: ranges))
             }
         }
 
-        // Exact hits first; both groups keep the history's own recency order.
-        return exact + fuzzy
+        // Exact title hits first, then images whose text contains the query, then the
+        // loose in-order matches; each group keeps the history's own recency order. Text
+        // in images is only matched exactly: read text is noisy, and loose matching over
+        // a page of it would find almost anything.
+        return exact + inImages + fuzzy
+    }
+
+    /// The line of an image's text that contains the query, with the match's range in it.
+    private static func imageTextMatch(_ query: String, in item: ClipboardItem) -> Match? {
+        guard let text = item.imageText else { return nil }
+        for line in text.split(whereSeparator: \.isNewline) {
+            let line = String(line).trimmingCharacters(in: .whitespaces)
+            if let range = line.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) {
+                return Match(item: item, ranges: [range], displayTitle: line)
+            }
+        }
+        return nil
     }
 
     /// Matches every character of `needle` in order within `haystack`, returning the

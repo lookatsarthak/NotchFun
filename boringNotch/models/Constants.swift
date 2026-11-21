@@ -164,6 +164,8 @@ extension Defaults.Keys {
     static let sneakPeekStyles = Key<SneakPeekStyle>("sneakPeekStyles", default: .standard)
     /// Keep the title and artist beside the closed notch while music plays.
     static let persistentTrackInfo = Key<Bool>("persistentTrackInfo", default: false)
+    /// The current synced lyric line under the closed notch while music plays.
+    static let closedNotchLyrics = Key<Bool>("closedNotchLyrics", default: false)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
     /// Shrink the album art and spectrum beside the closed notch, so a playing track
@@ -285,6 +287,8 @@ extension Defaults.Keys {
     static let clipboardMaxPayloadMB = Key<Int>("clipboardMaxPayloadMB", default: 32)
     /// Escape hatch for layouts where the Command key switches to QWERTY. 9 = ANSI "v".
     static let clipboardPasteKeyCode = Key<Int>("clipboardPasteKeyCode", default: 9)
+    /// Read the text in copied images, on this Mac, for search and Copy Text.
+    static let clipboardImageText = Key<Bool>("clipboardImageText", default: true)
 
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

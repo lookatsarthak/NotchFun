@@ -27,6 +27,10 @@ struct ClipboardItem: Codable, Identifiable, Equatable, Hashable, Sendable {
     var numberOfCopies: Int
     /// A single character used as the quick-select shortcut while pinned. `nil` = unpinned.
     var pin: String?
+    /// Text read from an image clip, on this Mac, for search and Copy Text. Nil for
+    /// everything else, for images with no text, and for text that looked like a secret.
+    /// Missing in older history files, which load with nil.
+    var imageText: String? = nil
 
     var isPinned: Bool { pin != nil }
 

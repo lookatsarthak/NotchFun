@@ -31,4 +31,11 @@ import Foundation
     // needs NSXPCInterface.setClasses(_:for:argumentIndex:ofReply:), and forgetting it
     // fails at runtime with an empty reply - indistinguishable from "nothing connected".
     func bluetoothProfileJSON(with reply: @escaping (NSData?) -> Void)
+
+    // Text in a copied image (performed by the helper)
+    //
+    // Apple's text recognition takes about 140 MB while it runs; doing it here keeps
+    // that out of the app. Returns the recognised lines joined by newlines, or nil when
+    // there's no text or the image can't be read.
+    func recognizeText(in imageData: NSData, with reply: @escaping (NSString?) -> Void)
 }

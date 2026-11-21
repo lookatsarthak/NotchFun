@@ -99,6 +99,14 @@ struct ClipboardHistory {
         return items.remove(at: index)
     }
 
+    /// Stores the text read from an image clip. False if the entry has gone meanwhile.
+    @discardableResult
+    mutating func setImageText(_ text: String?, id: UUID) -> Bool {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return false }
+        items[index].imageText = text
+        return true
+    }
+
     /// Toggles the pin, assigning an unused quick-select character when pinning.
     @discardableResult
     mutating func togglePin(id: UUID) -> ClipboardItem? {

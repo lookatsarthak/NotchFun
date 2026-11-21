@@ -13,6 +13,8 @@ import SwiftUI
 struct ClipboardRowView: View, Equatable {
     let item: ClipboardItem
     var highlightRanges: [Range<String.Index>] = []
+    /// Shown instead of the title: the matched line of an image's text during a search.
+    var titleOverride: String? = nil
     let shortcutLabel: String?
     let isSelected: Bool
     /// Whether pasting this entry will rewrite it. Passed in rather than computed here
@@ -29,6 +31,7 @@ struct ClipboardRowView: View, Equatable {
             && lhs.isSelected == rhs.isSelected
             && lhs.cleansLink == rhs.cleansLink
             && lhs.highlightRanges == rhs.highlightRanges
+            && lhs.titleOverride == rhs.titleOverride
     }
 
     var body: some View {
@@ -78,6 +81,9 @@ struct ClipboardRowView: View, Equatable {
 
     /// Emphasises the characters that matched the search query.
     private var label: AttributedString {
+        if let titleOverride {
+            return ClipboardSearchService.highlighted(titleOverride, ranges: highlightRanges)
+        }
         let title = item.title.isEmpty ? "Image" : item.title
         guard !highlightRanges.isEmpty, !item.title.isEmpty else {
             return AttributedString(title)
