@@ -12,6 +12,7 @@ import SwiftUI
 struct Appearance: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.mirrorShape) var mirrorShape
+    @Default(.mirrorCameraID) private var mirrorCameraID
     @Default(.sliderColor) var sliderColor
 
     let icons: [String] = ["logo2"]
@@ -70,6 +71,18 @@ struct Appearance: View {
                         .tag(MirrorShapeEnum.circle)
                     Text("Square")
                         .tag(MirrorShapeEnum.rectangle)
+                }
+                Picker("Mirror camera", selection: $mirrorCameraID) {
+                    // Nil follows CameraChoice: the built-in camera, or the best one there is.
+                    Text(WebcamManager.availableCameras().contains { $0.deviceType == .builtInWideAngleCamera } ? "Built-in" : "Automatic")
+                        .tag(String?.none)
+                    ForEach(WebcamManager.availableCameras().filter { $0.deviceType != .builtInWideAngleCamera }, id: \.uniqueID) { device in
+                        Text(device.localizedName).tag(String?.some(device.uniqueID))
+                    }
+                }
+                .onChange(of: mirrorCameraID) { WebcamManager.shared.cameraChoiceChanged() }
+                Defaults.Toggle(key: .mirrorFlipped) {
+                    Text("Flip the picture, like a mirror")
                 }
                 Defaults.Toggle(key: .showNotHumanFace) {
                     Text("Show cool face animation while inactive")

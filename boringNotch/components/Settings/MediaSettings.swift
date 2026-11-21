@@ -61,6 +61,11 @@ struct Media: View {
                         Text(style.rawValue).tag(style)
                     }
                 }
+                Defaults.Toggle(key: .persistentTrackInfo) {
+                    Text("Keep the track beside the notch while music plays")
+                    Text("The title on the left and the artist on the right, all the time instead of a few seconds after each change.")
+                }
+                .disabled(!coordinator.musicLiveActivityEnabled)
                 HStack {
                     Stepper(value: $waitInterval, in: 0...10, step: 1) {
                         HStack {

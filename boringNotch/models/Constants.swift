@@ -76,6 +76,8 @@ extension Defaults.Keys {
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
+    /// Move the notch to the display of the app you switch to.
+    static let notchFollowsActiveDisplay = Key<Bool>("notchFollowsActiveDisplay", default: false)
 
     // MARK: Setup
     /// The setup version last finished; 0 for never. Compared with OnboardingPlan.version
@@ -102,6 +104,8 @@ extension Defaults.Keys {
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
+    /// Bundle IDs of apps in which hovering doesn't open the notch.
+    static let hoverSuppressedApps = Key<[String]>("hoverSuppressedApps", default: [])
     static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
     static let notchHeightMode = Key<WindowHeightMode>(
         "notchHeightMode",
@@ -145,11 +149,21 @@ extension Defaults.Keys {
     static let enableGestures = Key<Bool>("enableGestures", default: true)
     static let closeGestureEnabled = Key<Bool>("closeGestureEnabled", default: true)
     static let gestureSensitivity = Key<CGFloat>("gestureSensitivity", default: 200.0)
+    /// Two-finger swipe left or right on the music in the notch skips tracks.
+    static let swipeToSkip = Key<Bool>("swipeToSkip", default: true)
+
+    // MARK: Mirror
+    /// The camera's unique ID. Nil means the built-in camera.
+    static let mirrorCameraID = Key<String?>("mirrorCameraID", default: nil)
+    /// Show the picture flipped, as a mirror does. Off shows it as others see you.
+    static let mirrorFlipped = Key<Bool>("mirrorFlipped", default: true)
     
     // MARK: Media playback
     static let coloredSpectrogram = Key<Bool>("coloredSpectrogram", default: true)
     static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: false)
     static let sneakPeekStyles = Key<SneakPeekStyle>("sneakPeekStyles", default: .standard)
+    /// Keep the title and artist beside the closed notch while music plays.
+    static let persistentTrackInfo = Key<Bool>("persistentTrackInfo", default: false)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
     /// Shrink the album art and spectrum beside the closed notch, so a playing track
@@ -279,6 +293,10 @@ extension Defaults.Keys {
     static let autoScrollToNextEvent = Key<Bool>("autoScrollToNextEvent", default: true)
     /// "Standup in 2 min" in the closed notch before calls that have a link.
     static let showMeetingReminders = Key<Bool>("showMeetingReminders", default: true)
+
+    // MARK: Messages
+    /// Show messages from the "Show in Notch" action and notchfun://show links.
+    static let allowNotchMessages = Key<Bool>("allowNotchMessages", default: true)
     
     // MARK: Fullscreen Media Detection
     static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)

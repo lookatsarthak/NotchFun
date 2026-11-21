@@ -29,6 +29,7 @@ struct GeneralSettings: View {
     @Default(.automaticallySwitchDisplay) var automaticallySwitchDisplay
     @Default(.enableGestures) var enableGestures
     @Default(.openNotchOnHover) var openNotchOnHover
+    @AppStorage(NotchMotionStyle.defaultsKey) private var motionStyle: NotchMotionStyle = .standard
     
 
     var body: some View {
@@ -77,6 +78,11 @@ struct GeneralSettings: View {
                             name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
                     }
                     .disabled(showOnAllDisplays)
+                Defaults.Toggle(key: .notchFollowsActiveDisplay) {
+                    Text("Follow the active display")
+                    Text("Moves the notch to the display of the app you switch to.")
+                }
+                .disabled(showOnAllDisplays)
             } header: {
                 Text("System features")
             }
@@ -168,6 +174,10 @@ struct GeneralSettings: View {
 
             NotchBehaviour()
 
+            if openNotchOnHover {
+                HoverSuppressedAppsSection()
+            }
+
             gestureControls()
         }
         .toolbar {
@@ -208,6 +218,9 @@ struct GeneralSettings: View {
                     }
                 }
             }
+            Defaults.Toggle(key: .swipeToSkip) {
+                Text("Swipe on the music to skip tracks")
+            }
         } header: {
             HStack {
                 Text("Gesture control")
@@ -215,7 +228,7 @@ struct GeneralSettings: View {
             }
         } footer: {
             Text(
-                "Two-finger swipe up on notch to close, two-finger swipe down on notch to open when **Open notch on hover** option is disabled"
+                "Two-finger swipe up on the notch to close it, or down to open it when **Open notch on hover** is off. Swipe left on the music for the next track, right for the previous one."
             )
             .multilineTextAlignment(.trailing)
             .foregroundStyle(.secondary)
@@ -233,6 +246,12 @@ struct GeneralSettings: View {
                     Text("Enable haptic feedback")
             }
             Toggle("Remember last tab", isOn: $coordinator.openLastTabByDefault)
+            Picker("Motion", selection: $motionStyle) {
+                ForEach(NotchMotionStyle.allCases, id: \.self) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            .help("How much the notch bounces when it opens. Reduce Motion in System Settings overrides this.")
             if openNotchOnHover {
                 Slider(value: $minimumHoverDuration, in: 0...1, step: 0.1) {
                     HStack {

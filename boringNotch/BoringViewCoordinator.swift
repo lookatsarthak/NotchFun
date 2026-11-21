@@ -20,6 +20,7 @@ enum SneakContentType {
     case caffeine
     case accessoryBattery
     case meeting
+    case message
 }
 
 struct sneakPeek {
@@ -335,7 +336,11 @@ class BoringViewCoordinator: ObservableObject {
             if expandingView.show {
                 expandingViewTask?.cancel()
                 // Long enough to read a meeting title and reach for it; the rest are a glance.
-                let duration: TimeInterval = expandingView.type == .meeting ? MeetingReminder.bannerDuration : 3
+                let duration: TimeInterval = switch expandingView.type {
+                case .meeting: MeetingReminder.bannerDuration
+                case .message: NotchMessageCenter.shared.current?.seconds ?? NotchMessage.defaultSeconds
+                default: 3
+                }
                 let currentType = expandingView.type
                 expandingViewTask = Task { [weak self] in
                     try? await Task.sleep(for: .seconds(duration))

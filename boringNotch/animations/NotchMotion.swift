@@ -24,15 +24,65 @@ import SwiftUI
 /// `spring(response: 0.42, dampingFraction: 0.8)` is the same spring as
 /// `spring(duration: 0.42, bounce: 0.20)`, since response is the natural period and bounce
 /// is one minus the damping ratio. The notch itself does not change.
+/// How much the notch moves, from Settings → General → Motion.
+///
+/// Only the notch's own movement changes: opening, closing and the banners beside it.
+/// Content inside it keeps one speed, so lists and tabs don't feel different from app to
+/// app. Reduce Motion in System Settings overrides all three.
+enum NotchMotionStyle: String, CaseIterable, Sendable {
+    /// No overshoot, a touch quicker. For people who find the bounce too much.
+    case calm
+    /// The original springs.
+    case standard
+    /// More give: a longer, bouncier open.
+    case lively
+
+    /// The settings key. Stored as the raw string, through @AppStorage, so this file
+    /// needs no Defaults import (it's also compiled into the standalone test bundle).
+    static let defaultsKey = "notchMotionStyle"
+
+    static var current: NotchMotionStyle {
+        UserDefaults.standard.string(forKey: defaultsKey).flatMap(NotchMotionStyle.init) ?? .standard
+    }
+
+    var title: String {
+        switch self {
+        case .calm: return "Calm"
+        case .standard: return "Standard"
+        case .lively: return "Lively"
+        }
+    }
+
+    /// (duration, bounce) for the shell opening and the closed-notch banners.
+    var openSpring: (duration: Double, bounce: Double) {
+        switch self {
+        case .calm: return (0.36, 0)
+        case .standard: return (0.42, 0.20)
+        case .lively: return (0.50, 0.32)
+        }
+    }
+
+    var closeDuration: Double {
+        switch self {
+        case .calm: return 0.36
+        case .standard, .lively: return 0.45
+        }
+    }
+}
+
 enum NotchMotion {
 
     /// The shell expanding. The only token with overshoot: this is the one place the app
-    /// should feel like a physical object rather than a resizing rectangle.
-    static var shellOpen: Animation { resolve(.spring(duration: 0.42, bounce: 0.20)) }
+    /// should feel like a physical object rather than a resizing rectangle. Calm takes the
+    /// overshoot away; Lively adds to it.
+    static var shellOpen: Animation {
+        let spring = NotchMotionStyle.current.openSpring
+        return resolve(.spring(duration: spring.duration, bounce: spring.bounce))
+    }
 
-    /// The shell collapsing. No bounce — a wobble on the way out reads as a glitch, and
-    /// the asymmetry with `shellOpen` is deliberate rather than an oversight.
-    static var shellClose: Animation { resolve(.spring(duration: 0.45, bounce: 0)) }
+    /// The shell collapsing. No bounce in any style — a wobble on the way out reads as a
+    /// glitch, and the asymmetry with `shellOpen` is deliberate rather than an oversight.
+    static var shellClose: Animation { resolve(.spring(duration: NotchMotionStyle.current.closeDuration, bounce: 0)) }
 
     /// The closed notch widening beside the hardware for a moment - the volume and
     /// brightness popups, the caffeine, charging and AirPods banners - and settling back.
@@ -41,7 +91,10 @@ enum NotchMotion {
     /// edge of the screen, and a little give at each end reads as the notch reacting
     /// rather than a rectangle being resized. It only ever widens or narrows the black
     /// shape beside the cutout, so the overshoot never uncovers anything.
-    static var sneak: Animation { resolve(.spring(duration: 0.42, bounce: 0.20)) }
+    static var sneak: Animation {
+        let spring = NotchMotionStyle.current.openSpring
+        return resolve(.spring(duration: spring.duration, bounce: spring.bounce))
+    }
 
     /// Anything living inside the notch: tab swaps, list rows, HUD bars.
     static var content: Animation { resolve(.spring(duration: 0.28, bounce: 0)) }

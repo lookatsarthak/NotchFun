@@ -14,12 +14,17 @@ import SwiftUI
 
 struct MusicPlayerView: View {
     @Environment(BoringViewModel.self) var vm
+    @Default(.swipeToSkip) private var swipeToSkip
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
         HStack {
             AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
             MusicControlsView().drawingGroup().compositingGroup()
+        }
+        // Over the player only: the calendar beside it scrolls sideways itself.
+        .horizontalSwipe(enabled: swipeToSkip) { swipe in
+            MusicManager.shared.skip(swipe)
         }
     }
 }
@@ -300,6 +305,8 @@ struct MusicControlsView: View {
             HoverButton(icon: "goforward.15", scale: .medium) {
                 MusicManager.shared.skip(seconds: 15)
             }
+        case .output:
+            AudioOutputButton()
         case .none:
             Color.clear.frame(height: 1)
         }

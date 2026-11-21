@@ -5,6 +5,7 @@
 //  Created by Harsh Vardhan  Goswami  on 19/08/24.
 //
 import AVFoundation
+import Defaults
 import SwiftUI
 
 @Observable
@@ -103,13 +104,48 @@ class WebcamManager: NSObject {
         }
     }
     
-    /// Checks if any camera devices are available and sets up capture session if needed
-    func checkCameraAvailability() {
-        let availableDevices = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.external, .builtInWideAngleCamera],
+    /// Every camera the mirror could use, Continuity Camera included.
+    static func availableCameras() -> [AVCaptureDevice] {
+        AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera, .external, .continuityCamera],
             mediaType: .video,
             position: .unspecified
         ).devices
+    }
+
+    /// The camera from Settings if it's connected, otherwise the built-in one. See `CameraChoice`.
+    static func preferredCamera() -> AVCaptureDevice? {
+        let devices = availableCameras()
+        let cameras = devices.map { device in
+            CameraChoice.Camera(id: device.uniqueID, kind: {
+                switch device.deviceType {
+                case .builtInWideAngleCamera: return .builtIn
+                case .continuityCamera: return .continuity
+                default: return .external
+                }
+            }())
+        }
+        guard let pick = CameraChoice.pick(from: cameras, chosen: Defaults[.mirrorCameraID]) else { return nil }
+        return devices.first { $0.uniqueID == pick.id }
+    }
+
+    /// Settings picked another camera: rebuild the session on it, and keep it running if
+    /// it was.
+    func cameraChoiceChanged() {
+        sessionQueue.async { [weak self] in
+            guard let self, let session = self.captureSession else { return }
+            let wasRunning = session.isRunning
+            self.cleanupExistingSession()
+            guard wasRunning else { return }
+            self.setupCaptureSession { success in
+                if success { self.startRunningCaptureSession() }
+            }
+        }
+    }
+
+    /// Checks if any camera devices are available and sets up capture session if needed
+    func checkCameraAvailability() {
+        let availableDevices = Self.availableCameras()
         
         let hasAvailableDevices = !availableDevices.isEmpty
         
@@ -132,14 +168,7 @@ class WebcamManager: NSObject {
             let session = AVCaptureSession()
             
             do {
-                // Get available devices and prefer external camera if available
-                let discoverySession = AVCaptureDevice.DiscoverySession(
-                    deviceTypes: [.external, .builtInWideAngleCamera],
-                    mediaType: .video,
-                    position: .unspecified
-                )
-                
-                guard let videoDevice = discoverySession.devices.first else {
+                guard let videoDevice = Self.preferredCamera() else {
                     NSLog("No video devices available")
                     DispatchQueue.main.async {
                         self.isSessionRunning = false

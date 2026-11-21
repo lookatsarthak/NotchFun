@@ -37,15 +37,28 @@ you need:
   of the giant square in the middle of your screen.
 - **AirPods battery** — left, right and case, shown when you connect them, and beside
   the Mac's own battery while the notch is open.
-- **Shortcuts** — five actions in Shortcuts.app, so caffeine, the clipboard and the
-  notch itself can be driven from an automation or Spotlight.
+- **Shortcuts and links** — six actions in Shortcuts.app and `notchfun://` links, so
+  caffeine, the clipboard, the notch and your own messages can be driven from an
+  automation, a script or Spotlight.
 
 ## Shortcuts
 
-NotchFun shows up in Shortcuts.app with five actions: **Set Caffeine** (with a duration,
-which a keyboard shortcut cannot express), **Open Notch** (optionally on a given tab),
-**Close Notch**, **Paste as Plain Text**, and **Set Clipboard History** — handy for
-switching recording off by itself before a screen share.
+NotchFun shows up in Shortcuts.app with six actions: **Show in Notch**, **Set Caffeine**
+(with a duration, which a keyboard shortcut cannot express), **Open Notch** (optionally
+on a given tab), **Close Notch**, **Paste as Plain Text**, and **Set Clipboard History** —
+handy for switching recording off by itself before a screen share.
+
+**Show in Notch** puts a short line in the closed notch for a few seconds, with an
+optional SF Symbol and progress ring: build status, a timer, the weather, anything a
+script knows. The same works from a link, so any script or terminal can do it:
+
+```bash
+open "notchfun://show?text=Build%20passed&icon=checkmark.circle.fill&seconds=5"
+```
+
+`notchfun://open?tab=shelf` and `notchfun://close` work too. Messages are text only and
+can't open anything, more than five in ten seconds are dropped, and Settings → Shortcuts
+can switch them off.
 
 Three of them also answer to Spotlight: *"Toggle caffeine in NotchFun"*, *"Open
 NotchFun"*, *"Paste plain text with NotchFun"*.

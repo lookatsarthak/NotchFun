@@ -84,6 +84,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
     private var caffeineObserver: AnyCancellable?
 
+    /// notchfun:// links. See `NotchURLCommand` for what they can ask.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls { NotchMessageCenter.shared.handle(url) }
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
     }
@@ -620,6 +625,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
         }
         observeCaffeineChanges()
+        observeActiveDisplay()
 
         // Pasteboard polling is pointless while the machine is asleep, so pause it.
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -728,6 +734,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         audioPlayer.play(fileName: "boring", fileExtension: "m4a")
     }
 
+    #if NOTCHFUN_SOAK
+    /// Runs the display-change path as if the layout had changed, for the soak.
+    func soakDisplayChange() {
+        previousLayout = []
+        screenConfigurationDidChange()
+    }
+    #endif
+
     @objc func screenConfigurationDidChange() {
         // First: everything below looks screens up by UUID, and a stale entry still answers
         // with the old frame. That put the notch at the old top edge, which after mirroring
@@ -739,13 +753,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         previousLayout = layout
 
         if screensChanged {
+            // The windows are moved, not rebuilt. A closed notch window is never freed by
+            // AppKit (see `retire`), so rebuilding on every display change left an empty
+            // window shell behind each time, as screen locks did before 2.0. Their size
+            // doesn't depend on the display, so moving them is enough;
+            // `adjustWindowPosition` still retires the window of a display that's gone.
             DispatchQueue.main.async { [weak self] in
-                self?.cleanupWindows()
                 self?.adjustWindowPosition()
                 self?.setupDragDetectors()
             }
         }
         scheduleRepositioning()
+    }
+
+    /// "Follow the active display": the notch moves to the display of the app you switch
+    /// to. Driven by app and Space switches, so nothing runs while you stay put. Only while
+    /// the notch is closed, so it never jumps away from under the pointer.
+    private func observeActiveDisplay() {
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didActivateApplicationNotification, NSWorkspace.activeSpaceDidChangeNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.followActiveDisplay() }
+            }
+        }
+    }
+
+    @MainActor
+    private func followActiveDisplay() {
+        guard Defaults[.notchFollowsActiveDisplay], !Defaults[.showOnAllDisplays],
+              NSScreen.screens.count > 1, vm.notchState == .closed,
+              // The screen with the frontmost app's focused window and the active menu bar.
+              let active = NSScreen.main, let uuid = active.displayUUID,
+              uuid != coordinator.selectedScreenUUID
+        else { return }
+        coordinator.selectedScreenUUID = uuid
+        adjustWindowPosition()
+        setupDragDetectors()
     }
 
     @objc func adjustWindowPosition(changeAlpha: Bool = false) {
@@ -784,7 +827,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             let selectedScreen: NSScreen
 
-            if let preferredScreen = NSScreen.screen(withUUID: coordinator.preferredScreenUUID ?? "") {
+            if Defaults[.notchFollowsActiveDisplay],
+               let current = NSScreen.screen(withUUID: coordinator.selectedScreenUUID) {
+                // Following the active display: stay where it last moved, while that
+                // display is still there.
+                selectedScreen = current
+            } else if let preferredScreen = NSScreen.screen(withUUID: coordinator.preferredScreenUUID ?? "") {
                 coordinator.selectedScreenUUID = coordinator.preferredScreenUUID ?? ""
                 selectedScreen = preferredScreen
             } else if Defaults[.automaticallySwitchDisplay], let mainScreen = NSScreen.main,

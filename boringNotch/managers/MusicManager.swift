@@ -674,6 +674,18 @@ class MusicManager {
         }
     }
 
+    /// A two-finger swipe on the music: left for the next track, right for the previous,
+    /// with a tick on the trackpad.
+    func skip(_ swipe: HorizontalSwipeDetector.Swipe) {
+        switch swipe {
+        case .next: nextTrack()
+        case .previous: previousTrack()
+        }
+        if Defaults[.enableHaptics] {
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        }
+    }
+
     func nextTrack() {
         Task {
             await activeController?.nextTrack()

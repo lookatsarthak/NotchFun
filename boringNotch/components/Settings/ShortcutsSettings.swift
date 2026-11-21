@@ -5,6 +5,7 @@
 //  Created by Richard Kunkli on 07/08/2024.
 //
 
+import Defaults
 import KeyboardShortcuts
 import SwiftUI
 
@@ -34,6 +35,20 @@ struct Shortcuts: View {
             } footer: {
                 Text(
                     "Unset by default — ⌘F1 and ⌘F2 already toggle display mirroring on most Macs, so NotchFun will not take them without being asked."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            }
+            Section {
+                Defaults.Toggle(key: .allowNotchMessages) {
+                    Text("Show messages from Shortcuts and links")
+                }
+            } header: {
+                Text("Messages")
+            } footer: {
+                Text(
+                    "The Show in Notch action, or a link like notchfun://show?text=Build%20passed&icon=checkmark.circle, shows a line in the closed notch for a few seconds. Text only: a message can't open anything, and more than five in ten seconds are dropped."
                 )
                 .multilineTextAlignment(.trailing)
                 .foregroundStyle(.secondary)

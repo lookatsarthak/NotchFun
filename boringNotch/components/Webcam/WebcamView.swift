@@ -12,6 +12,8 @@ import SwiftUI
 struct CameraPreviewView: View {
     let webcamManager: WebcamManager
     
+    @Default(.mirrorFlipped) private var mirrorFlipped
+
     // Track if authorization request is in progress to avoid multiple requests
     @State private var isRequestingAuthorization: Bool = false
 
@@ -20,7 +22,7 @@ struct CameraPreviewView: View {
             ZStack {
                 if let previewLayer = webcamManager.previewLayer {
                     CameraPreviewLayerView(previewLayer: previewLayer)
-                        .scaleEffect(x: -1, y: 1)
+                        .scaleEffect(x: mirrorFlipped ? -1 : 1, y: 1)
                         .clipShape(
                             mirrorShape(
                                 rectangleRadius: Defaults[.cornerRadiusScaling]

@@ -31,7 +31,6 @@ struct MeetingNotification: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            .frame(maxWidth: 180, alignment: .trailing)
         } trailing: {
             Text(startsIn)
                 .font(.subheadline.monospacedDigit())

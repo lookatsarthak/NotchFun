@@ -17,6 +17,7 @@ import AppKit
 /// Post `<bundle id>.soak.<command>` as a distributed notification; the object, if any,
 /// is the argument.
 ///   lockcycle      run the lock handler, then the unlock handler 0.6 s later
+///   displaychange  run the display-change handler as if the layout had changed
 ///   open [tab]     open the notch (home, shelf or clipboard) and keep it open
 ///   close          close the notch
 ///   shelfdemo      put demo files, a link and a text item on the shelf
@@ -44,6 +45,9 @@ enum SoakHooks {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 delegate.onScreenUnlocked(Notification(name: Notification.Name("com.apple.screenIsUnlocked")))
             }
+        }
+        on("displaychange") { _ in
+            AppDelegate.shared?.soakDisplayChange()
         }
         on("open") { argument in
             let tab: NotchViews? = switch argument {

@@ -32,6 +32,8 @@ struct ContentView: View {
     @Default(.inlineHUD) private var inlineHUD
     @Default(.minimumHoverDuration) private var minimumHoverDuration
     @Default(.openNotchOnHover) private var openNotchOnHover
+    @Default(.swipeToSkip) private var swipeToSkip
+    @Default(.persistentTrackInfo) private var persistentTrackInfo
     @Default(.playerColorTinting) private var playerColorTinting
     @Default(.showAccessoryBattery) private var showAccessoryBattery
     @Default(.showPowerStatusNotifications) private var showPowerStatusNotifications
@@ -44,6 +46,7 @@ struct ContentView: View {
     let batteryModel = BatteryStatusViewModel.shared
     let accessoryBattery = AccessoryBatteryManager.shared
     let meetingReminder = MeetingReminder.shared
+    let messageCenter = NotchMessageCenter.shared
     let brightnessManager = BrightnessManager.shared
     let volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -102,7 +105,7 @@ struct ContentView: View {
     /// Wide enough for any banner row, which is a different thing from the open notch's
     /// width even though both happen to be 640. Naming it stops the two being conflated:
     /// a banner's hover area has no business changing because the open notch was resized.
-    private static let bannerChinWidth: CGFloat = 640
+    private static let bannerChinWidth: CGFloat = NotchBannerRow<EmptyView, EmptyView>.chinWidth
 
     /// Whether the closed notch is currently showing the Mac's own power banner.
     private var showsPowerBanner: Bool {
@@ -127,6 +130,15 @@ struct ContentView: View {
         )
     }
 
+    /// A Shortcuts or notchfun:// message. Ranked like the meeting banner: below the HUD
+    /// for a key just pressed, above the ambient ones.
+    private var showsMessageBanner: Bool {
+        coordinator.expandingView.type == .message && coordinator.expandingView.show
+            && vm.notchState == .closed && !vm.hideOnClosed && messageCenter.current != nil
+            && !(coordinator.sneakPeek.show && inlineHUD
+                 && coordinator.sneakPeek.type != .music && coordinator.sneakPeek.type != .battery)
+    }
+
     /// "Standup in 2 min". Ranked below the inline HUD for the reason the accessory
     /// banner is, and above it and caffeine: it is the only one about to be late.
     private var showsMeetingBanner: Bool {
@@ -134,6 +146,19 @@ struct ContentView: View {
             && vm.notchState == .closed && !vm.hideOnClosed && meetingReminder.current != nil
             && !(coordinator.sneakPeek.show && inlineHUD
                  && coordinator.sneakPeek.type != .music && coordinator.sneakPeek.type != .battery)
+    }
+
+    /// The inline sneak peek after a track change: title left of the notch, artist right.
+    private var inlineTrackIsPeeking: Bool {
+        coordinator.expandingView.show && coordinator.expandingView.type == .music
+            && sneakPeekStyles == .inline
+    }
+
+    /// The same title and artist, kept up for as long as music plays, when "Keep the track
+    /// beside the notch" is on. Any banner takes its place while it shows.
+    private var showsPersistentTrackInfo: Bool {
+        persistentTrackInfo && musicManager.isPlaying && vm.notchState == .closed
+            && !vm.hideOnClosed && !coordinator.expandingView.show
     }
 
     private var showsCaffeineBanner: Bool {
@@ -148,7 +173,8 @@ struct ContentView: View {
     /// of the branches below matched it. Only visible with `hideTitleBar` on, which is
     /// presumably why nobody reported it.
     private var showsAnyBanner: Bool {
-        showsPowerBanner || showsMeetingBanner || showsAccessoryBatteryBanner || showsCaffeineBanner
+        showsPowerBanner || showsMessageBanner || showsMeetingBanner || showsAccessoryBatteryBanner
+            || showsCaffeineBanner
     }
 
     /// One square slot beside the physical notch, the same size the face and album art use.
@@ -395,6 +421,11 @@ struct ContentView: View {
                               .transition(.opacity)
                       // Below the HUD deliberately: you connect earbuds and reach for the
                       // volume keys a second later, and winning here would eat that feedback.
+                      } else if showsMessageBanner, let message = messageCenter.current {
+                          NotchMessageNotification(message: message, notchWidth: vm.closedNotchSize.width)
+                              .id(message)
+                              .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                              .transition(NotchMotion.transition(.opacity.combined(with: .scale)))
                       } else if showsMeetingBanner, let meeting = meetingReminder.current {
                           MeetingNotification(event: meeting, notchWidth: vm.closedNotchSize.width)
                               .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
@@ -431,6 +462,9 @@ struct ContentView: View {
                                       .transition(NotchMotion.transition(.opacity.combined(with: .scale)))
                               }
                               MusicLiveActivity()
+                                  .horizontalSwipe(enabled: swipeToSkip) { swipe in
+                                      MusicManager.shared.skip(swipe)
+                                  }
                               if showsCaffeineIndicator {
                                   Color.clear
                                       .frame(width: notchSlotSize + 10, height: notchSlotSize)
@@ -615,20 +649,17 @@ struct ContentView: View {
                 .fill(.black)
                 .overlay(
                     HStack(alignment: .top) {
-                        if coordinator.expandingView.show
-                            && coordinator.expandingView.type == .music
-                        {
+                        if inlineTrackIsPeeking || showsPersistentTrackInfo {
                             MarqueeText(
                                 .constant(musicManager.songTitle),
                                 textColor: coloredSpectrogram
                                     ? Color(nsColor: musicManager.avgColor) : Color.gray,
                                 minDuration: 0.4,
-                                frameWidth: 100
-                            )
-                            .opacity(
-                                (coordinator.expandingView.show
-                                    && sneakPeekStyles == .inline)
-                                    ? 1 : 0
+                                frameWidth: 100,
+                                // Scrolls only during a track-change peek. Kept on screen, a
+                                // scrolling title costs NotchFun about 18% CPU for as long
+                                // as the music plays, so the persistent one stays still.
+                                isActive: inlineTrackIsPeeking
                             )
                             Spacer(minLength: vm.closedNotchSize.width)
                             // Song Artist
@@ -640,19 +671,11 @@ struct ContentView: View {
                                         ? Color(nsColor: musicManager.avgColor)
                                         : Color.gray
                                 )
-                                .opacity(
-                                    (coordinator.expandingView.show
-                                        && coordinator.expandingView.type == .music
-                                        && sneakPeekStyles == .inline)
-                                        ? 1 : 0
-                                )
                         }
                     }
                 )
                 .frame(
-                    width: (coordinator.expandingView.show
-                        && coordinator.expandingView.type == .music
-                        && sneakPeekStyles == .inline)
+                    width: inlineTrackIsPeeking || showsPersistentTrackInfo
                         ? 380
                         : vm.closedNotchSize.width
                             + -cornerRadiusInsets.closed.top
@@ -708,6 +731,14 @@ struct ContentView: View {
 
     // MARK: - Hover Management
 
+    /// The active app is on the "Don't open on hover" list in Settings → General.
+    private var hoverIsSuppressedInFrontApp: Bool {
+        let suppressed = Defaults[.hoverSuppressedApps]
+        guard !suppressed.isEmpty,
+              let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return false }
+        return suppressed.contains(front)
+    }
+
     private func handleHover(_ hovering: Bool) {
         // Also while the "hello" plays when setup is run again, as on the first launch.
         if coordinator.firstLaunch || coordinator.helloAnimationRunning { return }
@@ -718,13 +749,16 @@ struct ContentView: View {
                 isHovering = true
             }
             
-            if vm.notchState == .closed && enableHaptics {
+            // No tick either in a listed app: in a game, a trackpad tap every time the
+            // pointer brushes the top of the screen is its own annoyance.
+            if vm.notchState == .closed && enableHaptics && !hoverIsSuppressedInFrontApp {
                 haptics.toggle()
             }
             
             guard vm.notchState == .closed,
                   !coordinator.sneakPeek.show,
-                  openNotchOnHover else { return }
+                  openNotchOnHover,
+                  !hoverIsSuppressedInFrontApp else { return }
             
             hoverTask = Task {
                 try? await Task.sleep(for: .seconds(minimumHoverDuration))

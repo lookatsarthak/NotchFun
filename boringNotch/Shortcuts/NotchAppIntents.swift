@@ -189,6 +189,46 @@ struct SetClipboardHistoryIntent: AppIntent {
     }
 }
 
+struct ShowInNotchIntent: AppIntent {
+    static var title: LocalizedStringResource { "Show in Notch" }
+    static var description: IntentDescription {
+        IntentDescription(
+            "Show a short message in the closed notch for a few seconds, with an optional SF Symbol and progress ring."
+        )
+    }
+    static var openAppWhenRun: Bool { false }
+
+    @Parameter(title: "Text")
+    var text: String
+
+    @Parameter(title: "Symbol", description: "An SF Symbol name, such as checkmark.circle.fill.")
+    var symbol: String?
+
+    @Parameter(title: "Progress", description: "From 0 to 1, drawn as a ring.")
+    var progress: Double?
+
+    @Parameter(title: "Seconds", default: 4, inclusiveRange: (1, 30))
+    var seconds: Double
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Show \(\.$text) in the notch") {
+            \.$symbol
+            \.$progress
+            \.$seconds
+        }
+    }
+
+    /// True when it was shown. False for empty text, messages switched off in Settings,
+    /// or more than five in ten seconds.
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
+        guard let message = NotchMessage(text: text, symbol: symbol, progress: progress, seconds: seconds) else {
+            return .result(value: false)
+        }
+        return .result(value: NotchMessageCenter.shared.show(message))
+    }
+}
+
 // MARK: - Spoken and Spotlight phrases
 
 /// Three, deliberately. Each phrase must contain `\(.applicationName)` or metadata

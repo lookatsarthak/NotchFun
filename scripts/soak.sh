@@ -98,7 +98,7 @@ measure_idle() {  # name
   echo "    ${RESULTS[-1]}"
 }
 
-caffeinate -d -u -t $(( PHASE * 12 + CYCLES * 2 + 130 )) &
+caffeinate -d -u -t $(( PHASE * 12 + CYCLES * 2 + 150 )) &
 rm -f "$LOG"
 echo "==> Launching"
 START=$(perl -MTime::HiRes=time -e 'printf "%.3f", time')
@@ -125,8 +125,10 @@ post open clipboard; sleep 2; measure "open: clipboard"
 post close; sleep 3
 echo "==> $CYCLES lock cycles"
 for _ in $(seq $CYCLES); do post lockcycle; sleep 1.5; done
+echo "==> 10 display changes"
+for _ in $(seq 10); do post displaychange; sleep 1.5; done
 sleep 8
-measure_idle "idle, after $CYCLES locks"
+measure_idle "idle, after $CYCLES locks"  # and the display changes
 : > "$LOG"; post report; sleep 1
 WINDOWS=$(grep -o "notchWindows=[0-9]*" "$LOG" | tail -1 | cut -d= -f2)
 # Whether the Now Playing helper delivered anything. Informational: with nothing playing
@@ -140,7 +142,7 @@ for phase in "idle, fresh" "idle, after $CYCLES locks"; do
 done
 growth=$(( ${MEM["idle, after $CYCLES locks"]:-0} - ${MEM["idle, fresh"]:-0} ))
 (( growth > 15 )) && FAILS+=("memory grew ${growth} MB over $CYCLES locks (> 15)")
-[[ "${WINDOWS:-}" == 1 ]] || FAILS+=("${WINDOWS:-unknown} notch windows after $CYCLES locks (should be 1)")
+[[ "${WINDOWS:-}" == 1 ]] || FAILS+=("${WINDOWS:-unknown} notch windows after $CYCLES locks and 10 display changes (should be 1)")
 if (( ${#FAILS} )); then VERDICT="FAIL: ${(j:; :)FAILS}"; else VERDICT="PASS"; fi
 
 OUT="$WORK/soak-$(date +%Y%m%d-%H%M%S).txt"
@@ -150,7 +152,7 @@ OUT="$WORK/soak-$(date +%Y%m%d-%H%M%S).txt"
   echo "NotchFun soak $(defaults read "$COPY/Contents/Info.plist" CFBundleShortVersionString) ($(git -C "$ROOT" rev-parse --short HEAD)$(git -C "$ROOT" diff --quiet HEAD -- boringNotch BoringNotchXPCHelper mediaremote-adapter || echo +changes)), $(sw_vers -productVersion), $(date)"
   echo "launch to notch window: ${LAUNCH:-unknown} s"
   printf '%s\n' "${RESULTS[@]}"
-  echo "notch windows after $CYCLES locks: ${WINDOWS:-unknown}"
+  echo "notch windows after $CYCLES locks and 10 display changes: ${WINDOWS:-unknown}"
   echo "Now Playing after $CYCLES locks: ${NOWPLAYING:-unknown}"
   echo "$VERDICT"
 } | tee "$OUT"
