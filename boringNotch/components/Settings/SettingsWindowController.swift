@@ -36,8 +36,8 @@ class SettingsWindowController: NSWindowController {
 
     func setUpdaterController(_ controller: SPUStandardUpdaterController) {
         self.updaterController = controller
-        // Recreate the content view with the proper updater controller
-        setupWindow()
+        // If Settings happens to be open already, rebuild it with the real updater.
+        if window?.isVisible == true { installContent() }
     }
     
     private func setupWindow() {
@@ -60,16 +60,31 @@ class SettingsWindowController: NSWindowController {
         window.isRestorable = true
         window.identifier = NSUserInterfaceItemIdentifier("BoringNotchSettingsWindow")
         
-        // Create the SwiftUI content
-        let settingsView = SettingsView(updaterController: updaterController)
-        let hostingView = NSHostingView(rootView: settingsView)
-        window.contentView = hostingView
-        
+        // The SwiftUI content is built on first show, not here: see `installContent`.
+
         // Handle window closing
         window.delegate = self
     }
+
+    /// Builds the Settings view. Only while the window is open.
+    ///
+    /// It used to be built at launch and kept for good. A hidden NSHostingView still
+    /// re-renders whenever anything it reads changes, and Settings reads a lot: every
+    /// battery event while charging re-ran General, whose Launch at Login toggle asks the
+    /// system for its status each time. That was most of NotchFun's idle CPU on a
+    /// charging Mac, for a window nobody had opened.
+    private func installContent() {
+        window?.contentView = NSHostingView(rootView: SettingsView(updaterController: updaterController))
+    }
+
+    /// Frees the view once the window is gone, for the same reason.
+    private func removeContent() {
+        window?.contentView = NSView()
+    }
     
     func showWindow() {
+        if !(window?.contentView is NSHostingView<SettingsView>) { installContent() }
+
         // Set app to regular mode first
         NSApp.setActivationPolicy(.regular)
         
@@ -111,6 +126,11 @@ class SettingsWindowController: NSWindowController {
 extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         relinquishFocus()
+        // After the close has finished drawing, so the window doesn't flash empty.
+        DispatchQueue.main.async { [weak self] in
+            guard self?.window?.isVisible == false else { return }
+            self?.removeContent()
+        }
     }
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {

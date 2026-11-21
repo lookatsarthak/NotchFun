@@ -19,6 +19,7 @@ enum SneakContentType {
     case battery
     case caffeine
     case accessoryBattery
+    case meeting
 }
 
 struct sneakPeek {
@@ -333,7 +334,8 @@ class BoringViewCoordinator: ObservableObject {
         didSet {
             if expandingView.show {
                 expandingViewTask?.cancel()
-                let duration: TimeInterval = 3
+                // Long enough to read a meeting title and reach for it; the rest are a glance.
+                let duration: TimeInterval = expandingView.type == .meeting ? MeetingReminder.bannerDuration : 3
                 let currentType = expandingView.type
                 expandingViewTask = Task { [weak self] in
                     try? await Task.sleep(for: .seconds(duration))

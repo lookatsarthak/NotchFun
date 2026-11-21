@@ -43,6 +43,7 @@ struct ContentView: View {
     @Bindable var musicManager = MusicManager.shared
     let batteryModel = BatteryStatusViewModel.shared
     let accessoryBattery = AccessoryBatteryManager.shared
+    let meetingReminder = MeetingReminder.shared
     let brightnessManager = BrightnessManager.shared
     let volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -126,6 +127,15 @@ struct ContentView: View {
         )
     }
 
+    /// "Standup in 2 min". Ranked below the inline HUD for the reason the accessory
+    /// banner is, and above it and caffeine: it is the only one about to be late.
+    private var showsMeetingBanner: Bool {
+        coordinator.expandingView.type == .meeting && coordinator.expandingView.show
+            && vm.notchState == .closed && !vm.hideOnClosed && meetingReminder.current != nil
+            && !(coordinator.sneakPeek.show && inlineHUD
+                 && coordinator.sneakPeek.type != .music && coordinator.sneakPeek.type != .battery)
+    }
+
     private var showsCaffeineBanner: Bool {
         coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
             && vm.notchState == .closed && caffeineShowNotification
@@ -138,7 +148,7 @@ struct ContentView: View {
     /// of the branches below matched it. Only visible with `hideTitleBar` on, which is
     /// presumably why nobody reported it.
     private var showsAnyBanner: Bool {
-        showsPowerBanner || showsAccessoryBatteryBanner || showsCaffeineBanner
+        showsPowerBanner || showsMeetingBanner || showsAccessoryBatteryBanner || showsCaffeineBanner
     }
 
     /// One square slot beside the physical notch, the same size the face and album art use.
@@ -385,6 +395,10 @@ struct ContentView: View {
                               .transition(.opacity)
                       // Below the HUD deliberately: you connect earbuds and reach for the
                       // volume keys a second later, and winning here would eat that feedback.
+                      } else if showsMeetingBanner, let meeting = meetingReminder.current {
+                          MeetingNotification(event: meeting, notchWidth: vm.closedNotchSize.width)
+                              .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                              .transition(NotchMotion.transition(.opacity.combined(with: .scale)))
                       } else if showsAccessoryBatteryBanner, let accessory = accessoryBattery.current {
                           AccessoryBatteryNotification(
                               accessory: accessory,

@@ -28,6 +28,47 @@ class BatteryActivityManager {
         return min(max((full / design * 100 / 5).rounded() * 5, 0), 100)
     }
 
+    /// What the battery popover shows beyond the level.
+    struct PowerDetails: Equatable {
+        /// Minutes left on battery, once macOS has an estimate. Nil while plugged in or
+        /// still estimating.
+        var minutesToEmpty: Int?
+        /// The charger's rating in watts, while plugged in. Nil if it doesn't say.
+        var adapterWatts: Int?
+    }
+
+    /// Read when the popover opens rather than on every power event: both numbers are
+    /// only ever shown there, and macOS revises the estimate every minute or so.
+    static func readPowerDetails() -> PowerDetails {
+        var details = PowerDetails()
+        if let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+           let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef] {
+            for source in sources {
+                guard let info = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
+                      info[kIOPSTypeKey] as? String == kIOPSInternalBatteryType
+                else { continue }
+                // -1 while estimating, 0 when it doesn't apply.
+                if info[kIOPSPowerSourceStateKey] as? String == kIOPSBatteryPowerValue,
+                   let minutes = info[kIOPSTimeToEmptyKey] as? Int, minutes > 0 {
+                    details.minutesToEmpty = minutes
+                }
+            }
+        }
+        if let adapter = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any],
+           let watts = (adapter[kIOPSPowerAdapterWattsKey] as? NSNumber)?.intValue, watts > 0 {
+            details.adapterWatts = watts
+        }
+        return details
+    }
+
+    /// "2 h 5 min", "45 min".
+    static func durationText(minutes: Int) -> String {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = minutes >= 60 ? [.hour, .minute] : [.minute]
+        formatter.unitsStyle = .short
+        return formatter.string(from: TimeInterval(minutes * 60)) ?? "\(minutes) min"
+    }
+
     var onBatteryLevelChange: ((Float) -> Void)?
     var onMaxCapacityChange: ((Float) -> Void)?
     var onPowerModeChange: ((Bool) -> Void)?

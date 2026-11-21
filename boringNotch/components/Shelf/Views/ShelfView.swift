@@ -7,12 +7,14 @@
 
 import SwiftUI
 import AppKit
+import Defaults
 
 struct ShelfView: View {
     @Environment(BoringViewModel.self) var vm
     @StateObject var tvm = ShelfStateViewModel.shared
     @StateObject var selection = ShelfSelectionModel.shared
     @StateObject private var quickLookService = QuickLookService()
+    @Default(.shelfNewestFirst) private var newestFirst
     private let spacing: CGFloat = 8
 
     var body: some View {
@@ -122,7 +124,7 @@ struct ShelfView: View {
             } else {
                 ScrollView(.horizontal) {
                     HStack(spacing: spacing) {
-                        ForEach(tvm.items) { item in
+                        ForEach(newestFirst ? Array(tvm.items.reversed()) : tvm.items) { item in
                             ShelfItemView(item: item)
                                 .environmentObject(quickLookService)
                         }

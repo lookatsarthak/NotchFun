@@ -153,6 +153,7 @@ struct BatteryMenuView: View {
     var onDismiss: () -> Void
 
     @Environment(\.openURL) private var openURL
+    @State private var details = BatteryActivityManager.PowerDetails()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -184,12 +185,18 @@ struct BatteryMenuView: View {
                         .fontWeight(.regular)
                 }
                 if isPluggedIn {
-                    Label("Plugged In", systemImage: "powerplug.fill")
+                    Label(details.adapterWatts.map { "Plugged In: \($0) W charger" } ?? "Plugged In",
+                          systemImage: "powerplug.fill")
                         .font(.subheadline)
                         .fontWeight(.regular)
                 }
                 if timeToFullCharge > 0 {
-                    Label("Time to Full Charge: \(timeToFullCharge) min", systemImage: "clock")
+                    Label("Full in \(BatteryActivityManager.durationText(minutes: timeToFullCharge))", systemImage: "clock")
+                        .font(.subheadline)
+                        .fontWeight(.regular)
+                }
+                if !isPluggedIn, let minutes = details.minutesToEmpty {
+                    Label("\(BatteryActivityManager.durationText(minutes: minutes)) remaining", systemImage: "clock")
                         .font(.subheadline)
                         .fontWeight(.regular)
                 }
@@ -218,6 +225,8 @@ struct BatteryMenuView: View {
         .padding()
         .frame(width: 280)
         .foregroundColor(.white)
+        .onAppear { details = BatteryActivityManager.readPowerDetails() }
+        .onChange(of: isPluggedIn) { details = BatteryActivityManager.readPowerDetails() }
     }
 
     private func openBatteryPreferences() {

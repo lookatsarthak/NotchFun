@@ -410,7 +410,10 @@ struct EventListView: View {
                             .foregroundColor(.white)
                             .lineLimit(showFullEventTitles ? nil : 2)
 
-                        if let location = event.location, !location.isEmpty {
+                        if let location = event.location, !location.isEmpty,
+                           // A location that is just the call link says nothing the
+                           // Join button doesn't.
+                           event.meetingLink.map({ !location.contains($0.url.absoluteString) }) ?? true {
                             Text(location)
                                 .font(.caption)
                                 .foregroundColor(Color(white: 0.65))
@@ -418,6 +421,9 @@ struct EventListView: View {
                         }
                     }
                     Spacer(minLength: 0)
+                    if let link = event.meetingLink, event.eventStatus != .ended {
+                        JoinMeetingButton(link: link, isSoon: event.start.timeIntervalSinceNow < JoinMeetingButton.soonWindow)
+                    }
                     VStack(alignment: .trailing, spacing: 4) {
                         if event.isAllDay {
                             Text("All-day")
@@ -478,4 +484,39 @@ struct ReminderToggle: View {
         .frame(width: 215, height: 130)
         .background(.black)
         .environment(BoringViewModel())
+}
+
+/// Opens the event's video call. A filled "Join" capsule from 10 minutes before the start
+/// until the end, and a quiet camera icon for calls later in the day, so a day of
+/// meetings doesn't read as a column of buttons.
+struct JoinMeetingButton: View {
+    static let soonWindow: TimeInterval = 10 * 60
+
+    let link: MeetingLink.Match
+    let isSoon: Bool
+
+    var body: some View {
+        Button {
+            NSWorkspace.shared.open(link.url)
+        } label: {
+            if isSoon {
+                Label("Join", systemImage: "video.fill")
+                    .labelStyle(.titleAndIcon)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(.white))
+            } else {
+                Image(systemName: "video")
+                    .font(.caption)
+                    .foregroundStyle(Color(white: 0.65))
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
+            }
+        }
+        .buttonStyle(ScaleButtonStyle())
+        .help("Join on \(link.service.rawValue)")
+        .accessibilityLabel("Join on \(link.service.rawValue)")
+    }
 }

@@ -19,11 +19,22 @@ struct AccessoryBatteryNotification: View {
 
     var body: some View {
         NotchBannerRow(notchWidth: notchWidth) {
-            Text(accessory.name)
-                .font(.subheadline)
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            // The parts beside the name, not instead of it: "Pods  L 80 · R 78 · Case 100".
+            // The name truncates first, because the numbers are what you came for.
+            HStack(spacing: 6) {
+                Text(accessory.name)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                if accessory.hasParts {
+                    Text(accessory.partsSummary)
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
         } trailing: {
             AccessoryBatteryGlyph(accessory: accessory)
         }
@@ -56,20 +67,18 @@ struct AccessoryBatteryGlyph: View {
             Image(systemName: "airpods.gen3")
                 .font(.system(size: batteryWidth * 0.42, weight: .medium))
                 .foregroundStyle(.white)
-            // Charging state is all false because it cannot be known: nothing in the
-            // system_profiler payload says whether an accessory is charging, and showing
-            // a bolt we cannot substantiate would be a lie. `batteryColor` still turns
-            // the fill red under 20%, which is the part that matters.
+            // The bolt only when the power sources say the buds are charging. The
+            // system_profiler fallback never says, so it never shows one.
             BatteryView(
                 levelBattery: Float(accessory.level),
                 isPluggedIn: false,
-                isCharging: false,
+                isCharging: accessory.isCharging,
                 isInLowPowerMode: false,
                 batteryWidth: batteryWidth,
                 isForNotification: false
             )
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(accessory.name) battery \(accessory.level) percent")
+        .accessibilityLabel(accessory.spokenSummary)
     }
 }

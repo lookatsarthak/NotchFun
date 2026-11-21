@@ -24,6 +24,8 @@ struct EventModel: Equatable, Identifiable {
     let timeZone: TimeZone?
     let hasRecurrenceRules: Bool
     let priority: Priority?
+    /// The video call to join, found once when the event is read. See `MeetingLink`.
+    var meetingLink: MeetingLink.Match? = nil
 }
 
 enum AttendanceStatus: Comparable {

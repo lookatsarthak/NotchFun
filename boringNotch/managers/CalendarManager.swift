@@ -193,6 +193,23 @@ class CalendarManager: ObservableObject {
         self.events = eventsResult
     }
     
+    /// Calls you haven't declined that start within the next `hours`, soonest first, for
+    /// the meeting heads-up. Read straight from the store, independent of the day picked
+    /// in the notch.
+    func upcomingMeetings(hours: Double = 12) async -> [EventModel] {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
+        if selectedCalendars.isEmpty { await reloadCalendarAndReminderLists() }
+        let now = Date()
+        let ids = selectedCalendars.filter { !$0.isReminder }.map(\.id)
+        guard !ids.isEmpty else { return [] }
+        let upcoming = await calendarService.events(from: now, to: now.addingTimeInterval(hours * 3600), calendars: ids)
+        return upcoming.filter { event in
+            guard event.meetingLink != nil, !event.isAllDay, event.start > now else { return false }
+            if case .event(.declined) = event.type { return false }
+            return true
+        }
+    }
+
     func setReminderCompleted(reminderID: String, completed: Bool) async {
         await calendarService.setReminderCompleted(reminderID: reminderID, completed: completed)
         // Refresh events after updating

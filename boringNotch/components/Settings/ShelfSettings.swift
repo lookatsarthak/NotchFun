@@ -23,6 +23,8 @@ struct Shelf: View {
         Task { await QuickShareService.shared.discoverAvailableProviders() }
     }
     
+    @Default(.shelfNewestFirst) private var shelfNewestFirst
+
     var body: some View {
         Form {
             Section {
@@ -46,6 +48,10 @@ struct Shelf: View {
                 }
                 Defaults.Toggle(key: .autoRemoveShelfItems) {
                     Text("Remove from shelf after dragging")
+                }
+                Picker("Order", selection: $shelfNewestFirst) {
+                    Text("Newest first").tag(true)
+                    Text("Oldest first").tag(false)
                 }
 
             } header: {

@@ -14,6 +14,7 @@ struct ClipboardView: View {
     @ObservedObject private var clipboard = ClipboardStateViewModel.shared
 
     @Default(.clipboardCleanLinks) private var cleanLinks
+    @Default(.boringShelf) private var shelfEnabled
 
     /// Keeps the notch open while the tab is in use. Released on every exit path.
     @State private var hold: NotchHoldToken?
@@ -126,7 +127,14 @@ struct ClipboardView: View {
                         )
                         .equatable()
                         .id(match.item.id)
-                        .onTapGesture { select(match.item) }
+                        .onTapGesture {
+                            // ⌘-click puts it on the shelf instead of pasting it.
+                            if shelfEnabled, NSEvent.modifierFlags.contains(.command) {
+                                addToShelf(match.item)
+                            } else {
+                                select(match.item)
+                            }
+                        }
                         .onHover { hovering in
                             guard hovering else { return }
                             let pointer = NSEvent.mouseLocation
@@ -177,6 +185,9 @@ struct ClipboardView: View {
             clipboard.togglePin(id: item.id)
         }
         Button("Copy") { select(item) }
+        if shelfEnabled {
+            Button("Add to Shelf") { addToShelf(item) }
+        }
         if item.kind == .files {
             Button("Reveal in Finder") {
                 NSWorkspace.shared.activateFileViewerSelecting(clipboard.fileURLs(of: item))
@@ -355,6 +366,16 @@ struct ClipboardView: View {
     /// Ordering matters: the notch must be gone *before* Command-V is posted, so the
     /// keystroke lands in the app the user was actually working in and the pasteboard
     /// write has settled first.
+    /// Adds the entry to the shelf and switches to it, so you see where it went.
+    private func addToShelf(_ item: ClipboardItem) {
+        Task {
+            await ClipboardToShelf.add(item, from: clipboard)
+            withAnimation(NotchMotion.content) {
+                BoringViewCoordinator.shared.currentView = .shelf
+            }
+        }
+    }
+
     private func select(_ item: ClipboardItem, asPlainText: Bool = false) {
         fireHaptic()
         deactivate()

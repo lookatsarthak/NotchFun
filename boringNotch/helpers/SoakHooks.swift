@@ -90,7 +90,10 @@ enum SoakHooks {
             let parts = (argument ?? "General").split(separator: "@")
             let fraction = parts.count > 1 ? Double(parts[1]) ?? 0 : 0
             SettingsWindowController.shared.showWindow()
-            NotificationCenter.default.post(name: settingsPane, object: String(parts[0]))
+            // The view is built on show, so give it a moment to subscribe.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                NotificationCenter.default.post(name: settingsPane, object: String(parts[0]))
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 guard let window = SettingsWindowController.shared.window,
                       let content = window.contentView else { return }
@@ -119,6 +122,27 @@ enum SoakHooks {
             items.append(ShelfItem(kind: .text(string: "Remember to stretch")))
             ShelfStateViewModel.shared.add(items)
         }
+        // What the accessory battery manager holds, and what the power sources say, for
+        // checking the AirPods path inside the sandbox. Names are not logged.
+        on("accessory") { _ in
+            let sources = AccessoryPowerSources.read()
+            let parsed = sources.map(AccessoryPowerSourceParser.parse) ?? []
+            func describe(_ reading: AccessoryBattery?) -> String {
+                guard let reading else { return "nil" }
+                return "level=\(reading.level) charging=\(reading.isCharging) parts=[\(reading.partsSummary)] nameMatchesOutput=\(reading.name == SystemAudioOutput.name())"
+            }
+            let line = "\(Date().timeIntervalSince1970) accessory sources=\(sources.map { String($0.count) } ?? "unreadable") parsed=\(parsed.count) outputIsBluetooth=\(SystemAudioOutput.isBluetooth()) current=\(describe(AccessoryBatteryManager.shared.current)) first=\(describe(parsed.first))\n"
+            appendToLog(line)
+        }
+        // The first pair the power sources list, shown as if connected. Layout only.
+        on("accessorydemo") { _ in
+            guard let reading = AccessoryPowerSources.read().map(AccessoryPowerSourceParser.parse)?.first else { return }
+            AccessoryBatteryManager.shared.showDemo(reading)
+        }
+        // A made-up call two minutes out, to show the meeting banner without a real calendar.
+        on("meetingdemo") { title in
+            MeetingReminder.shared.showDemo(title: title ?? "Design review")
+        }
         on("report") { _ in
             let notchWindows = NSApp.windows.filter { $0 is BoringNotchSkyLightWindow }
             let line = "\(Date().timeIntervalSince1970) notchWindows=\(notchWindows.count) visible=\(notchWindows.filter(\.isVisible).count) appWindows=\(NSApp.windows.count)\n"
@@ -130,6 +154,18 @@ enum SoakHooks {
             } else {
                 try? Data(line.utf8).write(to: url)
             }
+        }
+    }
+
+    @MainActor
+    private static func appendToLog(_ line: String) {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("soak.log")
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile()
+            handle.write(Data(line.utf8))
+            try? handle.close()
+        } else {
+            try? Data(line.utf8).write(to: url)
         }
     }
 }

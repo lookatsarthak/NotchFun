@@ -6,11 +6,21 @@
 import CoreAudio
 import Defaults
 import Foundation
+import notify
 import SwiftUI
 
 /// Tracks the battery of the Bluetooth accessory you are listening through.
 ///
-/// There is no polling here and no timer. Two things ask for a reading:
+/// Two sources, in order:
+///
+/// 1. **The system's accessory power sources** (`AccessoryPowerSources`), for AirPods and
+///    Beats. Left, right and case, with charging state, read in-process and with no
+///    permission. powerd posts a notification whenever one of them changes, so levels
+///    and the case stay current without polling.
+/// 2. **`system_profiler` through the XPC helper**, for headphones the system doesn't list
+///    there. One number, refreshed on connect and when the notch opens.
+///
+/// There is no polling here and no timer. Three things ask for a reading:
 ///
 /// - **A connect.** macOS switches `kAudioHardwarePropertyDefaultOutputDevice` to a pair
 ///   of earbuds the moment they connect, so one CoreAudio listener is the whole event
@@ -19,6 +29,8 @@ import SwiftUI
 ///   and would have had to live in the XPC helper, which cannot push events back and
 ///   which launchd may terminate under it.
 /// - **Opening the notch**, so the header is not showing a stale number.
+/// - **powerd's accessory notification**, which re-reads the power sources only. It never
+///   starts `system_profiler`, so a bud's level ticking down costs one in-process call.
 ///
 /// The notch opens on *hover*, so that second trigger is the dangerous one: without the
 /// cache and the in-flight guard below, sweeping the pointer across the notch would spawn
@@ -47,6 +59,7 @@ final class AccessoryBatteryManager {
     private var inFlight: Task<Void, Never>?
     private var listenerInstalled = false
     private var settingTask: Task<Void, Never>?
+    private var notifyTokens: [Int32] = []
 
     private init() {}
 
@@ -65,6 +78,14 @@ final class AccessoryBatteryManager {
             AudioObjectID(kAudioObjectSystemObject), &address, nil
         ) { [weak self] _, _ in
             Task { @MainActor in self?.outputDeviceChanged() }
+        }
+
+        for name in AccessoryPowerSources.notifications {
+            var token: Int32 = 0
+            let status = notify_register_dispatch(name, &token, .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.powerSourcesChanged() }
+            }
+            if status == NOTIFY_STATUS_OK { notifyTokens.append(token) }
         }
 
         // Catch the case where earbuds were already connected when the app launched.
@@ -111,6 +132,29 @@ final class AccessoryBatteryManager {
         refresh(force: true, announce: true)
     }
 
+    /// A bud or the case changed. Updates the reading in place and never announces: the
+    /// banner is for connecting, not for every percent.
+    private func powerSourcesChanged() {
+        guard Defaults[.showAccessoryBattery], SystemAudioOutput.isBluetooth(),
+              let reading = powerSourceReading(), reading != current
+        else { return }
+        withAnimation(NotchMotion.content) { current = reading }
+    }
+
+    /// The output device's reading from the system power sources, if it is listed there.
+    ///
+    /// Matched by name and nothing else. The list also carries your other AirPods nearby,
+    /// from their broadcasts, so "the only pair listed" could be a pair in a drawer while
+    /// you listen through something else.
+    private func powerSourceReading() -> AccessoryBattery? {
+        guard let output = SystemAudioOutput.name(),
+              let sources = AccessoryPowerSources.read()
+        else { return nil }
+        return AccessoryPowerSourceParser.parse(sources).first {
+            $0.name.compare(output, options: [.caseInsensitive]) == .orderedSame
+        }
+    }
+
     /// - Parameters:
     ///   - force: ignore the cache. True only for a real device change.
     ///   - announce: show the transient banner afterwards.
@@ -122,6 +166,17 @@ final class AccessoryBatteryManager {
         guard SystemAudioOutput.isBluetooth() else {
             // Same inequality guard as above: a redundant publish re-renders the notch.
             if current != nil { current = nil }
+            return
+        }
+
+        // The power sources are an in-process read, so they skip the cache entirely.
+        if let reading = powerSourceReading() {
+            if reading != current {
+                withAnimation(NotchMotion.content) { current = reading }
+            }
+            if announce {
+                BoringViewCoordinator.shared.toggleExpandingView(status: true, type: .accessoryBattery)
+            }
             return
         }
 
@@ -158,6 +213,14 @@ final class AccessoryBatteryManager {
             }
         }
     }
+
+    #if NOTCHFUN_SOAK
+    /// Shows a reading as if it had just connected, to check the banner's layout.
+    func showDemo(_ reading: AccessoryBattery) {
+        current = reading
+        BoringViewCoordinator.shared.toggleExpandingView(status: true, type: .accessoryBattery)
+    }
+    #endif
 
     /// Prefer the accessory that is actually the audio output, so a paired mouse or
     /// keyboard cannot claim the banner.

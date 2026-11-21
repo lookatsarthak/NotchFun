@@ -582,6 +582,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // observers and schedules nothing.
         ClipboardAutoClearService.shared.start()
         AccessoryBatteryManager.shared.start()
+        MeetingReminder.shared.start()
 
         // Caffeine. restore() resumes a session that survived a quit and drops one that
         // expired while we were not running; startObserving() wires sleep/wake and

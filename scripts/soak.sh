@@ -84,7 +84,21 @@ measure() {  # name
   echo "    ${RESULTS[-1]}"
 }
 
-caffeinate -d -u -t $(( PHASE * 8 + CYCLES * 2 + 130 )) &
+# Idle is the median of three windows. One stray burst (a Now Playing update, a battery
+# tick, macOS doing something on NotchFun's behalf) turned up in single windows of both the
+# 2.0 and the 1.7 builds and failed the gate at random; a steady cost still fails it.
+measure_idle() {  # name
+  local w=() a b i
+  for i in 1 2 3; do a=$(cputime); sleep $PHASE; b=$(cputime); w+=($((b - a))); done
+  local median=$(printf '%s\n' $w | sort -n | sed -n 2p)
+  local pct=$(awk -v d=$median -v s=$PHASE 'BEGIN { printf "%.2f", d / (s * 10) }')
+  local mem=$(memmb)
+  PCT[$1]=$pct; MEM[$1]=$mem
+  RESULTS+=("$(printf '%-24s %6s%% %6s ms %6s MB   (windows: %s ms)' "$1" "$pct" $median "$mem" "${(j:, :)w}")")
+  echo "    ${RESULTS[-1]}"
+}
+
+caffeinate -d -u -t $(( PHASE * 12 + CYCLES * 2 + 130 )) &
 rm -f "$LOG"
 echo "==> Launching"
 START=$(perl -MTime::HiRes=time -e 'printf "%.3f", time')
@@ -104,7 +118,7 @@ echo "    launch to notch window: ${LAUNCH:-unknown} s"
 sleep 20
 
 echo "==> Measuring ($PHASE s per phase)"
-measure "idle, fresh"
+measure_idle "idle, fresh"
 post open home;      sleep 2; measure "open: home"
 post open shelf;     sleep 2; measure "open: shelf"
 post open clipboard; sleep 2; measure "open: clipboard"
@@ -112,7 +126,7 @@ post close; sleep 3
 echo "==> $CYCLES lock cycles"
 for _ in $(seq $CYCLES); do post lockcycle; sleep 1.5; done
 sleep 8
-measure "idle, after $CYCLES locks"
+measure_idle "idle, after $CYCLES locks"
 : > "$LOG"; post report; sleep 1
 WINDOWS=$(grep -o "notchWindows=[0-9]*" "$LOG" | tail -1 | cut -d= -f2)
 

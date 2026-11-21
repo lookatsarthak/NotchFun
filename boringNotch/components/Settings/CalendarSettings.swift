@@ -32,6 +32,11 @@ struct CalendarSettings: View {
             Defaults.Toggle(key: .showFullEventTitles) {
                 Text("Always show full event titles")
             }
+            Defaults.Toggle(key: .showMeetingReminders) {
+                Text("Remind me before calls")
+                Text("Shows the call in the closed notch 2 minutes before it starts. Calls are events with a Meet, Zoom, Teams, Webex, Whereby, Jitsi or FaceTime link.")
+            }
+            .disabled(!showCalendar)
             Section(header: Text("Calendars")) {
                 if calendarManager.calendarAuthorizationStatus != .fullAccess {
                     Text("Calendar access is denied. Please enable it in System Settings.")

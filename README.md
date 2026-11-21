@@ -27,15 +27,16 @@ you need:
 
 - **Now Playing** — album art, scrubbing, a live audio visualiser, and controls for
   Apple Music, Spotify and anything else that reports Now Playing.
-- **Calendar** — today's events at a glance, with a scrollable date strip.
+- **Calendar** — today's events at a glance, with a scrollable date strip, a Join
+  button on video calls, and a heads-up in the notch two minutes before one starts.
 - **Shelf** — a drop zone for files you're moving between apps, with AirDrop and
-  Quick Share built in.
+  Quick Share built in. Clipboard entries can go on it too.
 - **Clipboard history** — everything you copy, searchable, pinnable, and pasteable
   straight back into whatever app you're in.
 - **HUD replacement** — volume and brightness indicators rendered in the notch instead
   of the giant square in the middle of your screen.
-- **AirPods battery** — shown when you connect them, and beside the Mac's own battery
-  while the notch is open.
+- **AirPods battery** — left, right and case, shown when you connect them, and beside
+  the Mac's own battery while the notch is open.
 - **Shortcuts** — five actions in Shortcuts.app, so caffeine, the clipboard and the
   notch itself can be driven from an automation or Spotlight.
 
@@ -53,12 +54,14 @@ NotchFun"*, *"Paste plain text with NotchFun"*.
 
 Off by default; turn it on in **Settings → Battery**.
 
-One number per device, not a left/right split: macOS reports both earbuds at the same
-level even when one of them is sitting in the case, so a split would be showing a
-distinction the data does not actually contain. Where the two differ, you get the lower
-one. The case level is not shown at all, because macOS keeps reporting a last-known
-value long after the case is out of range and nothing in the data says whether it is
-still true.
+AirPods and Beats show each earbud and the case, with a bolt while they charge, read
+from the same data macOS uses for its own battery widget. No permission is needed, and
+the numbers update as they change, without polling. The case appears only while a bud is
+in it: the case reports while it's open or holding one, and its last number would
+otherwise linger after it's shut.
+
+Other Bluetooth headphones show one number, the lower of the two earbuds if they report
+two.
 
 ## Clipboard history
 
@@ -79,6 +82,19 @@ The newest addition, and the reason this fork exists.
   readable solely by your user account.
 
 Setup switches it on for you, and you can turn it off there or in **Settings → Clipboard**.
+
+**⌘-click** an entry, or right-click it and choose **Add to Shelf**, to put it on the
+shelf for dragging into another app later. Images become PNG files.
+
+## Stays light
+
+NotchFun sits at about **0.1% of one CPU core** while idle and uses **about 25–40 MB** of
+memory. Open on Home with a paused track, it uses no measurable CPU at all: nothing
+redraws until something changes. Twenty screen locks in a row leave it where it started.
+
+Measured with `scripts/soak.sh` on a MacBook Air (M4, macOS 27.2): CPU time over
+30-second windows, fresh and after 20 screen-lock cycles, plus memory and the number of
+notch windows. Every release has to pass it before it can ship.
 
 ## Install
 
