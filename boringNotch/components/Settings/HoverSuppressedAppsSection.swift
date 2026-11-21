@@ -45,7 +45,7 @@ struct HoverSuppressedAppsSection: View {
                         }
                     }
                 }
-                Button("Choose…") { chooseApp() }
+                Button("Choose…") { AppChooser.choose(prompt: "Add") { add($0) } }
             }
         } header: {
             Text("Don't open on hover in these apps")
@@ -68,15 +68,36 @@ struct HoverSuppressedAppsSection: View {
         apps.append(bundleID)
     }
 
-    private func chooseApp() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.application]
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "Add"
-        guard panel.runModal() == .OK, let url = panel.url,
-              let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
-        add(bundleID)
+}
+
+/// The "Choose…" item in Settings' app lists: picks an app in the open panel and hands
+/// back its bundle ID.
+@MainActor
+enum AppChooser {
+    static func choose(prompt: String, _ completion: @escaping @MainActor (String) -> Void) {
+        // Once the menu offering Choose… has closed. Run modally from inside the menu's
+        // action, the panel never appeared on screen: NotchFun waited on an invisible
+        // dialog and ignored every click, the rest of Settings included, until it quit.
+        DispatchQueue.main.async {
+            let panel = NSOpenPanel()
+            panel.allowedContentTypes = [.application]
+            panel.allowsMultipleSelection = false
+            panel.directoryURL = URL(fileURLWithPath: "/Applications")
+            panel.prompt = prompt
+            let finish: (NSApplication.ModalResponse) -> Void = { response in
+                guard response == .OK, let url = panel.url,
+                      let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
+                MainActor.assumeIsolated { completion(bundleID) }
+            }
+            // A sheet on Settings, like Claude Code's Connect: the sandbox's panel runs in
+            // a system process, and a sheet is the one place it reliably shows.
+            NSApp.activate(ignoringOtherApps: true)
+            if let host = SettingsWindowController.shared.window, host.isVisible {
+                panel.beginSheetModal(for: host, completionHandler: finish)
+            } else {
+                panel.begin(completionHandler: finish)
+            }
+        }
     }
 }
 

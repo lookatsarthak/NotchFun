@@ -50,7 +50,7 @@ struct ClipboardIgnoredAppsSection: View {
                         }
                     }
                 }
-                Button("Choose…") { chooseApp() }
+                Button("Choose…") { AppChooser.choose(prompt: "Exclude") { add($0) } }
             }
         } header: {
             Text("Never save from these apps")
@@ -71,17 +71,6 @@ struct ClipboardIgnoredAppsSection: View {
     private func add(_ bundleID: String) {
         guard !ignored.contains(bundleID) else { return }
         ignored.append(bundleID)
-    }
-
-    private func chooseApp() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.application]
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "Exclude"
-        guard panel.runModal() == .OK, let url = panel.url,
-              let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
-        add(bundleID)
     }
 
     private func displayName(for bundleID: String) -> String {
