@@ -158,11 +158,11 @@ enum OnboardingPlan {
         guard !accessibilityGranted else { return nil }
         switch (mediaKeyHUD, clipboardHistory) {
         case (true, true):
-            return "The volume popup and pasting from clipboard history need Accessibility. If you allow it later, turn the popup on in Settings → HUD."
+            return "The volume popup and pasting from clipboard history need Accessibility. You can allow it later in System Settings → Privacy & Security → Accessibility, then turn the popup on in NotchFun's Settings → Volume & Brightness."
         case (true, false):
-            return "The volume and brightness popup needs Accessibility. If you allow it later, turn the popup on in Settings → HUD."
+            return "The volume and brightness popup needs Accessibility. You can allow it later in System Settings → Privacy & Security → Accessibility, then turn the popup on in NotchFun's Settings → Volume & Brightness."
         case (false, true):
-            return "Pasting from clipboard history needs Accessibility."
+            return "Pasting from clipboard history needs Accessibility. You can allow it later in System Settings → Privacy & Security → Accessibility."
         case (false, false):
             return nil
         }

@@ -32,6 +32,7 @@ struct ClipboardRowView: View, Equatable {
             && lhs.cleansLink == rhs.cleansLink
             && lhs.highlightRanges == rhs.highlightRanges
             && lhs.titleOverride == rhs.titleOverride
+            && lhs.item.imageText == rhs.item.imageText
     }
 
     var body: some View {
@@ -74,7 +75,9 @@ struct ClipboardRowView: View, Equatable {
         .frame(height: Self.height)
         .background {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? Color.effectiveAccent.opacity(0.65) : Color.clear)
+                // A quiet tint, not a saturated bar: the loudest thing in a dark notch
+                // shouldn't be the selection.
+                .fill(isSelected ? Color.effectiveAccent.opacity(0.32) : Color.clear)
         }
         .contentShape(Rectangle())
     }
@@ -83,6 +86,12 @@ struct ClipboardRowView: View, Equatable {
     private var label: AttributedString {
         if let titleOverride {
             return ClipboardSearchService.highlighted(titleOverride, ranges: highlightRanges)
+        }
+        // An image with text is labelled by its first line, so a column of screenshots
+        // isn't a column of identical "Image" rows.
+        if item.kind == .image, let firstLine = item.imageText?
+            .split(whereSeparator: \.isNewline).first.map(String.init), !firstLine.isEmpty {
+            return AttributedString("Image: \(firstLine)")
         }
         let title = item.title.isEmpty ? "Image" : item.title
         guard !highlightRanges.isEmpty, !item.title.isEmpty else {
@@ -122,7 +131,7 @@ struct ClipboardRowView: View, Equatable {
                 .frame(width: 18, height: 18)
                 .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
         } else {
-            Image(systemName: item.isPinned ? "pin.fill" : item.kind.systemImage)
+            Image(systemName: item.isSnippet ? "text.quote" : item.isPinned ? "pin.fill" : item.kind.systemImage)
                 .font(.system(size: 11))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(item.isPinned ? Color.effectiveAccent : .gray)

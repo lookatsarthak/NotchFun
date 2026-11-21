@@ -537,12 +537,11 @@ struct MusicSliderView: View {
                 Spacer()
                 Text(timeString(from: duration))
             }
+            // Neutral, not tinted like the slider: tinted times competed with the title
+            // above them. Monospaced so they don't shimmy as the seconds change.
             .fontWeight(.medium)
-            .foregroundColor(
-                Defaults[.playerColorTinting]
-                    ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.6) : .gray
-            )
-            .font(.caption)
+            .foregroundStyle(.white.opacity(0.5))
+            .font(.caption.monospacedDigit())
         }
         .onChange(of: currentDate) { syncSlider(at: currentDate) }
         // The timeline is paused while nothing plays, so a seek made while paused, and the

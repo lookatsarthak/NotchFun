@@ -14,6 +14,7 @@
 		E50E243236078E968A4F475F /* NotchHoverHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1BCA505FC84D88447CD27DD /* NotchHoverHighlight.swift */; };
 		03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */; };
 		B51B90A2921F5841A0A0CD69 /* HoverSuppressedAppsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA665A4534C584759039D71A /* HoverSuppressedAppsSection.swift */; };
+		C486341F7E78F5FB4DCA94C4 /* ClipboardSnippetsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C23C8E3839F625A2733A41 /* ClipboardSnippetsSection.swift */; };
 		0D0ACC5199355FAB6BF1B332 /* ClipboardAutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */; };
 		64A8E8F3CFE97905E7803FEE /* ClipboardSecretHeuristicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */; };
 		7B7C2BEC95784CB1A69056DA /* URLCleanerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92207BBACAA9410788BB8463 /* URLCleanerTests.swift */; };
@@ -57,6 +58,7 @@
 		1EDCB926D5331344B1EB9734 /* AgentBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D824EF5138D55B3AB2661E1E /* AgentBoard.swift */; };
 		0E959446A85429C82B6D393F /* ClaudeCodeHooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B0E8584B50E7C8F5FFE90D /* ClaudeCodeHooks.swift */; };
 		C85BDA35CBBEE8A87B141ED8 /* CameraChoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDF29271E7CAB41ABA9E17C /* CameraChoice.swift */; };
+		C9037588EBFCD834AA0C9108 /* ClipboardSnippet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215897FAD303DEE481B5EA60 /* ClipboardSnippet.swift */; };
 		CD0EE573435B78DE5885BA28 /* ClipboardSecretHeuristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898E3EBA3ED6D8B08CD0A351 /* ClipboardSecretHeuristic.swift */; };
 		2553C297577D49C297D12A9C /* URLCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95D159687544B04B2B42C9F /* URLCleaner.swift */; };
 		E6C18184425EDEF98D24BB2D /* ReminderDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CCD1E3CED2A7595161A083 /* ReminderDate.swift */; };
@@ -171,6 +173,7 @@
 		EABBC49F3F0985F07A680D80 /* AgentBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D824EF5138D55B3AB2661E1E /* AgentBoard.swift */; };
 		EFE515B7F40B281CBE6B6F72 /* ClaudeCodeHooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B0E8584B50E7C8F5FFE90D /* ClaudeCodeHooks.swift */; };
 		67FC20737F1921A68F7540B4 /* CameraChoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDF29271E7CAB41ABA9E17C /* CameraChoice.swift */; };
+		D944884F41AD85DEC2E2E163 /* ClipboardSnippet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215897FAD303DEE481B5EA60 /* ClipboardSnippet.swift */; };
 		1163988F2DF5CC870052E6AF /* CalendarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1163988E2DF5CC870052E6AF /* CalendarModel.swift */; };
 		116398962DF5D6C00052E6AF /* CalendarServiceProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116398952DF5D6C00052E6AF /* CalendarServiceProviding.swift */; };
 		117AB5172E30E09C00558921 /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 112B0EBA2E30DD5000562D6C /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -332,6 +335,7 @@
 		E1BCA505FC84D88447CD27DD /* NotchHoverHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchHoverHighlight.swift; sourceTree = "<group>"; };
 		79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardIgnoredAppsSection.swift; sourceTree = "<group>"; };
 		EA665A4534C584759039D71A /* HoverSuppressedAppsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverSuppressedAppsSection.swift; sourceTree = "<group>"; };
+		B1C23C8E3839F625A2733A41 /* ClipboardSnippetsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSnippetsSection.swift; sourceTree = "<group>"; };
 		FB5D5A72D3FF34FC03D7C87D /* ClipboardAutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardAutoClearService.swift; sourceTree = "<group>"; };
 		793EDA2CC2363F66CD27627A /* ClipboardSecretHeuristicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSecretHeuristicTests.swift; sourceTree = "<group>"; };
 		92207BBACAA9410788BB8463 /* URLCleanerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCleanerTests.swift; sourceTree = "<group>"; };
@@ -436,6 +440,7 @@
 		D824EF5138D55B3AB2661E1E /* AgentBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBoard.swift; sourceTree = "<group>"; };
 		66B0E8584B50E7C8F5FFE90D /* ClaudeCodeHooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodeHooks.swift; sourceTree = "<group>"; };
 		9CDF29271E7CAB41ABA9E17C /* CameraChoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraChoice.swift; sourceTree = "<group>"; };
+		215897FAD303DEE481B5EA60 /* ClipboardSnippet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSnippet.swift; sourceTree = "<group>"; };
 		1163988E2DF5CC870052E6AF /* CalendarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarModel.swift; sourceTree = "<group>"; };
 		116398952DF5D6C00052E6AF /* CalendarServiceProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarServiceProviding.swift; sourceTree = "<group>"; };
 		E1CCD1E3CED2A7595161A083 /* ReminderDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderDate.swift; sourceTree = "<group>"; };
@@ -1075,6 +1080,7 @@
 				D824EF5138D55B3AB2661E1E /* AgentBoard.swift */,
 				66B0E8584B50E7C8F5FFE90D /* ClaudeCodeHooks.swift */,
 				9CDF29271E7CAB41ABA9E17C /* CameraChoice.swift */,
+				215897FAD303DEE481B5EA60 /* ClipboardSnippet.swift */,
 				B19016232CC15B4D00E3F12E /* Constants.swift */,
 				14D570C82C5F38890011E668 /* BoringViewModel.swift */,
 				14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */,
@@ -1164,6 +1170,7 @@
 				780E39A26B26DC273B0AAD32 /* ClipboardSettings.swift */,
 				79F5E7C0CC42D080BE7D4401 /* ClipboardIgnoredAppsSection.swift */,
 				EA665A4534C584759039D71A /* HoverSuppressedAppsSection.swift */,
+				B1C23C8E3839F625A2733A41 /* ClipboardSnippetsSection.swift */,
 				11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */,
 				11C5E3152DFE88510065821E /* SettingsView.swift */,
 				AB705EC5B5A596DB926A61F5 /* ShortcutsSettings.swift */,
@@ -1429,6 +1436,7 @@
 				1EDCB926D5331344B1EB9734 /* AgentBoard.swift in Sources */,
 				0E959446A85429C82B6D393F /* ClaudeCodeHooks.swift in Sources */,
 				C85BDA35CBBEE8A87B141ED8 /* CameraChoice.swift in Sources */,
+				C9037588EBFCD834AA0C9108 /* ClipboardSnippet.swift in Sources */,
 				2FAEF610EEFDA8A198475972 /* ClipboardBlobStore.swift in Sources */,
 				F7A327BEAB148244959DE5BC /* ClipboardCapture.swift in Sources */,
 				A968BCE26F3F20A6E915B780 /* ClipboardMonitor.swift in Sources */,
@@ -1489,6 +1497,7 @@
 				1C644F3D37B608205BF237EE /* ClipboardSettings.swift in Sources */,
 				03047944207A533A14B1050F /* ClipboardIgnoredAppsSection.swift in Sources */,
 				B51B90A2921F5841A0A0CD69 /* HoverSuppressedAppsSection.swift in Sources */,
+				C486341F7E78F5FB4DCA94C4 /* ClipboardSnippetsSection.swift in Sources */,
 				167220B43ABF835FDC10BAC2 /* ClipboardPasteboardWriter.swift in Sources */,
 				98F0D829DBB7C44C9D90F6F8 /* ClipboardKeyInterpreter.swift in Sources */,
 				4FF49D37D1C29FEC168E838A /* ClipboardSearchBar.swift in Sources */,
@@ -1551,6 +1560,7 @@
 				EABBC49F3F0985F07A680D80 /* AgentBoard.swift in Sources */,
 				EFE515B7F40B281CBE6B6F72 /* ClaudeCodeHooks.swift in Sources */,
 				67FC20737F1921A68F7540B4 /* CameraChoice.swift in Sources */,
+				D944884F41AD85DEC2E2E163 /* ClipboardSnippet.swift in Sources */,
 				5BFF243B316C4E99B8782EF2 /* NotchMotion.swift in Sources */,
 				2EE1B993AE7FED6AD4DF681B /* HorizontalSwipe.swift in Sources */,
 				11EFCD702E8E92D600D0B974 /* ShelfItemViewModel.swift in Sources */,

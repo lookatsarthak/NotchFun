@@ -82,6 +82,18 @@ class SettingsWindowController: NSWindowController {
         window?.contentView = NSView()
     }
     
+    /// Posted with a pane name ("Clipboard", "Face", …) to switch Settings to that pane.
+    static let showPaneNotification = Notification.Name("NotchFunSettingsShowPane")
+
+    /// Opens Settings on a particular pane. The view is built on show, so the switch is
+    /// posted a moment later, once it's listening.
+    func showWindow(pane: String) {
+        showWindow()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            NotificationCenter.default.post(name: Self.showPaneNotification, object: pane)
+        }
+    }
+
     func showWindow() {
         if !(window?.contentView is NSHostingView<SettingsView>) { installContent() }
 

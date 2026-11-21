@@ -8,7 +8,10 @@
 import Defaults
 import SwiftUI
 
+/// Appearance: how NotchFun looks. (Was "Advanced"; its window behaviour settings moved
+/// to General, and the music, mirror and face settings to their own panes.)
 struct Advanced: View {
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.useCustomAccentColor) var useCustomAccentColor
     @Default(.customAccentColorData) var customAccentColorData
     @Default(.extendHoverArea) var extendHoverArea
@@ -50,10 +53,18 @@ struct Advanced: View {
     var body: some View {
         Form {
             Section {
+                Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
+                Defaults.Toggle(key: .settingsIconInNotch) {
+                    Text("Show settings icon in notch")
+                }
+            } header: {
+                Text("Notch")
+            }
+
+            Section {
                 VStack(alignment: .leading, spacing: 16) {
-                    // Toggle between system and custom
                     Picker("Accent color", selection: $useCustomAccentColor) {
-                        Text("System").tag(false)
+                        Text("NotchFun").tag(false)
                         Text("Custom").tag(true)
                     }
                     .pickerStyle(.segmented)
@@ -69,9 +80,9 @@ struct Advanced: View {
                                 ) {}
                                 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Using System Accent")
+                                    Text("Using NotchFun purple")
                                         .font(.body)
-                                    Text("Your macOS system accent color")
+                                    Text("NotchFun's own color")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -147,7 +158,7 @@ struct Advanced: View {
             } header: {
                 Text("Accent color")
             } footer: {
-                Text("Choose between your system accent color or customize it with your own selection.")
+                Text("NotchFun's purple, or a color of your own.")
                     .multilineTextAlignment(.trailing)
                     .foregroundStyle(.secondary)
                     .font(.caption)
@@ -164,72 +175,13 @@ struct Advanced: View {
                     Text("Corner radius scaling")
                 }
             } header: {
-                Text("Window Appearance")
+                Text("Window")
             }
             
-            Section {
-                HStack {
-                    ForEach(icons, id: \.self) { icon in
-                        Spacer()
-                        VStack {
-                            Image(icon)
-                                .resizable()
-                                .frame(width: 80, height: 80)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                        .strokeBorder(
-                                            icon == selectedIcon ? Color.effectiveAccent : .clear,
-                                            lineWidth: 2.5
-                                        )
-                                )
-
-                            Text("Default")
-                                .fontWeight(.medium)
-                                .font(.caption)
-                                .foregroundStyle(icon == selectedIcon ? .white : .secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(
-                                    Capsule()
-                                        .fill(icon == selectedIcon ? Color.effectiveAccent : .clear)
-                                )
-                        }
-                        .onTapGesture {
-                            withAnimation(NotchMotion.page) {
-                                selectedIcon = icon
-                            }
-                            NSApp.applicationIconImage = NSImage(named: icon)
-                        }
-                        Spacer()
-                    }
-                }
-                .disabled(true)
-            } header: {
-                HStack {
-                    Text("App icon")
-                    customBadge(text: "Coming soon")
-                }
-            }
             
-            Section {
-                Defaults.Toggle(key: .extendHoverArea) {
-                    Text("Extend hover area")
-                }
-                Defaults.Toggle(key: .hideTitleBar) {
-                    Text("Hide title bar")
-                }
-                Defaults.Toggle(key: .showOnLockScreen) {
-                    Text("Show notch on lock screen")
-                }
-                Defaults.Toggle(key: .hideFromScreenRecording) {
-                    Text("Hide from screen recording")
-                }
-            } header: {
-                Text("Window Behavior")
-            }
         }
         .accentColor(.effectiveAccent)
-        .navigationTitle("Advanced")
+        .navigationTitle("Appearance")
         .onAppear {
             loadCustomColor()
         }

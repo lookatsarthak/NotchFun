@@ -106,9 +106,9 @@ struct OnboardingPlanTests {
     @Test("The last screen names what is waiting on Accessibility, and nothing once it is allowed")
     func accessibilityReminder() {
         let both = OnboardingPlan.accessibilityReminder(mediaKeyHUD: true, clipboardHistory: true, accessibilityGranted: false)
-        #expect(both?.contains("volume popup") == true && both?.contains("clipboard") == true && both?.contains("Settings → HUD") == true)
+        #expect(both?.contains("volume popup") == true && both?.contains("clipboard") == true && both?.contains("Settings → Volume & Brightness") == true)
         let popup = OnboardingPlan.accessibilityReminder(mediaKeyHUD: true, clipboardHistory: false, accessibilityGranted: false)
-        #expect(popup?.contains("Settings → HUD") == true && popup?.contains("clipboard") == false)
+        #expect(popup?.contains("Settings → Volume & Brightness") == true && popup?.contains("clipboard") == false)
         let paste = OnboardingPlan.accessibilityReminder(mediaKeyHUD: false, clipboardHistory: true, accessibilityGranted: false)
         #expect(paste?.contains("clipboard") == true && paste?.contains("HUD") == false)
         #expect(OnboardingPlan.accessibilityReminder(mediaKeyHUD: false, clipboardHistory: false, accessibilityGranted: false) == nil)

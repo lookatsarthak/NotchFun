@@ -19,7 +19,7 @@ struct Charge: View {
                     Text("Show power status notifications")
                 }
                 Defaults.Toggle(key: .showAccessoryBattery) {
-                    Text("Show Bluetooth accessory battery")
+                    Text("Show AirPods and headphone battery")
                 }
             } header: {
                 Text("General")

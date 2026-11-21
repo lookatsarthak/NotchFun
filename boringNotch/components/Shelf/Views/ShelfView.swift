@@ -19,8 +19,10 @@ struct ShelfView: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            // Narrower than the square it was, which took a quarter of the shelf and left
+            // room for about two files fewer.
             FileShareView()
-                .aspectRatio(1, contentMode: .fit)
+                .frame(width: 92)
                 .environment(vm)
             panel
                 .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: nil) { providers in
@@ -85,13 +87,19 @@ struct ShelfView: View {
     }
 
     var panel: some View {
+        // Dashed "drop here" only while something is being dragged; at rest, a quiet
+        // panel. Dashes all the time said "drop here" to nobody.
         RoundedRectangle(cornerRadius: NotchRadius.panel, style: .continuous)
-            .stroke(
-                vm.dragDetectorTargeting
-                    ? Color.accentColor.opacity(0.9)
-                    : Color.white.opacity(0.1),
-                style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [10])
-            )
+            .fill(Color.white.opacity(vm.anyDropZoneTargeting ? 0 : 0.04))
+            .overlay {
+                if vm.anyDropZoneTargeting {
+                    RoundedRectangle(cornerRadius: NotchRadius.panel, style: .continuous)
+                        .stroke(
+                            vm.dragDetectorTargeting ? Color.effectiveAccent.opacity(0.9) : Color.white.opacity(0.25),
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [10])
+                        )
+                }
+            }
             .overlay {
                 content
                     .padding()
@@ -132,6 +140,15 @@ struct ShelfView: View {
                 }
                 .padding(-spacing)
                 .scrollIndicators(.never)
+                // The last item fades out at the edge instead of being cut, which says
+                // "there's more" when the row scrolls.
+                .mask {
+                    HStack(spacing: 0) {
+                        Rectangle()
+                        LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: 28)
+                    }
+                }
                 .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: nil) { providers in
                     handleDrop(providers: providers)
                 }

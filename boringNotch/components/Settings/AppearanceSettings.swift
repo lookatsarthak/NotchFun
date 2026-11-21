@@ -24,46 +24,8 @@ struct Appearance: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
-                Defaults.Toggle(key: .settingsIconInNotch) {
-                    Text("Show settings icon in notch")
-                }
-
-            } header: {
-                Text("General")
-            }
-
-            Section {
-                Defaults.Toggle(key: .coloredSpectrogram) {
-                    Text("Colored spectrogram")
-                }
-                Defaults
-                    .Toggle("Player tinting", key: .playerColorTinting)
-                Defaults.Toggle(key: .lightingEffect) {
-                    Text("Enable blur effect behind album art")
-                }
-                Picker("Slider color", selection: $sliderColor) {
-                    ForEach(SliderColorEnum.allCases, id: \.self) { option in
-                        Text(option.rawValue)
-                    }
-                }
-                Defaults.Toggle(key: .compactMusicLiveActivity) {
-                    Text("Compact music indicator")
-                }
-            } header: {
-                Text("Media")
-            } footer: {
-                Text(
-                    "Compact shrinks the album art and spectrum beside the closed notch, so a playing track widens it by 40pt instead of 56pt."
-                )
-                .multilineTextAlignment(.trailing)
-                .foregroundStyle(.secondary)
-                .font(.caption)
-            }
-
-            Section {
                 Defaults.Toggle(key: .showMirror) {
-                    Text("Enable boring mirror")
+                    Text("Show the mirror")
                 }
                     .disabled(!checkVideoInput())
                 Picker("Mirror shape", selection: $mirrorShape) {
@@ -84,19 +46,22 @@ struct Appearance: View {
                 Defaults.Toggle(key: .mirrorFlipped) {
                     Text("Flip the picture, like a mirror")
                 }
+            } header: {
+                Text("Mirror")
+            }
+
+            Section {
                 Defaults.Toggle(key: .showNotHumanFace) {
-                    Text("Show cool face animation while inactive")
+                    Text("Show the face when nothing is playing")
                 }
             } header: {
-                HStack {
-                    Text("Additional features")
-                }
+                Text("Face")
             }
 
             ClaudeCodeSection()
         }
         .accentColor(.effectiveAccent)
-        .navigationTitle("Appearance")
+        .navigationTitle("Face & Mirror")
     }
 
     func checkVideoInput() -> Bool {

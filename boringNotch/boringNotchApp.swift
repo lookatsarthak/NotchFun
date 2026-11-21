@@ -929,7 +929,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     onOpenSettings: {
                         SettingsWindowController.shared.showWindow()
                     }
-                ))
+                )
+                // Switches fill with NotchFun's purple when on. Untinted, a white knob on
+                // a dark track looked the same on and off.
+                .tint(.notchFunPurple))
             window.isRestorable = false
             window.identifier = NSUserInterfaceItemIdentifier("OnboardingWindow")
 

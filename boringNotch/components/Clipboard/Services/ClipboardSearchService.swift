@@ -38,7 +38,7 @@ enum ClipboardSearchService {
                 options: [.caseInsensitive, .diacriticInsensitive]
             ) {
                 exact.append(Match(item: item, ranges: [range]))
-            } else if let match = imageTextMatch(trimmed, in: item) {
+            } else if let match = contentMatch(trimmed, in: item) {
                 inImages.append(match)
             } else if let ranges = subsequenceRanges(of: trimmed, in: item.title) {
                 fuzzy.append(Match(item: item, ranges: ranges))
@@ -52,8 +52,13 @@ enum ClipboardSearchService {
         return exact + inImages + fuzzy
     }
 
-    /// The line of an image's text that contains the query, with the match's range in it.
-    private static func imageTextMatch(_ query: String, in item: ClipboardItem) -> Match? {
+    /// A match inside an image's text, shown as the line that matched, or inside a
+    /// snippet's text, shown under the snippet's own name.
+    private static func contentMatch(_ query: String, in item: ClipboardItem) -> Match? {
+        if let snippet = item.snippetText {
+            return snippet.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+                ? Match(item: item, ranges: []) : nil
+        }
         guard let text = item.imageText else { return nil }
         for line in text.split(whereSeparator: \.isNewline) {
             let line = String(line).trimmingCharacters(in: .whitespaces)

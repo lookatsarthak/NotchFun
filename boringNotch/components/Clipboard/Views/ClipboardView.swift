@@ -15,6 +15,7 @@ struct ClipboardView: View {
 
     @Default(.clipboardCleanLinks) private var cleanLinks
     @Default(.boringShelf) private var shelfEnabled
+    @Default(.clipboardSnippets) private var snippets
 
     /// Keeps the notch open while the tab is in use. Released on every exit path.
     @State private var hold: NotchHoldToken?
@@ -42,8 +43,14 @@ struct ClipboardView: View {
     @State private var scrollingByProgram = false
     @State private var lastTickAt: CFAbsoluteTime = 0
 
-    private var matches: [ClipboardSearchService.Match] {
-        ClipboardSearchService.search(query, in: clipboard.visibleItems)
+    private var matches: [ClipboardSearchService.Match] { combinedMatches(for: query) }
+
+    /// History matches, with snippets that match ahead of them while you type. Snippets
+    /// never show in the plain list, so ⌘1–⌘9 there stay "the last nine copies".
+    private func combinedMatches(for query: String) -> [ClipboardSearchService.Match] {
+        let history = ClipboardSearchService.search(query, in: clipboard.visibleItems)
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty, !snippets.isEmpty else { return history }
+        return ClipboardSearchService.search(query, in: snippets.map(\.asItem)) + history
     }
 
     /// Clears the history from inside the notch.
@@ -182,6 +189,20 @@ struct ClipboardView: View {
 
     @ViewBuilder
     private func contextMenu(for item: ClipboardItem) -> some View {
+        if item.isSnippet {
+            Button("Copy") { select(item) }
+            Button("Edit Snippets…") {
+                deactivate()
+                vm.close(force: true)
+                SettingsWindowController.shared.showWindow(pane: "Clipboard")
+            }
+        } else {
+            historyContextMenu(for: item)
+        }
+    }
+
+    @ViewBuilder
+    private func historyContextMenu(for item: ClipboardItem) -> some View {
         Button(item.isPinned ? "Unpin" : "Pin") {
             clipboard.togglePin(id: item.id)
         }
@@ -297,7 +318,7 @@ struct ClipboardView: View {
         case .character(let text):
             query += text
             // Keep a valid selection: the previously selected row may be filtered out.
-            let updated = ClipboardSearchService.search(query, in: clipboard.visibleItems)
+            let updated = combinedMatches(for: query)
             if !updated.contains(where: { $0.item.id == selectedID }) {
                 selectedID = updated.first?.item.id
             }
@@ -393,7 +414,9 @@ struct ClipboardView: View {
         // Copy unconditionally and first, so the entry is on the pasteboard even if
         // the permission check is pending or refused — the user can then paste it
         // themselves. Degrading beats doing nothing.
-        if asPlainText {
+        if let snippet = item.snippetText {
+            clipboard.copyPlainText(snippet)
+        } else if asPlainText {
             clipboard.copyToPasteboardAsPlainText(item)
         } else {
             clipboard.copyToPasteboard(item)

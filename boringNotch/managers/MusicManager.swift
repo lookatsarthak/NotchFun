@@ -416,7 +416,7 @@ class MusicManager {
 
     // MARK: - Lyrics
     //
-    // Opt-in (Settings > Media), because finding them means asking lrclib.net about the
+    // Opt-in (Settings > Music), because finding them means asking lrclib.net about the
     // track. The pure parts (LRC, choosing a result, the line being sung) are in Lyrics.swift.
 
     /// The track the current or last lookup was for. A reply for any other track is dropped,

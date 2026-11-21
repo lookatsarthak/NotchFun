@@ -812,10 +812,8 @@ struct DoneStep: View {
                 .foregroundStyle(.white.opacity(0.8))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            Button("Allow") {
-                Task { _ = await XPCHelperClient.shared.ensureAccessibilityAuthorizationStatus(promptIfNeeded: true) }
-            }
-            .buttonStyle(OnboardingPrimaryButtonStyle())
+            // No second Allow button: the permissions step asked already. This only says
+            // what's still off.
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.orange.opacity(0.08)))

@@ -72,4 +72,18 @@ struct ClipboardImageTextTests {
         #expect(ClipboardSecretHeuristic.looksSensitive("api_key: sk-live-9f8e7d6c5b4a3f2e1d0c"))
         #expect(!ClipboardSecretHeuristic.looksSensitive("Total due: $320.00"))
     }
+
+    // MARK: Snippets
+
+    @Test("A snippet is found by its name, and by words in its text, under its own name")
+    func snippets() throws {
+        let address = ClipboardSnippet(name: "Home address", text: "221B Baker Street\nLondon").asItem
+        #expect(address.isSnippet)
+        let byName = try #require(ClipboardSearchService.search("home", in: [address]).first)
+        #expect(byName.item.id == address.id)
+        let byText = try #require(ClipboardSearchService.search("baker", in: [address]).first)
+        #expect(byText.displayTitle == nil)
+        #expect(byText.item.snippetText == "221B Baker Street\nLondon")
+        #expect(ClipboardSearchService.search("paris", in: [address]).isEmpty)
+    }
 }

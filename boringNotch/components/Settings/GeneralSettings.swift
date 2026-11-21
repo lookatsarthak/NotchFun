@@ -155,7 +155,7 @@ struct GeneralSettings: View {
                     in: OpenNotchWidth.minimum...OpenNotchWidth.maximum,
                     step: 10
                 ) {
-                    Text("Width when open - \(openNotchWidth, specifier: "%.0f")")
+                    Text("Width when open: \(openNotchWidth, specifier: "%.0f") pt")
                 }
                 .onChange(of: openNotchWidth) {
                     NotificationCenter.default.post(
@@ -179,12 +179,28 @@ struct GeneralSettings: View {
             }
 
             gestureControls()
+
+            Section {
+                Defaults.Toggle(key: .extendHoverArea) {
+                    Text("Extend hover area")
+                }
+                Defaults.Toggle(key: .hideTitleBar) {
+                    Text("Hide title bar")
+                }
+                Defaults.Toggle(key: .showOnLockScreen) {
+                    Text("Show notch on lock screen")
+                }
+                Defaults.Toggle(key: .hideFromScreenRecording) {
+                    Text("Hide from screen recording")
+                }
+            } header: {
+                Text("Window behavior")
+            }
         }
         .toolbar {
-            Button("Quit app") {
+            Button("Quit NotchFun") {
                 NSApp.terminate(self)
             }
-            .controlSize(.extraLarge)
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("General")
@@ -222,10 +238,7 @@ struct GeneralSettings: View {
                 Text("Swipe on the music to skip tracks")
             }
         } header: {
-            HStack {
-                Text("Gesture control")
-                customBadge(text: "Beta")
-            }
+            Text("Gestures")
         } footer: {
             Text(
                 "Two-finger swipe up on the notch to close it, or down to open it when **Open notch on hover** is off. Swipe left on the music for the next track, right for the previous one."

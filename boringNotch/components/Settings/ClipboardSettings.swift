@@ -101,6 +101,8 @@ struct ClipboardSettings: View {
                 Text("Strips utm_, fbclid, gclid and similar from a copied link when you paste it — never from a parameter that selects content, like a YouTube timestamp. Only applies to a copy that is a single link, and pastes it as plain text. Your history keeps the original.")
             }
 
+            ClipboardSnippetsSection()
+
             Section {
                 Defaults.Toggle(key: .clipboardImageText) {
                     Text("Find text in copied images")
@@ -123,14 +125,18 @@ struct ClipboardSettings: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Both need Accessibility permission. Without it, selecting an entry still copies it — you just press ⌘V yourself.")
                     if accessibilityGranted == false {
-                        HStack(spacing: 8) {
+                        // The warning on its own line and the buttons under it. Side by
+                        // side, the text was squeezed into four short lines.
+                        VStack(alignment: .leading, spacing: 6) {
                             warningBadge("Accessibility permission not granted", "Needed for auto-paste and for typing to search.")
-                            Button("Request Permission…") {
-                                ClipboardAccessibility.prompt()
-                            }
-                            Button("Open Settings") {
-                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                                    NSWorkspace.shared.open(url)
+                            HStack(spacing: 8) {
+                                Button("Request Permission…") {
+                                    ClipboardAccessibility.prompt()
+                                }
+                                Button("Open Settings") {
+                                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                                        NSWorkspace.shared.open(url)
+                                    }
                                 }
                             }
                         }

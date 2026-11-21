@@ -118,7 +118,7 @@ struct HUD: View {
             .disabled(!Defaults[.hudReplacement])
         }
         .accentColor(.effectiveAccent)
-        .navigationTitle("HUDs")
+        .navigationTitle("Volume & Brightness")
         .task {
             accessibilityAuthorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
         }

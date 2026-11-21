@@ -31,6 +31,11 @@ struct ClipboardItem: Codable, Identifiable, Equatable, Hashable, Sendable {
     /// everything else, for images with no text, and for text that looked like a secret.
     /// Missing in older history files, which load with nil.
     var imageText: String? = nil
+    /// Set only on the stand-in entries made from snippets (`ClipboardSnippet.asItem`):
+    /// the text to paste. Never on history entries.
+    var snippetText: String? = nil
+
+    var isSnippet: Bool { snippetText != nil }
 
     var isPinned: Bool { pin != nil }
 

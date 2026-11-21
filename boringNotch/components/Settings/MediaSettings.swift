@@ -17,6 +17,7 @@ struct Media: View {
     @Default(.sneakPeekStyles) var sneakPeekStyles
 
     @Default(.enableLyrics) var enableLyrics
+    @Default(.sliderColor) var sliderColor
 
     var body: some View {
         Form {
@@ -94,12 +95,38 @@ struct Media: View {
             }
             
             Section {
+                Defaults.Toggle(key: .coloredSpectrogram) {
+                    Text("Color the visualizer from the artwork")
+                }
+                Defaults.Toggle(key: .playerColorTinting) {
+                    Text("Tint the player from the artwork")
+                }
+                Defaults.Toggle(key: .lightingEffect) {
+                    Text("Enable blur effect behind album art")
+                }
+                Picker("Slider color", selection: $sliderColor) {
+                    ForEach(SliderColorEnum.allCases, id: \.self) { option in
+                        Text(option.rawValue)
+                    }
+                }
+                Defaults.Toggle(key: .compactMusicLiveActivity) {
+                    Text("Compact music indicator")
+                }
+            } header: {
+                Text("Look")
+            } footer: {
+                Text(
+                    "Compact shrinks the album art and spectrum beside the closed notch, so a playing track widens it by 40pt instead of 56pt."
+                )
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            }
+
+            Section {
                 MusicSlotConfigurationView()
                 Defaults.Toggle(key: .enableLyrics) {
-                    HStack {
-                        Text("Show lyrics below artist name")
-                        customBadge(text: "Beta")
-                    }
+                    Text("Show lyrics below the artist")
                 }
                 Defaults.Toggle(key: .closedNotchLyrics) {
                     Text("Show the current line under the closed notch")
@@ -115,7 +142,7 @@ struct Media: View {
             }
         }
         .accentColor(.effectiveAccent)
-        .navigationTitle("Media")
+        .navigationTitle("Music")
     }
 
     // Only show controller options that are available on this macOS version

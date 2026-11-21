@@ -55,7 +55,7 @@ struct TabSelectionView: View {
                     coordinator.currentView = tab.view
                 }
                 .frame(height: 26)
-                .foregroundStyle(.white.opacity(selected ? 1 : hovered == tab.view ? 0.75 : 0.45))
+                .foregroundStyle(.white.opacity(selected ? 1 : hovered == tab.view ? 0.8 : 0.6))
                 .background {
                     // Exactly one pill, under the selected tab only, so matchedGeometryEffect
                     // has a single source and slides it to the next tab. This used to put a

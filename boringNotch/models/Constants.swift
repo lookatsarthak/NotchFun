@@ -71,6 +71,8 @@ enum OptionKeyAction: String, CaseIterable, Identifiable, Defaults.Serializable 
     var id: String { self.rawValue }
 }
 
+extension ClipboardSnippet: Defaults.Serializable {}
+
 extension Defaults.Keys {
     // MARK: General
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
@@ -185,7 +187,9 @@ extension Defaults.Keys {
     
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
-    static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
+    /// The Mac's battery in the open notch's header. Off by default: the menu bar already
+    /// shows it.
+    static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: false)
     static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
     /// Show the battery of the Bluetooth accessory you are listening through. Off by
@@ -289,6 +293,8 @@ extension Defaults.Keys {
     static let clipboardPasteKeyCode = Key<Int>("clipboardPasteKeyCode", default: 9)
     /// Read the text in copied images, on this Mac, for search and Copy Text.
     static let clipboardImageText = Key<Bool>("clipboardImageText", default: true)
+    /// Saved texts with names. See `ClipboardSnippet`.
+    static let clipboardSnippets = Key<[ClipboardSnippet]>("clipboardSnippets", default: [])
 
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

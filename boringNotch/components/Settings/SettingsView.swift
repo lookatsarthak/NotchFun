@@ -30,16 +30,19 @@ struct SettingsView: View {
                     Label("General", systemImage: "gear")
                 }
                 NavigationLink(value: "Appearance") {
-                    Label("Appearance", systemImage: "eye")
+                    Label("Appearance", systemImage: "paintbrush")
                 }
                 NavigationLink(value: "Media") {
-                    Label("Media", systemImage: "play.laptopcomputer")
+                    Label("Music", systemImage: "music.note")
+                }
+                NavigationLink(value: "Face") {
+                    Label("Face & Mirror", systemImage: "face.smiling")
                 }
                 NavigationLink(value: "Calendar") {
                     Label("Calendar", systemImage: "calendar")
                 }
                 NavigationLink(value: "HUD") {
-                    Label("HUDs", systemImage: "dial.medium.fill")
+                    Label("Volume & Brightness", systemImage: "dial.medium.fill")
                 }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
@@ -56,9 +59,6 @@ struct SettingsView: View {
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
-                NavigationLink(value: "Advanced") {
-                    Label("Advanced", systemImage: "gearshape.2")
-                }
                 NavigationLink(value: "About") {
                     Label("About", systemImage: "info.circle")
                 }
@@ -73,9 +73,11 @@ struct SettingsView: View {
                 case "General":
                     GeneralSettings()
                 case "Appearance":
-                    Appearance()
+                    Advanced()
                 case "Media":
                     Media()
+                case "Face":
+                    Appearance()
                 case "Calendar":
                     CalendarSettings()
                 case "HUD":
@@ -90,8 +92,6 @@ struct SettingsView: View {
                     CaffeineSettings()
                 case "Shortcuts":
                     Shortcuts()
-                case "Advanced":
-                    Advanced()
                 case "About":
                     if let controller = updaterController {
                         About(updaterController: controller)
@@ -124,6 +124,9 @@ struct SettingsView: View {
         .id(accentColorUpdateTrigger)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
             accentColorUpdateTrigger = UUID()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: SettingsWindowController.showPaneNotification)) { note in
+            if let pane = note.object as? String { selectedTab = pane }
         }
         #if NOTCHFUN_SOAK
         .onReceive(NotificationCenter.default.publisher(for: SoakHooks.settingsPane)) { note in
