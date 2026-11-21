@@ -468,6 +468,24 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
 .little-tabs button[aria-pressed="true"] { background: #fff; color: #0b0920; }
 .little-caption { margin: 0; font: 600 20px/1.45 var(--font); }
 
+/* The Claude Code face: its four looks, each in a strip of closed notch. Colours and
+   shapes follow AnimatedFace.swift; the twinkle and nudge keep the app's rhythm. */
+.face-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.face-grid li { display: grid; gap: 4px; padding: 14px; border-radius: 18px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); }
+.face-grid b { margin-top: 8px; font: 700 16px/1.2 var(--font); }
+.face-grid li > span:last-child { font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.face-tile { display: flex; justify-content: flex-end; align-items: center; height: 64px; padding-right: 18%; border-radius: 0 0 20px 20px; background: #000; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.face-tile svg { width: 56px; height: 45px; overflow: visible; fill: currentColor; }
+.face-tile .face-line { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.face-tile .face-nose { stroke: none; }
+.face-working .face-tile, .face-waiting .face-tile { color: #d97857; }
+.face-done .face-tile { color: #66db7a; }
+.face-error .face-tile { color: #ff6b66; }
+.sparkle { transform-box: fill-box; transform-origin: center; animation: twinkle 1.4s steps(1) infinite; }
+@keyframes twinkle { 50% { transform: scale(0.6); } }
+.face-nudge { animation: face-nudge 3s ease-in-out infinite; }
+@keyframes face-nudge { 0%, 24%, 100% { transform: none; } 6% { transform: translateX(-2px); } 12% { transform: translateX(2px); } 18% { transform: translateX(-1px); } }
+
 .little-prop { min-height: 268px; }
 .little-prop.no-loupe .loupe-frame { display: none; }
 /* "Up close": the same closed notch, twice the size, for the chapters where the
@@ -504,6 +522,12 @@ body.playing .pp-play, body:not(.playing) .pp-pause { opacity: 0; transform: sca
   transition: width 0.5s var(--spring); }
 .wd-notch i { position: absolute; left: 12px; top: 12px; width: 30px; height: 30px; border-radius: 8px; background: var(--art, linear-gradient(135deg, #ff5fa2, #7b61ff 55%, #1d1a5c)); }
 .c-width input { width: 100%; height: 32px; margin: 10px 0 -8px; accent-color: var(--lav); }
+.c-motion { grid-column: 1 / -1; }
+.motion-demo { gap: 4px; }
+.motion-demo span { padding: 10px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px var(--line); font: 600 14px/1 var(--font); color: var(--ink-2); }
+.motion-demo .on { background: #fff; color: #0b0920; }
+.c-motion:hover .motion-demo .on { animation: lively 1.2s var(--spring) infinite; }
+@keyframes lively { 0%, 60%, 100% { transform: none; } 25% { transform: translateY(-5px) scale(1.06); } }
 
 /* Install: three plain steps, each with a small scene that plays in turn, then the
    line to copy and two quieter alternatives. */

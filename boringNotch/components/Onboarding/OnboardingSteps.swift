@@ -156,7 +156,46 @@ struct FeaturesStep: View {
                             note: "Needs Accessibility",
                             isOn: $hudChoice)
             }
+
+            // Only for apps that are installed, so nobody is offered something they
+            // can't use.
+            if showsClaude || showsBetterDisplay {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Works with your apps")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                    LazyVGrid(columns: columns, spacing: 10) {
+                        if showsClaude {
+                            FeatureCard(icon: "sparkle", title: "Claude Code",
+                                        detail: "Shown on the face",
+                                        compact: true,
+                                        isOn: claudeBinding)
+                        }
+                        if showsBetterDisplay {
+                            FeatureCard(icon: "display", title: "BetterDisplay",
+                                        detail: "External display brightness",
+                                        compact: true,
+                                        isOn: $betterDisplay)
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private let showsClaude = ClaudeCodeConnection.claudeAppInstalled
+    private let showsBetterDisplay = NSWorkspace.shared.urlForApplication(withBundleIdentifier: BetterDisplayProtocol.bundleID) != nil
+    @Default(.useBetterDisplay) private var betterDisplay
+    private let claude = ClaudeCodeConnection.shared
+
+    /// On: the folder dialog, as a sheet on the setup window. Off: disconnect.
+    private var claudeBinding: Binding<Bool> {
+        Binding(
+            get: { claude.isConnected },
+            set: { on in
+                if on { claude.connect(from: NSApp.keyWindow) } else { claude.disconnect() }
+            }
+        )
     }
 }
 
@@ -165,6 +204,9 @@ private struct FeatureCard: View {
     let title: String
     let detail: String
     var note: String? = nil
+    /// One line of detail and a short card, for the "Works with your apps" row, so it
+    /// fits under the grid without pushing Back and Continue out of the window.
+    var compact: Bool = false
     @Binding var isOn: Bool
     @State private var bounces = 0
 
@@ -185,10 +227,10 @@ private struct FeatureCard: View {
                 Text(detail)
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.6))
-                    .lineLimit(2)
+                    .lineLimit(compact ? 1 : 2)
                 // Said up front, on the card that causes it, rather than as a surprise
                 // on the next screen.
-                if isOn, let note {
+                if isOn, let note, !compact {
                     Text(note)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Color.orange.opacity(0.9))
@@ -206,7 +248,7 @@ private struct FeatureCard: View {
         .padding(10)
         // One height for every card, so the two in a row line up; grid rows otherwise
         // size to the taller card and centre the shorter one.
-        .frame(maxWidth: .infinity, minHeight: 92, maxHeight: 92, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: compact ? 54 : 82, maxHeight: compact ? 54 : 82, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.white.opacity(isOn ? 0.10 : 0.05))
@@ -777,6 +819,8 @@ struct DoneStep: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 tip("keyboard", "⇧⌘I opens the notch from the keyboard.")
+                tip("hand.draw", "Swipe left or right on the music to skip a track.")
+                tip("text.quote", "Save snippets in Settings → Clipboard, then type a snippet's name in the clipboard tab to paste it.")
                 tip("square.stack.3d.up", "Its actions are in the Shortcuts app, for automations.")
                 tip("gearshape", "Everything you chose, and a lot more, is in Settings: the gear in the open notch.")
             }

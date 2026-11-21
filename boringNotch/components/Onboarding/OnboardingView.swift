@@ -226,6 +226,7 @@ struct OnboardingView: View {
         applyHUDChoice()
         tryIt.cleanUp()
         Defaults[.onboardingCompletedVersion] = OnboardingPlan.version
+        WhatsNew.markSeen()
         Defaults[.onboardingResumeStep] = nil
         Defaults[.onboardingPendingHUDChoice] = nil
         onFinish()

@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NotchFun — the notch, but fun</title>
-  <meta name="description" content="NotchFun turns the MacBook notch into a small, quiet place for what's playing, files in motion, what you've copied, and more. Free and open source, for macOS 26 Tahoe and later.">
+  <meta name="description" content="NotchFun turns the MacBook notch into a small, quiet place for what's playing, files in motion, what you've copied and what Claude Code is doing. Free and open source, for macOS 26 Tahoe and later.">
   <meta name="theme-color" content="#07071A">
   <link rel="icon" href="assets/favicon.png">
   <link rel="canonical" href="https://lookatsarthak.github.io/NotchFun/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="NotchFun">
   <meta property="og:title" content="NotchFun — the notch, but fun">
-  <meta property="og:description" content="Music, a file shelf, clipboard history and more, right in the MacBook notch. Free and open source for macOS 26 Tahoe and later.">
+  <meta property="og:description" content="Music, a file shelf, clipboard history and a face that shows what Claude Code is doing, right in the MacBook notch. Free and open source for macOS 26 Tahoe and later.">
   <meta property="og:url" content="https://lookatsarthak.github.io/NotchFun/">
   <meta property="og:image" content="https://lookatsarthak.github.io/NotchFun/assets/og.jpg?v=2">
   <meta property="og:image:width" content="1200">
@@ -261,6 +261,40 @@
   <!-- ============ CHAPTERS ============ -->
   <div id="features" class="chapters">
 
+    <!-- New in 2.0. The page's own notch stays closed here (main.js has no view for it),
+         so the card draws the four looks the face takes, as the app draws them. -->
+    <section class="chapter" data-chapter="claude">
+      <div class="ch-copy">
+        <h2 class="reveal-lines"><span class="line"><span>Know when</span></span><span class="line"><span>Claude needs you.</span></span></h2>
+        <p class="ch-body reveal">Connect Claude Code and the face in the notch shows what it's doing. One click in Settings, no Terminal.</p>
+        <p class="ch-moment reveal">Start a long task and look away. The face looks up when it's your turn.</p>
+      </div>
+      <div class="ch-prop">
+        <div class="prop-card face-prop reveal">
+          <p class="prop-hint">Four looks, no words</p>
+          <ul class="face-grid">
+            <li class="face-working">
+              <span class="face-tile" aria-hidden="true"><svg viewBox="0 0 40 32"><g class="face-eyes"><path class="sparkle" d="M12 3.5c.4 3.1 1.4 4.1 4.5 4.5-3.1.4-4.1 1.4-4.5 4.5-.4-3.1-1.4-4.1-4.5-4.5 3.1-.4 4.1-1.4 4.5-4.5z"/><path class="sparkle" d="M28 3.5c.4 3.1 1.4 4.1 4.5 4.5-3.1.4-4.1 1.4-4.5 4.5-.4-3.1-1.4-4.1-4.5-4.5 3.1-.4 4.1-1.4 4.5-4.5z"/></g><rect class="face-nose" x="19" y="13" width="2" height="4" rx="1"/><path class="face-line" d="M12.5 21.5q7.5 5.5 15 0"/></svg></span>
+              <b>Working</b><span>Orange sparkles that twinkle</span>
+            </li>
+            <li class="face-waiting">
+              <span class="face-tile" aria-hidden="true"><svg viewBox="0 0 40 32"><g class="face-nudge"><circle cx="12" cy="8" r="3.2"/><circle cx="28" cy="8" r="3.2"/><rect class="face-nose" x="19" y="13" width="2" height="4" rx="1"/><circle class="face-line" cx="20" cy="23.5" r="2.6"/></g></svg></span>
+              <b>Needs you</b><span>Wide eyes, and a nudge until you answer</span>
+            </li>
+            <li class="face-done">
+              <span class="face-tile" aria-hidden="true"><svg viewBox="0 0 40 32"><path class="face-line" d="M9 10l3-3 3 3M25 10l3-3 3 3"/><rect class="face-nose" x="19" y="13" width="2" height="4" rx="1"/><path class="face-line" d="M11 20.5q9 8 18 0"/></svg></span>
+              <b>Done</b><span>A green smile</span>
+            </li>
+            <li class="face-error">
+              <span class="face-tile" aria-hidden="true"><svg viewBox="0 0 40 32"><path class="face-line" d="M10 6l4 4M14 6l-4 4M26 6l4 4M30 6l-4 4"/><rect class="face-nose" x="19" y="13" width="2" height="4" rx="1"/><path class="face-line" d="M13 25q7-5.5 14 0"/></svg></span>
+              <b>Error</b><span>A red frown</span>
+            </li>
+          </ul>
+          <p class="prop-foot">Music playing? A small face pops up beside the notch when Claude needs you or finishes.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="chapter" data-chapter="shelf">
       <div class="ch-copy">
         <h2 class="reveal-lines"><span class="line"><span>A pocket</span></span><span class="line"><span>for your files.</span></span></h2>
@@ -290,7 +324,7 @@
     <section class="chapter" data-chapter="music">
       <div class="ch-copy">
         <h2 class="reveal-lines"><span class="line"><span>Your music,</span></span><span class="line"><span>one glance up.</span></span></h2>
-        <p class="ch-body reveal">Artwork and controls for whatever's playing. Closed, the notch keeps a live waveform at its edge.</p>
+        <p class="ch-body reveal">Artwork and controls for whatever's playing. Closed, the notch keeps a live waveform at its edge and, if you like, the lyrics underneath. Swipe with two fingers to skip a track, or switch speakers from the output menu.</p>
         <p class="ch-moment reveal">Skip the song mid-call. Nobody notices.</p>
       </div>
       <div class="ch-prop" data-prop>
@@ -321,7 +355,7 @@
     <section class="chapter" data-chapter="clip">
       <div class="ch-copy">
         <h2 class="reveal-lines"><span class="line"><span>Everything you copied.</span></span><span class="line"><span>Right there.</span></span></h2>
-        <p class="ch-body reveal">Your clipboard history: search it, pin it, paste it straight back. Copies that password managers mark as private never get in.</p>
+        <p class="ch-body reveal">Your clipboard history: search it, pin it, paste it straight back. Search finds copied screenshots by the words in them, and snippets hold the text you paste often. Copies that password managers mark as private never get in.</p>
         <p class="ch-moment reveal">That tracking number from this morning? Still here.</p>
       </div>
       <div class="ch-prop">
@@ -338,7 +372,7 @@
     <section class="chapter" data-chapter="cal">
       <div class="ch-copy">
         <h2 class="reveal-lines"><span class="line"><span>Your day,</span></span><span class="line"><span>at a glance.</span></span></h2>
-        <p class="ch-body reveal">Today's events, right beside your music. No app to open.</p>
+        <p class="ch-body reveal">Today's events, right beside your music. Video calls get a Join button, and the notch gives you a heads-up two minutes before one starts.</p>
         <p class="ch-moment reveal">See the next meeting without leaving the sentence.</p>
       </div>
       <div class="ch-prop">
@@ -492,8 +526,12 @@ Done. NotchFun is in your notch.</code></pre>
       <h3 class="faq-group">Using it</h3>
       <details class="reveal" data-faq="free"><summary>Is it really free?</summary><p>Yes. No trial, no account, no in-app purchases. It's open source under the GPLv3.</p></details>
       <details class="reveal" data-faq="permissions"><summary>What permissions does it need?</summary><p>Only what the features you turn on need: Calendar and Reminders for events, Camera for the mirror, Accessibility for pasting and the volume popup. Setup asks at the moment it matters.</p></details>
-      <details class="reveal" data-faq="privacy"><summary>Does anything leave my Mac?</summary><p>The app has no accounts and no analytics. It checks GitHub for updates, and if you turn on lyrics it looks up the current song on LRCLIB. Your clipboard never leaves your Mac. This website and the installer keep anonymous counts of visits, clicks and installs — no cookies, nothing that identifies you.</p></details>
-      <details class="reveal" data-faq="light"><summary>Will it slow my Mac down or drain the battery?</summary><p>No. Idle, it uses about 0.1% of one CPU core and around 30 MB of memory, and with the notch open on a paused track it uses no measurable CPU at all. Every release is measured before it ships: idle, open on each tab, and after 20 screen locks.</p></details>
+      <details class="reveal" data-faq="privacy"><summary>Does anything leave my Mac?</summary><p>The app has no accounts and no analytics. It checks GitHub for updates, and if you turn on lyrics it looks up the current song on LRCLIB. Your clipboard never leaves your Mac, and the text in copied images is read there too. This website and the installer keep anonymous counts of visits, clicks and installs — no cookies, nothing that identifies you.</p></details>
+      <details class="reveal" data-faq="light"><summary>Will it slow my Mac down or drain the battery?</summary><p>No. Idle, it uses about 0.1% of one CPU core and around 30 MB of memory. Open, with music playing and a long title scrolling, it uses about 0.3%, down from 18% before 2.0. Every release is measured before it ships: idle, open on each tab, and after 20 screen locks and 10 display changes.</p></details>
+      <details class="reveal" data-faq="claude"><summary>What does connecting Claude Code change?</summary>
+        <p>NotchFun adds its hooks to Claude Code's <code>settings.json</code>, after saving a backup beside it. The rest of the file keeps its contents, though its keys end up in sorted order. <b>Disconnect</b> removes exactly what was added.</p>
+        <p>The hooks run in the background, so Claude Code never waits on NotchFun, and they do nothing while NotchFun is closed. They work in the Claude Code CLI, the desktop app and IDE sessions, but not in cloud sessions.</p>
+      </details>
       <details class="reveal" data-faq="uninstall"><summary>How do I uninstall it?</summary><p>Open Settings → General and click <b>Quit app</b>, then move NotchFun from Applications to the Trash. If you installed with Homebrew, run <code>brew uninstall --cask notchfun</code>.</p></details>
     </div>
   </section>
@@ -507,13 +545,18 @@ Done. NotchFun is in your notch.</code></pre>
       <article class="card c-shortcut reveal">
         <div class="card-visual keys-demo" aria-hidden="true"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>I</kbd></div>
         <h3>Open it from the keyboard</h3>
-        <p>⇧⌘I, or any shortcut you like. Five actions in the Shortcuts app cover the rest.</p>
+        <p>⇧⌘I, or any shortcut you like. Six Shortcuts actions and notchfun:// links cover the rest, even putting your own message in the notch.</p>
       </article>
       <article class="card c-width reveal">
         <div class="card-visual width-demo" aria-hidden="true"><span class="wd-notch"><i></i></span></div>
         <h3>As wide as you like</h3>
         <p>Drag the slider — it resizes the notch up top.</p>
         <input type="range" min="500" max="900" value="640" step="10" data-width aria-label="Open notch width">
+      </article>
+      <article class="card c-motion reveal">
+        <div class="card-visual motion-demo" aria-hidden="true"><span>Calm</span><span>Standard</span><span class="on">Lively</span></div>
+        <h3>Moves the way you like</h3>
+        <p>Calm, Standard or Lively. Name the apps where hovering shouldn't open it, and let it follow you to the display you're using.</p>
       </article>
     </div>
   </section>
@@ -523,8 +566,28 @@ Done. NotchFun is in your notch.</code></pre>
     <div class="section-head">
       <h2 class="reveal-lines"><span class="line"><span>Recently shipped.</span></span></h2>
     </div>
+    <!-- 2.0 is written in here, from release-notes/2.0.0.md, so the page has it without
+         scripts. main.js swaps in the latest release from GitHub once that loads, in the
+         same markup. -->
     <div class="releases" data-releases>
-      <p class="loading">Loading the latest release…</p>
+      <article class="release reveal">
+        <div class="release-head"><h3>2.0.0</h3><time datetime="2026-11-21">21 November 2026</time><span class="latest">Latest</span></div>
+        <div class="release-body">
+          <h4>New</h4>
+          <ul>
+            <li><b>The face shows what Claude Code is doing.</b> It twinkles while Claude works, looks up when it needs you and smiles when it's done. Connect it in Settings → Face &amp; Mirror.</li>
+            <li><b>AirPods show each earbud and the case.</b> Left, right and case, with charging, when you connect them.</li>
+            <li><b>Join video calls from the notch.</b> Calendar events get a Join button, and the notch gives you a heads-up two minutes before a call.</li>
+            <li><b>Find screenshots by the words in them.</b> Clipboard search reads copied images on your Mac, and right-click offers Copy Text. Snippets keep text you paste often.</li>
+            <li><b>Make it yours.</b> Swipe on the music to skip, lyrics under the closed notch, an output menu, calmer or livelier motion, and apps where hovering doesn't open the notch.</li>
+          </ul>
+          <h4>Improved</h4>
+          <ul>
+            <li><b>Lighter than ever.</b> About 0.1% CPU in the background and around 30 MB, measured on every release; a scrolling title with the notch open dropped from 18% CPU to under 1%.</li>
+            <li><b>Settings are grouped by feature.</b> Music, Face &amp; Mirror and Volume &amp; Brightness each have their own place.</li>
+          </ul>
+        </div>
+      </article>
     </div>
     <a class="btn btn-ghost center" href="https://github.com/lookatsarthak/NotchFun/releases" target="_blank" rel="noopener"><span>Every release on GitHub →</span></a>
   </section>

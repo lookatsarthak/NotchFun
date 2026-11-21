@@ -171,7 +171,7 @@ test('admin page and unknown paths', async () => {
 test('behaviour: batches, allowed events only, once per kind of thing', async () => {
   const ua = { 'user-agent': 'Behaviour browser' };
   assert.equal((await post('/e', { b: [{ e: 'view', c: 'news.ycombinator.com' }, { e: 'device', c: 'mac/desktop' }, { e: 'lang', c: 'en' }] }, ua)).status, 204);
-  for (const [e, c] of [['section', 'music'], ['section', 'install'], ['toggle', 'shelf:real'], ['video_end', 'shelf'], ['demo', 'clip:search'], ['demo', 'shelf:out'], ['demo', 'cal:day'], ['faq_open', 'uninstall'], ['faq_open', 'safe'], ['copy_curl', 'closing'],
+  for (const [e, c] of [['section', 'music'], ['section', 'install'], ['toggle', 'shelf:real'], ['video_end', 'shelf'], ['demo', 'clip:search'], ['demo', 'shelf:out'], ['demo', 'cal:day'], ['faq_open', 'uninstall'], ['faq_open', 'claude'], ['faq_open', 'light'], ['section', 'claude'], ['faq_open', 'safe'], ['copy_curl', 'closing'],
     ['faq_open', 'warning'], ['outbound', 'releases'], ['time', '30s-2m'], ['changelog_more', '']]) {
     assert.equal((await post('/e', { e, c }, ua)).status, 204, `${e} ${c}`);
   }
@@ -369,6 +369,14 @@ test('funnel: reaching either of the first two chapters counts as seeing the fea
   const ua = { 'user-agent': 'Shelf-first browser' };
   const before = (await stats()).funnel.features;
   await post('/e', { b: [{ e: 'view', c: '' }, { e: 'section', c: 'shelf' }] }, ua);
+  await settle();
+  assert.equal((await stats()).funnel.features - before, 1);
+});
+
+test('funnel: the Claude Code chapter, first since 2.0, counts as seeing the features', async () => {
+  const ua = { 'user-agent': 'Claude-first browser' };
+  const before = (await stats()).funnel.features;
+  await post('/e', { b: [{ e: 'view', c: '' }, { e: 'section', c: 'claude' }] }, ua);
   await settle();
   assert.equal((await stats()).funnel.features - before, 1);
 });

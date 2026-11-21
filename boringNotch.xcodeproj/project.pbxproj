@@ -214,6 +214,7 @@
 		E3D988B9397868903EEC8927 /* OnboardingPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F2B8CF56E76620818968E1 /* OnboardingPlan.swift */; };
 		C72249A1695419E3FE3C2E8A /* OnboardingPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F2B8CF56E76620818968E1 /* OnboardingPlan.swift */; };
 		C2845D9CF28C4A0B3DF4AD93 /* OnboardingSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 352D2AD42257298E0FBEFB96 /* OnboardingSteps.swift */; };
+		5F7BC531B5CFD94E8B2F36C9 /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 055E83FF4F7DD2F1CC3CD124 /* WhatsNewView.swift */; };
 		11CFC6632E09918400748C80 /* MusicControllerSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CFC6622E09917B00748C80 /* MusicControllerSelectionView.swift */; };
 		11D58EA22E760AE100FA8377 /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D58EA12E760AE100FA8377 /* ImageService.swift */; };
 		11EFCD702E8E92D600D0B974 /* ShelfItemViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EFCD6F2E8E92D600D0B974 /* ShelfItemViewModel.swift */; };
@@ -480,6 +481,7 @@
 		11CFC65E2E097F2100748C80 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C7F2B8CF56E76620818968E1 /* OnboardingPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPlan.swift; sourceTree = "<group>"; };
 		352D2AD42257298E0FBEFB96 /* OnboardingSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSteps.swift; sourceTree = "<group>"; };
+		055E83FF4F7DD2F1CC3CD124 /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		11CFC6622E09917B00748C80 /* MusicControllerSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicControllerSelectionView.swift; sourceTree = "<group>"; };
 		11D58EA12E760AE100FA8377 /* ImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageService.swift; sourceTree = "<group>"; };
 		11EFCD6F2E8E92D600D0B974 /* ShelfItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfItemViewModel.swift; sourceTree = "<group>"; };
@@ -1126,6 +1128,7 @@
 				11CFC65E2E097F2100748C80 /* OnboardingView.swift */,
 				C7F2B8CF56E76620818968E1 /* OnboardingPlan.swift */,
 				352D2AD42257298E0FBEFB96 /* OnboardingSteps.swift */,
+				055E83FF4F7DD2F1CC3CD124 /* WhatsNewView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1490,6 +1493,7 @@
 				7B748DDD057832EBA8862D24 /* GeneralSettings.swift in Sources */,
 				E3D988B9397868903EEC8927 /* OnboardingPlan.swift in Sources */,
 				C2845D9CF28C4A0B3DF4AD93 /* OnboardingSteps.swift in Sources */,
+				5F7BC531B5CFD94E8B2F36C9 /* WhatsNewView.swift in Sources */,
 				E50E243236078E968A4F475F /* NotchHoverHighlight.swift in Sources */,
 				D2AC7272081A3D1784360A29 /* CaffeineSettings.swift in Sources */,
 				AE87BFAB9EBCE883C3328361 /* CaffeineAppBoundMenu.swift in Sources */,
@@ -1732,14 +1736,14 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BoringNotchXPCHelper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "NotchFun Helper";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun.XPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1757,14 +1761,14 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BoringNotchXPCHelper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "NotchFun Helper";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun.XPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1911,7 +1915,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"boringNotch/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -1939,7 +1943,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1965,7 +1969,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"boringNotch/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -1992,7 +1996,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.lookatsarthak.notchfun;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;

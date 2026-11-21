@@ -784,8 +784,8 @@ const little = {
     caption: 'Keep your Mac awake for an hour, or until you turn it off.',
   },
   airpods: {
-    banner: { lead: '<svg viewBox="0 0 24 24"><use href="#i-airpods"/></svg>AirPods Pro', trail: '82%<span class="ring" style="--p:.82"></span>' },
-    caption: 'Pop them in, see the battery. One honest number.',
+    banner: { lead: '<svg viewBox="0 0 24 24"><use href="#i-airpods"/></svg>AirPods Pro', trail: 'L 80 · R 78 · Case 100' },
+    caption: 'Each earbud and the case, the moment they connect.',
   },
   charging: {
     banner: { lead: '<svg viewBox="0 0 24 24" style="color:#32d74b"><use href="#i-bolt"/></svg>Charging', trail: '84%<span class="ring" style="--p:.84"></span>' },
@@ -882,7 +882,7 @@ async function copyOrSelect(text, code, button) {
 }
 
 // What happens once the line is on the clipboard. It lands in the notch's clipboard, the
-// behaviour chapter 3 just taught, and the steps stop on the one the visitor is now doing.
+// behaviour the clipboard chapter just taught, and the steps stop on the one the visitor is now doing.
 function lineCopied(text) {
   addClip(text.replace(/https:\S+\/(install\.sh)/, '…/$1'), 'This page');
   peek('clip');

@@ -5,6 +5,7 @@
 
 #if NOTCHFUN_SOAK
 import AppKit
+import Defaults
 
 /// Remote controls for the release soak test. Compiled only into measurement builds
 /// (`SWIFT_ACTIVE_COMPILATION_CONDITIONS=NOTCHFUN_SOAK`), never into a shipped one.
@@ -78,6 +79,16 @@ enum SoakHooks {
         }
         on("lyricsdemo") { _ in
             MusicManager.shared.showDemoLyrics()
+        }
+        // Shows What's New, or setup at a step, for screenshots.
+        on("whatsnew") { _ in
+            Defaults[.whatsNewShownVersion] = 0
+            WhatsNew.showIfNeeded()
+        }
+        on("whatsnewclose") { _ in WhatsNew.close() }
+        on("setup") { step in
+            if let step { AppDelegate.shared?.soakShowOnboarding(at: step) }
+            else { AppDelegate.shared?.showOnboardingWindow(restart: true) }
         }
         on("displaychange") { _ in
             AppDelegate.shared?.soakDisplayChange()

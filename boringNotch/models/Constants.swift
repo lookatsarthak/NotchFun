@@ -85,6 +85,8 @@ extension Defaults.Keys {
     /// The setup version last finished; 0 for never. Compared with OnboardingPlan.version
     /// at launch, which is what lets a future redesign be shown once to existing users.
     static let onboardingCompletedVersion = Key<Int>("onboardingCompletedVersion", default: 0)
+    /// The What's New version last shown. See `WhatsNew`.
+    static let whatsNewShownVersion = Key<Int>("whatsNewShownVersion", default: 0)
     /// The step setup was on when last seen, while it is unfinished; nil otherwise. Lets
     /// setup resume where it was quit instead of starting over.
     static let onboardingResumeStep = Key<String?>("onboardingResumeStep", default: nil)
@@ -196,7 +198,7 @@ extension Defaults.Keys {
     /// default: it is the only feature that costs a subprocess, because the App Sandbox
     /// returns nothing for `system_profiler` and the reading has to come back through the
     /// unsandboxed XPC helper. Something with a cost should be asked for.
-    static let showAccessoryBattery = Key<Bool>("showAccessoryBattery", default: false)
+    static let showAccessoryBattery = Key<Bool>("showAccessoryBattery", default: true)
     
     // MARK: HUD
     static let hudReplacement = Key<Bool>("hudReplacement", default: false)

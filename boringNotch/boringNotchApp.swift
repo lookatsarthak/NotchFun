@@ -721,6 +721,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if Defaults[.onboardingCompletedVersion] == 0 {
                 Defaults[.onboardingCompletedVersion] = OnboardingPlan.version
             }
+            // Once, for people updating to 2.0, after the notch has settled.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { WhatsNew.showIfNeeded() }
             Task { @MainActor in
                 // Waits for the check; reading isNowPlayingDeprecated here directly
                 // always saw false. See MusicManager.nowPlayingDeprecation().
@@ -886,6 +888,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Shows setup, resuming where it was left unless `restart` is set - which is what
     /// "Run setup again" in Settings wants.
+    #if NOTCHFUN_SOAK
+    /// Opens setup at a given step, replacing any open setup window, for captures.
+    func soakShowOnboarding(at step: String) {
+        Defaults[.onboardingResumeStep] = step
+        onboardingWindowController?.close()
+        onboardingWindowController = nil
+        showOnboardingWindow()
+    }
+    #endif
+
     func showOnboardingWindow(restart: Bool = false) {
         if restart {
             // A window closed part-way is kept for resuming; a restart wants a new one.

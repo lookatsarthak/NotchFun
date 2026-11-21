@@ -48,7 +48,14 @@ final class ClaudeCodeConnection {
 
     // MARK: - Connect and disconnect
 
-    func connect() {
+    /// Whether the Claude app is installed, for offering Claude Code in setup and in
+    /// What's New. Claude Code in Terminal alone can't be detected from the sandbox;
+    /// those users find it in Settings.
+    static var claudeAppInstalled: Bool {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anthropic.claudefordesktop") != nil
+    }
+
+    func connect(from presenter: NSWindow? = nil) {
         problem = nil
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
@@ -66,8 +73,10 @@ final class ClaudeCodeConnection {
         // desktop: over a full-screen app it opened on the regular desktop, out of sight,
         // and the click seemed to do nothing. A sheet always shows on its window.
         NSApp.activate(ignoringOtherApps: true)
-        if let settings = SettingsWindowController.shared.window, settings.isVisible {
-            panel.beginSheetModal(for: settings) { [weak self] response in
+        let host = presenter?.isVisible == true ? presenter
+            : SettingsWindowController.shared.window?.isVisible == true ? SettingsWindowController.shared.window : nil
+        if let host {
+            panel.beginSheetModal(for: host) { [weak self] response in
                 guard response == .OK, let folder = panel.url else { return }
                 MainActor.assumeIsolated { self?.connect(folder: folder) }
             }

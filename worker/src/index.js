@@ -25,12 +25,12 @@ const SITE_EVENTS = {
   star_click: new Set(['hero', 'menubar', 'community', 'footer']),
   feedback_open: new Set(['idea', 'bug', 'other']),
   // How visitors behave: how far down they get, what they try, who they are.
-  section: new Set(['hero', 'music', 'shelf', 'clip', 'cal', 'keys', 'little', 'native', 'install', 'changelog', 'community', 'faq', 'footer']),
+  section: new Set(['hero', 'claude', 'music', 'shelf', 'clip', 'cal', 'keys', 'little', 'native', 'install', 'changelog', 'community', 'faq', 'footer']),
   toggle: new RegExp(`^(${CHAPTERS}):(try|real)$`),
   video_end: new RegExp(`^(${CHAPTERS})$`),
   demo: new Set(['music:play', 'music:next', 'music:prev', 'shelf:drag', 'shelf:out', 'clip:copy', 'clip:search', 'cal:day', 'keys:press',
     'little:caffeine', 'little:charging', 'little:airpods', 'little:mirror', 'native:width']),
-  faq_open: new Set(['free', 'safe', 'warning', 'terminal', 'macs', 'permissions', 'privacy', 'uninstall']),
+  faq_open: new Set(['free', 'claude', 'light', 'safe', 'warning', 'terminal', 'macs', 'permissions', 'privacy', 'uninstall']),
   send_mac: new Set(['open', 'share', 'email', 'copy']),
   see_how: new Set(['hero']),
   // Core Web Vitals per visit, graded with Google's thresholds: good, ok (needs work), poor.
@@ -50,7 +50,7 @@ const allowed = (rule, channel) => (rule instanceof RegExp ? rule.test(channel) 
 const STEP = { landed: 1, features: 2, install: 4, action: 8 };
 const stepFor = (event, channel) =>
   event === 'view' ? STEP.landed
-  : event === 'section' && (channel === 'shelf' || channel === 'music') ? STEP.features // the first two chapters
+  : event === 'section' && (channel === 'claude' || channel === 'shelf' || channel === 'music') ? STEP.features // the first chapters (Claude Code leads since 2.0)
   : (event === 'section' && channel === 'install') || event === 'install_seen' ? STEP.install
   : event === 'copy_curl' || event === 'copy_brew' || event === 'dmg' ? STEP.action
   : 0;
