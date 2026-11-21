@@ -47,6 +47,11 @@ PARAMS:
 
 OPTIONS:
   get
+    --bundle-id=ID: Reads the now playing information of the application
+      with the given bundle identifier or parent application bundle
+      identifier, even when another application is the now playing
+      application. Prints a list with one dictionary for each matching
+      application, which is empty when no application matches.
     --now: Adds an "elapsedTimeNow" key with an estimation of the current
       elapsed playback time. This estimation may be off by up to a second.
       To determine a more accurate time without polling "get" continuously,
@@ -56,11 +61,18 @@ OPTIONS:
     --no-diff: Disable diffing and always dump all metadata
     --debounce=N: Delay in milliseconds to prevent spam (0 by default)
   get, stream
-    --micros: Replaces the following time keys with microsecond equivalents
+    --micros: Replaces the following time keys with microsecond equivalents:
       "duration" -> "durationMicros"
       "elapsedTime" -> "elapsedTimeMicros"
       "elapsedTimeNow" -> "elapsedTimeNowMicros"
       "timestamp" -> "timestampEpochMicros" (converted to epoch time)
+    --no-artwork: Omits "artworkData" and "artworkMimeType" from the payload.
+      Useful for consumers that do not render artwork, since this avoids
+      emitting several hundred kilobytes of base64 data per update.
+    --allow-missing-title: By default, media with a null or absent title is
+      ignored. This flag leads to media with a null or absent title being
+      emitted. The consumer needs to explicitly handle the possibility of the
+      title being null or absent.
     --human-readable, -h: Makes values human-readable. Use only for debugging.
       The JSON output is pretty-printed and the following keys are adapted:
       "artworkData" -> Binary data is truncated to a shorter representation
@@ -125,7 +137,7 @@ sub parse_options {
   my $i = $start_index;
   while ($i <= $#ARGV) {
     my $arg = $ARGV[$i];
-    if ($arg =~ /^--([a-z\\-]+)(?:=(.*))?$/) {
+    if ($arg =~ /^--([a-z:\.\\-]+)(?:=(.*))?$/) {
       my $key = $1;
       my $value = defined $2 ? $2 : undef;
       $arg_map{$key} = $value;
@@ -196,8 +208,17 @@ elsif ($function_name eq "stream") {
     elsif ($key eq "micros") {
       set_env_option($options, $key);
     }
+    elsif ($key eq "no-artwork") {
+      set_env_option($options, $key);
+    }
+    elsif ($key eq "allow-missing-title") {
+      set_env_option($options, $key);
+    }
     elsif ($key eq "human-readable" || $key eq "h") {
       set_env_option($options, "human-readable");
+    }
+    elsif ($key eq "experimental-peculiar-debounce:com.tidal.desktop") {
+      set_env_option_value($options, $key);
     }
     else {
       fail "Unrecognized option '$key'";
@@ -211,11 +232,20 @@ elsif ($function_name eq "get") {
     if ($key eq "micros") {
       set_env_option($options, $key);
     }
+    elsif ($key eq "no-artwork") {
+      set_env_option($options, $key);
+    }
+    elsif ($key eq "allow-missing-title") {
+      set_env_option($options, $key);
+    }
     elsif ($key eq "human-readable" || $key eq "h") {
       set_env_option($options, "human-readable");
     }
     elsif ($key eq "now") {
       set_env_option($options, $key);
+    }
+    elsif ($key eq "bundle-id") {
+      set_env_option_value($options, $key);
     }
     else {
       fail "Unrecognized option '$key'";

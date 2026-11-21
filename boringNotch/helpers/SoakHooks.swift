@@ -145,7 +145,7 @@ enum SoakHooks {
         }
         on("report") { _ in
             let notchWindows = NSApp.windows.filter { $0 is BoringNotchSkyLightWindow }
-            let line = "\(Date().timeIntervalSince1970) notchWindows=\(notchWindows.count) visible=\(notchWindows.filter(\.isVisible).count) appWindows=\(NSApp.windows.count)\n"
+            let line = "\(Date().timeIntervalSince1970) notchWindows=\(notchWindows.count) visible=\(notchWindows.filter(\.isVisible).count) appWindows=\(NSApp.windows.count) nowPlayingSource=\(MusicManager.shared.bundleIdentifier != nil)\n"
             let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("soak.log")
             if let handle = try? FileHandle(forWritingTo: url) {
                 handle.seekToEndOfFile()

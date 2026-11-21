@@ -129,6 +129,9 @@ sleep 8
 measure_idle "idle, after $CYCLES locks"
 : > "$LOG"; post report; sleep 1
 WINDOWS=$(grep -o "notchWindows=[0-9]*" "$LOG" | tail -1 | cut -d= -f2)
+# Whether the Now Playing helper delivered anything. Informational: with nothing playing
+# anywhere there is nothing to deliver.
+NOWPLAYING=$(grep -o "nowPlayingSource=[a-z]*" "$LOG" | tail -1 | cut -d= -f2)
 
 # The bar every release has to clear.
 FAILS=()
@@ -144,10 +147,11 @@ OUT="$WORK/soak-$(date +%Y%m%d-%H%M%S).txt"
 {
   # The commit, marked "+changes" when the working tree differs: the release script only
   # accepts a pass for exactly the commit it is publishing.
-  echo "NotchFun soak $(defaults read "$COPY/Contents/Info.plist" CFBundleShortVersionString) ($(git -C "$ROOT" rev-parse --short HEAD)$(git -C "$ROOT" diff --quiet HEAD -- boringNotch BoringNotchXPCHelper || echo +changes)), $(sw_vers -productVersion), $(date)"
+  echo "NotchFun soak $(defaults read "$COPY/Contents/Info.plist" CFBundleShortVersionString) ($(git -C "$ROOT" rev-parse --short HEAD)$(git -C "$ROOT" diff --quiet HEAD -- boringNotch BoringNotchXPCHelper mediaremote-adapter || echo +changes)), $(sw_vers -productVersion), $(date)"
   echo "launch to notch window: ${LAUNCH:-unknown} s"
   printf '%s\n' "${RESULTS[@]}"
   echo "notch windows after $CYCLES locks: ${WINDOWS:-unknown}"
+  echo "Now Playing after $CYCLES locks: ${NOWPLAYING:-unknown}"
   echo "$VERDICT"
 } | tee "$OUT"
 
