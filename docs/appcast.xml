@@ -7,6 +7,33 @@
     <language>en</language>
 
     <item>
+      <title>2.0.0</title>
+      <pubDate>Sat, 21 Nov 2026 14:37:53 +0530</pubDate>
+      <sparkle:version>30</sparkle:version>
+      <sparkle:shortVersionString>2.0.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>New</h3>
+<ul>
+<li><strong>The face shows what Claude Code is doing.</strong> It twinkles while Claude works, looks up when it needs you and smiles when it's done. Connect it in Settings → Face &amp; Mirror.</li>
+<li><strong>AirPods show each earbud and the case.</strong> Left, right and case, with charging, when you connect them.</li>
+<li><strong>Join video calls from the notch.</strong> Calendar events get a Join button, and the notch gives you a heads-up two minutes before a call.</li>
+<li><strong>Find screenshots by the words in them.</strong> Clipboard search reads copied images on your Mac, and right-click offers Copy Text. Snippets keep text you paste often.</li>
+<li><strong>Make it yours.</strong> Swipe on the music to skip, lyrics under the closed notch, an output menu, calmer or livelier motion, and apps where hovering doesn't open the notch.</li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><strong>Lighter than ever.</strong> About 0.1% CPU in the background and around 30 MB, measured on every release; a scrolling title with the notch open dropped from 18% CPU to under 1%.</li>
+<li><strong>Settings are grouped by feature.</strong> Music, Face &amp; Mirror and Volume &amp; Brightness each have their own place.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v2.0.0/NotchFun-2.0.0.dmg"
+        sparkle:edSignature="W10PjUwJ/JFYdAxftUvtnGV8x3Qm0pjSlOoxAfWXG/gv5ikdFSzf9i7n8K83VTymEfkAgdOU8hnfiTG/TmkaCQ=="
+        length="7575833"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>1.7.0</title>
       <pubDate>Mon, 16 Nov 2026 13:44:48 +0530</pubDate>
       <sparkle:version>29</sparkle:version>
