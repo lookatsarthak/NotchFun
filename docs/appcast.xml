@@ -7,6 +7,24 @@
     <language>en</language>
 
     <item>
+      <title>2.0.1</title>
+      <pubDate>Sat, 21 Nov 2026 15:05:47 +0530</pubDate>
+      <sparkle:version>31</sparkle:version>
+      <sparkle:shortVersionString>2.0.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>Fixed</h3>
+<ul>
+<li><strong>Choose… in Settings no longer freezes NotchFun.</strong> Adding an app with Choose… under "Don't open on hover in these apps" or "Never save from these apps" opened an invisible dialog, and NotchFun stopped responding to clicks, Motion included, until it was quit. The dialog now opens on the Settings window.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v2.0.1/NotchFun-2.0.1.dmg"
+        sparkle:edSignature="i4D6FfDSND9wZtyzHUd/2RG3eiK5iNRbBSMZ7CiPVoQJkpMoyZmyBhuEh+tdKPO/AdCld/msem+KBYSBhJSgCg=="
+        length="7579206"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>2.0.0</title>
       <pubDate>Sat, 21 Nov 2026 14:37:53 +0530</pubDate>
       <sparkle:version>30</sparkle:version>
