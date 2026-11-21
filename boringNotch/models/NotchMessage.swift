@@ -76,12 +76,15 @@ struct NotchMessage: Hashable, Sendable {
 /// - `notchfun://show?text=Build%20passed&icon=checkmark.circle&progress=0.4&seconds=5`
 /// - `notchfun://open` or `notchfun://open?tab=shelf` (home, shelf, clipboard)
 /// - `notchfun://close`
+/// - `notchfun://agent?state=working&session=<id>`, from the Claude Code hooks
 enum NotchURLCommand: Equatable, Sendable {
     enum Tab: String, Sendable { case home, shelf, clipboard }
 
     case show(NotchMessage)
     case open(Tab?)
     case close
+    /// A Claude Code session's state. See `ClaudeCodeHooks`.
+    case agent(ClaudeCodeHooks.Report, session: String)
 
     static let scheme = "notchfun"
 
@@ -114,6 +117,15 @@ enum NotchURLCommand: Equatable, Sendable {
             }
         case "close":
             self = .close
+        case "agent":
+            guard let report = query["state"].flatMap({ ClaudeCodeHooks.Report(rawValue: $0.lowercased()) }) else { return nil }
+            // A UUID normally. Anything odd collapses to one shared session rather than
+            // putting arbitrary text into the app's state.
+            let raw = query["session"] ?? ""
+            let session = raw.count <= 64 && !raw.isEmpty
+                && raw.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") })
+                ? raw : "unknown"
+            self = .agent(report, session: session)
         default:
             return nil
         }

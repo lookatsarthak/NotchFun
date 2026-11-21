@@ -92,6 +92,8 @@ struct Appearance: View {
                     Text("Additional features")
                 }
             }
+
+            ClaudeCodeSection()
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Appearance")
@@ -103,5 +105,44 @@ struct Appearance: View {
         }
 
         return false
+    }
+}
+
+/// Connect or disconnect Claude Code from the face. One button and the folder dialog; no
+/// Terminal. See `ClaudeCodeConnection`.
+struct ClaudeCodeSection: View {
+    private let connection = ClaudeCodeConnection.shared
+
+    var body: some View {
+        Section {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Claude Code")
+                    Text(connection.isConnected ? "Connected" : "Not connected")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if connection.isConnected {
+                    Button("Disconnect") { connection.disconnect() }
+                } else {
+                    Button("Connect…") { connection.connect() }
+                }
+            }
+            if let problem = connection.problem {
+                Text(problem)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text("Claude Code on the face")
+        } footer: {
+            Text(
+                "The face shows what Claude Code is doing: thinking while it works, looking up when it needs you, and smiling when it's done. Connecting adds a few hooks to Claude Code's settings in the ~/.claude folder; you'll be asked to choose that folder once. New and open sessions pick it up straight away, and Disconnect removes exactly what was added."
+            )
+            .multilineTextAlignment(.trailing)
+            .foregroundStyle(.secondary)
+            .font(.caption)
+        }
     }
 }

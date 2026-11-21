@@ -46,6 +46,10 @@ final class NotchMessageCenter {
             NotchActions.openNotch(tab: tab.map(\.notchView), autoClose: true)
         case .close:
             NotchActions.closeNotch()
+        case .agent(let report, let session):
+            // Only while connected, so a stray link can't put "needs you" on the notch.
+            guard ClaudeCodeConnection.shared.isConnected else { return }
+            AgentStatusCenter.shared.handle(report, session: session)
         }
     }
 }

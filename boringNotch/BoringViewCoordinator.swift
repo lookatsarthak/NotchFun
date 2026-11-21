@@ -21,6 +21,7 @@ enum SneakContentType {
     case accessoryBattery
     case meeting
     case message
+    case agent
 }
 
 struct sneakPeek {
@@ -339,6 +340,9 @@ class BoringViewCoordinator: ObservableObject {
                 let duration: TimeInterval = switch expandingView.type {
                 case .meeting: MeetingReminder.bannerDuration
                 case .message: NotchMessageCenter.shared.current?.seconds ?? NotchMessage.defaultSeconds
+                // A finish shows briefly; "needs you" stays longer.
+                case .agent: AgentStatusCenter.shared.waitingCount > 0
+                    ? AgentStatusCenter.bannerDuration : AgentStatusCenter.celebrationDuration
                 default: 3
                 }
                 let currentType = expandingView.type

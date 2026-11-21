@@ -297,6 +297,10 @@ extension Defaults.Keys {
     // MARK: Messages
     /// Show messages from the "Show in Notch" action and notchfun://show links.
     static let allowNotchMessages = Key<Bool>("allowNotchMessages", default: true)
+
+    // MARK: Claude Code
+    /// Security-scoped bookmark to ~/.claude, granted by the user through the folder dialog.
+    static let claudeCodeFolderBookmark = Key<Data?>("claudeCodeFolderBookmark", default: nil)
     
     // MARK: Fullscreen Media Detection
     static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)

@@ -47,6 +47,7 @@ struct ContentView: View {
     let accessoryBattery = AccessoryBatteryManager.shared
     let meetingReminder = MeetingReminder.shared
     let messageCenter = NotchMessageCenter.shared
+    let agentStatus = AgentStatusCenter.shared
     let brightnessManager = BrightnessManager.shared
     let volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -161,6 +162,34 @@ struct ContentView: View {
             && !vm.hideOnClosed && !coordinator.expandingView.show
     }
 
+    /// The idle face, or Claude Code's state on it while a session has something to say,
+    /// even with the idle face switched off.
+    private var showsFace: Bool {
+        showNotHumanFace || agentStatus.shown != nil
+    }
+
+    /// Whether the face is on screen in the closed notch right now. When it is, it shows
+    /// Claude Code's state itself; when it isn't, the agent glyph does.
+    private var faceIsOnScreen: Bool {
+        vm.notchState == .closed && !vm.hideOnClosed && showsFace
+            && !musicManager.isPlaying && musicManager.isPlayerIdle
+    }
+
+    /// The face and a sign beside the notch, for "needs you" or a finish, only when the
+    /// face itself can't be seen (music playing, for one).
+    private var showsAgentBanner: Bool {
+        coordinator.expandingView.type == .agent && coordinator.expandingView.show
+            && vm.notchState == .closed && !vm.hideOnClosed && !faceIsOnScreen
+            && (agentStatus.waitingCount > 0 || agentStatus.celebrating)
+            && !(coordinator.sneakPeek.show && inlineHUD
+                 && coordinator.sneakPeek.type != .music && coordinator.sneakPeek.type != .battery)
+    }
+
+    /// The agent's expanding view doesn't push the face aside: the face is how it shows.
+    private var expandingViewHidesFace: Bool {
+        coordinator.expandingView.show && coordinator.expandingView.type != .agent
+    }
+
     private var showsCaffeineBanner: Bool {
         coordinator.expandingView.type == .caffeine && coordinator.expandingView.show
             && vm.notchState == .closed && caffeineShowNotification
@@ -173,7 +202,7 @@ struct ContentView: View {
     /// of the branches below matched it. Only visible with `hideTitleBar` on, which is
     /// presumably why nobody reported it.
     private var showsAnyBanner: Bool {
-        showsPowerBanner || showsMessageBanner || showsMeetingBanner || showsAccessoryBatteryBanner
+        showsPowerBanner || showsAgentBanner || showsMessageBanner || showsMeetingBanner || showsAccessoryBatteryBanner
             || showsCaffeineBanner
     }
 
@@ -204,8 +233,8 @@ struct ContentView: View {
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
             chinWidth += musicMetrics.addedWidth
-        } else if !coordinator.expandingView.show && vm.notchState == .closed
-            && (!musicManager.isPlaying && musicManager.isPlayerIdle) && showNotHumanFace
+        } else if !expandingViewHidesFace && vm.notchState == .closed
+            && (!musicManager.isPlaying && musicManager.isPlayerIdle) && showsFace
             && !vm.hideOnClosed
         {
             chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
@@ -421,6 +450,10 @@ struct ContentView: View {
                               .transition(.opacity)
                       // Below the HUD deliberately: you connect earbuds and reach for the
                       // volume keys a second later, and winning here would eat that feedback.
+                      } else if showsAgentBanner {
+                          AgentNotification(state: agentStatus.shown, waitingCount: agentStatus.waitingCount, notchWidth: vm.closedNotchSize.width)
+                              .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                              .transition(NotchMotion.transition(.opacity.combined(with: .scale)))
                       } else if showsMessageBanner, let message = messageCenter.current {
                           NotchMessageNotification(message: message, notchWidth: vm.closedNotchSize.width)
                               .id(message)
@@ -471,7 +504,7 @@ struct ContentView: View {
                               }
                           }
                           .frame(alignment: .center)
-                      } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && showNotHumanFace && !vm.hideOnClosed  {
+                      } else if !expandingViewHidesFace && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && showsFace && !vm.hideOnClosed  {
                           BoringFaceAnimation()
                       } else if showsCaffeineIndicator {
                           // Nothing else is claiming the closed notch - the face is off and
@@ -682,18 +715,28 @@ struct ContentView: View {
                 )
 
             HStack {
-                Rectangle()
-                    .fill(
-                        coloredSpectrogram
-                            ? Color(nsColor: musicManager.avgColor).gradient
-                            : Color.gray.gradient
-                    )
-                    .frame(width: 50, alignment: .center)
-                    .matchedGeometryEffect(id: "spectrum", in: albumArtNamespace)
-                    .mask {
-                        AudioSpectrumView(isPlaying: $musicManager.isPlaying)
-                            .frame(width: 16, height: 12)
-                    }
+                if agentStatus.waitingCount > 0 {
+                    // A Claude Code session is still waiting for you. The face isn't on
+                    // screen while music plays, so its dot takes the visualizer's place
+                    // until you answer.
+                    Circle()
+                        .fill(MinimalFaceFeatures.claudeOrange)
+                        .frame(width: 8, height: 8)
+                        .transition(.opacity)
+                } else {
+                    Rectangle()
+                        .fill(
+                            coloredSpectrogram
+                                ? Color(nsColor: musicManager.avgColor).gradient
+                                : Color.gray.gradient
+                        )
+                        .frame(width: 50, alignment: .center)
+                        .matchedGeometryEffect(id: "spectrum", in: albumArtNamespace)
+                        .mask {
+                            AudioSpectrumView(isPlaying: $musicManager.isPlaying)
+                                .frame(width: 16, height: 12)
+                        }
+                }
             }
             .frame(
                 width: musicMetrics.spectrumWidth,

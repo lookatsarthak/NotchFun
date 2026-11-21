@@ -46,6 +46,36 @@ enum SoakHooks {
                 delegate.onScreenUnlocked(Notification(name: Notification.Name("com.apple.screenIsUnlocked")))
             }
         }
+        // Plays a Claude Code state on the face without Claude Code: agentdemo working,
+        // waiting, done, error or end, for session "demo" (or "demo2" with "@2").
+        on("agentdemo") { argument in
+            let parts = (argument ?? "working").split(separator: "@")
+            guard let report = ClaudeCodeHooks.Report(rawValue: String(parts[0])) else { return }
+            let session = parts.count > 1 ? "demo\(parts[1])" : "demo"
+            AgentStatusCenter.shared.handle(report, session: session)
+        }
+        // Connects to a stand-in .claude folder inside the container, never the real one:
+        // claudeconnect <path to a folder named .claude>, claudedisconnect.
+        on("claudeconnect") { path in
+            guard let path else { return }
+            ClaudeCodeConnection.shared.connect(folder: URL(fileURLWithPath: path, isDirectory: true))
+            appendToLog("\(Date().timeIntervalSince1970) claude connected=\(ClaudeCodeConnection.shared.isConnected) problem=\(ClaudeCodeConnection.shared.problem ?? "none")\n")
+        }
+        on("claudedisconnect") { _ in
+            ClaudeCodeConnection.shared.disconnect()
+            appendToLog("\(Date().timeIntervalSince1970) claude connected=\(ClaudeCodeConnection.shared.isConnected) problem=\(ClaudeCodeConnection.shared.problem ?? "none")\n")
+        }
+        // Opens the real Connect dialog, logs which folder it opened in, then cancels it.
+        on("claudepanel") { _ in
+            ClaudeCodeConnection.shared.connect()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                guard let panel = NSApp.windows.compactMap({ $0 as? NSOpenPanel }).first else {
+                    appendToLog("panel none\n"); return
+                }
+                appendToLog("panel directory=\(panel.directoryURL?.path ?? "nil") visible=\(panel.isVisible)\n")
+                panel.cancel(nil)
+            }
+        }
         on("displaychange") { _ in
             AppDelegate.shared?.soakDisplayChange()
         }
