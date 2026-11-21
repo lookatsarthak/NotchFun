@@ -308,6 +308,12 @@ extension Defaults.Keys {
     /// Show messages from the "Show in Notch" action and notchfun://show links.
     static let allowNotchMessages = Key<Bool>("allowNotchMessages", default: true)
 
+    // MARK: BetterDisplay
+    /// Brightness on external displays through BetterDisplay. See `BetterDisplayBridge`.
+    static let useBetterDisplay = Key<Bool>("useBetterDisplay", default: false)
+    /// BetterDisplay's own pop-up settings from before NotchFun changed them, to restore.
+    static let betterDisplaySavedOSD = Key<[String: String]?>("betterDisplaySavedOSD", default: nil)
+
     // MARK: Claude Code
     /// Security-scoped bookmark to ~/.claude, granted by the user through the folder dialog.
     static let claudeCodeFolderBookmark = Key<Data?>("claudeCodeFolderBookmark", default: nil)

@@ -116,6 +116,8 @@ struct HUD: View {
                 Text("Closed Notch")
             }
             .disabled(!Defaults[.hudReplacement])
+
+            BetterDisplaySection()
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Volume & Brightness")
@@ -135,3 +137,34 @@ struct HUD: View {
         }
     }
 }
+
+/// The BetterDisplay toggle, with whether it's connected.
+private struct BetterDisplaySection: View {
+    @Default(.useBetterDisplay) private var useBetterDisplay
+    private let bridge = BetterDisplayBridge.shared
+
+    private var installed: Bool {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: BetterDisplayProtocol.bundleID) != nil
+    }
+
+    var body: some View {
+        Section {
+            Toggle("Use BetterDisplay for external displays", isOn: $useBetterDisplay)
+                .disabled(!installed && !useBetterDisplay)
+            if useBetterDisplay {
+                Text(bridge.isConnected ? "Connected" : "Waiting for BetterDisplay. Open it, and keep its integration setting on.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("External displays")
+        } footer: {
+            Text(installed
+                 ? "Brightness keys on an external display go to BetterDisplay, and NotchFun shows the bar. BetterDisplay's own pop-up is hidden while this is on and comes back when you turn it off."
+                 : "Needs BetterDisplay, a free app for controlling external displays.")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
+    }
+}
+

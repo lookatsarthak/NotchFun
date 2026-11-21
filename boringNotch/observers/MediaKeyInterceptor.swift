@@ -154,6 +154,15 @@ final class MediaKeyInterceptor {
         let option = flags.contains(.option)
         let shift = flags.contains(.shift)
         let command = flags.contains(.command)
+
+        // With BetterDisplay connected, display brightness on an external display is
+        // BetterDisplay's: the key goes through to it, and NotchFun draws the bar from
+        // BetterDisplay's event. The built-in display and ⌘ (keyboard backlight) stay ours.
+        if (keyType == .brightnessUp || keyType == .brightnessDown), !command,
+           BetterDisplayBridge.passesExternalBrightnessKeys,
+           let focused = NSScreen.main, !focused.isBuiltIn {
+            return Unmanaged.passRetained(cgEvent)
+        }
         
         // Handle option key action (without shift)
         if option && !shift {

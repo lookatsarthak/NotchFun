@@ -108,6 +108,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        BetterDisplayBridge.shared.restoreOnQuit()
         NotificationCenter.default.removeObserver(self)
         if let observer = screenLockedObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
@@ -588,6 +589,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ClipboardAutoClearService.shared.start()
         AccessoryBatteryManager.shared.start()
         MeetingReminder.shared.start()
+        // After a crash with BetterDisplay connected, its pop-up would stay off: put the
+        // saved settings back unless the integration is still wanted.
+        if !Defaults[.useBetterDisplay] { BetterDisplayBridge.shared.restoreOnQuit() }
+        BetterDisplayBridge.shared.start()
 
         // Caffeine. restore() resumes a session that survived a quit and drops one that
         // expired while we were not running; startObserving() wires sleep/wake and
