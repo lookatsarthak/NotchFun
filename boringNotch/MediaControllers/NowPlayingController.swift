@@ -67,6 +67,38 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
 
     private var process: Process?
     private var pipeHandler: JSONLinesPipeHandler?
+    /// The app holds the only write end. See `adapterWatcher`.
+    private var lifeline: Pipe?
+
+    /// Runs the adapter (the script and arguments after it) in this same process, beside a
+    /// watcher that stops it once NotchFun is gone.
+    ///
+    /// `stopHelper()` covers a normal quit and SIGTERM, but a crash, Force Quit or Xcode's
+    /// Stop left the adapter running under launchd. The watcher blocks reading stdin, whose
+    /// only write end NotchFun holds; the system closes it however NotchFun ends, the read
+    /// returns end-of-file, and the watcher stops the adapter.
+    ///
+    /// Idea from upstream boring.notch PR #1560, but blocking instead of polling: their
+    /// watcher woke every second to check, ours sleeps in `read` and costs nothing until
+    /// it is needed.
+    private static let adapterWatcher = #"""
+        my $adapter = $$;
+        my $watcher = fork() // die "fork: $!";
+        if ($watcher == 0) {
+            exit 0 unless -p STDIN;
+            open(STDOUT, ">", "/dev/null");
+            while (1) {
+                my $read = sysread(STDIN, my $buffer, 64);
+                next if !defined($read) && $!{EINTR};
+                last if !defined($read) || $read == 0;
+            }
+            kill "TERM", $adapter;
+            sleep 1;
+            kill "KILL", $adapter;
+            exit 0;
+        }
+        exec($^X, @ARGV) or die "exec: $!";
+        """#
     private var streamTask: Task<Void, Never>?
 
     // MARK: - Initialization
@@ -108,6 +140,9 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         if let process, process.isRunning {
             process.terminate()
         }
+        // Lets the watcher finish too, rather than wait for NotchFun to exit.
+        try? lifeline?.fileHandleForWriting.close()
+        lifeline = nil
     }
 
     deinit {
@@ -209,7 +244,10 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         }
         
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
-        process.arguments = [scriptURL.path, frameworkPath, "stream"]
+        process.arguments = ["-e", Self.adapterWatcher, scriptURL.path, frameworkPath, "stream"]
+        let lifeline = Pipe()
+        process.standardInput = lifeline
+        self.lifeline = lifeline
         
         let pipeHandler = JSONLinesPipeHandler()
         process.standardOutput = await pipeHandler.getPipe()

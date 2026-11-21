@@ -168,9 +168,11 @@ struct BatteryMenuView: View {
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("Max Capacity: \(Int(maxCapacity))%")
-                    .font(.subheadline)
-                    .fontWeight(.regular)
+                if let health = BatteryStatusViewModel.shared.health {
+                    Text("Battery Health: \(Int(health))%")
+                        .font(.subheadline)
+                        .fontWeight(.regular)
+                }
                 if isInLowPowerMode {
                     Label("Low Power Mode", systemImage: "bolt.circle")
                         .font(.subheadline)
@@ -191,8 +193,11 @@ struct BatteryMenuView: View {
                         .font(.subheadline)
                         .fontWeight(.regular)
                 }
-                if !isCharging && isPluggedIn && levelBattery >= 80 {
-                    Label("Charging on Hold: Desktop Mode", systemImage: "desktopcomputer")
+                // Plugged in but not charging: full, or held back by Optimized Charging or a
+                // charge limit. macOS doesn't say which, so neither do we.
+                if !isCharging && isPluggedIn {
+                    Label(levelBattery >= 100 ? "Fully Charged" : "Not Charging",
+                          systemImage: levelBattery >= 100 ? "checkmark.circle" : "pause.circle")
                         .font(.subheadline)
                         .fontWeight(.regular)
                 }

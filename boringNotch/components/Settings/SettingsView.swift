@@ -90,8 +90,6 @@ struct SettingsView: View {
                     CaffeineSettings()
                 case "Shortcuts":
                     Shortcuts()
-                case "Extensions":
-                    GeneralSettings()
                 case "Advanced":
                     Advanced()
                 case "About":
@@ -127,6 +125,11 @@ struct SettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
             accentColorUpdateTrigger = UUID()
         }
+        #if NOTCHFUN_SOAK
+        .onReceive(NotificationCenter.default.publisher(for: SoakHooks.settingsPane)) { note in
+            if let pane = note.object as? String { selectedTab = pane }
+        }
+        #endif
     }
 }
 

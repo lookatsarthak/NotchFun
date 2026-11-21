@@ -81,12 +81,9 @@ class CalendarService: CalendarServiceProviding {
             store.fetchReminders(matching: predicate) { reminders in
                 
                 let filteredReminders = (reminders ?? []).filter { reminder in
-                    // Check if reminder has a due date within our range
-                    guard let dueDate = reminder.dueDateComponents?.date else {
-                        return false
-                    }
-                    
-                    return dueDate >= start && dueDate <= end
+                    guard let dueDate = reminder.displayedDueDate else { return false }
+                    // Half-open, so a reminder due at the next midnight belongs to tomorrow.
+                    return dueDate >= start && dueDate < end
                 }
                 
                 // Convert to EventModel
@@ -150,7 +147,7 @@ extension EventModel {
     init?(from reminder: EKReminder) {
         guard let calendar = reminder.calendar,
               let dueDateComponents = reminder.dueDateComponents,
-              let date = Calendar.current.date(from: dueDateComponents)
+              let date = reminder.displayedDueDate
         else { return nil }
         
         self.init(
@@ -161,7 +158,7 @@ extension EventModel {
             location: reminder.location,
             notes: reminder.notes,
             url: reminder.url,
-            isAllDay: dueDateComponents.hour == nil,
+            isAllDay: dueDateComponents.isAllDayReminder,
             type: .reminder(completed: reminder.isCompleted),
             calendar: .init(from: calendar),
             participants: [],
@@ -261,6 +258,13 @@ private extension EKEvent {
         let startOfDay = calendar.startOfDay(for: startDate)
         let endOfDay = calendar.dateInterval(of: .day, for: endDate)?.end
         return startDate == startOfDay && endDate == endOfDay
+    }
+}
+
+private extension EKReminder {
+    /// See `DateComponents.reminderDate(in:fallbackTimeZone:)`.
+    var displayedDueDate: Date? {
+        dueDateComponents?.reminderDate(in: .current, fallbackTimeZone: timeZone)
     }
 }
 

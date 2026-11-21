@@ -1,4 +1,5 @@
 import Foundation
+import IOKit
 import IOKit.ps
 
 /// Manages and monitors battery status changes on the device
@@ -6,6 +7,26 @@ import IOKit.ps
 class BatteryActivityManager {
 
     static let shared = BatteryActivityManager()
+
+    /// Battery health: how much the battery holds now against when it was new, rounded to
+    /// 5% as System Settings does. Nil on a Mac without a battery.
+    ///
+    /// Not `kIOPSMaxCapacityKey`, which on Apple silicon is a percentage and always 100.
+    /// The smart battery's registry entry has the real capacities. It moves over weeks, so
+    /// callers read it at launch and on plug/unplug, not on every power event.
+    static func readHealth() -> Float? {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
+        guard service != IO_OBJECT_NULL else { return nil }
+        defer { IOObjectRelease(service) }
+        func number(_ key: String) -> Float? {
+            (IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)?
+                .takeRetainedValue() as? NSNumber)?.floatValue
+        }
+        guard let design = number("DesignCapacity"), design > 0,
+              let full = number("NominalChargeCapacity") ?? number("AppleRawMaxCapacity"), full > 0
+        else { return nil }
+        return min(max((full / design * 100 / 5).rounded() * 5, 0), 100)
+    }
 
     var onBatteryLevelChange: ((Float) -> Void)?
     var onMaxCapacityChange: ((Float) -> Void)?

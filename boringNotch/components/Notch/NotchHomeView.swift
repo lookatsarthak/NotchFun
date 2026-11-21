@@ -150,7 +150,7 @@ struct MusicControlsView: View {
         VStack(alignment: .leading, spacing: 0) {
             MarqueeText(
                 $musicManager.songTitle, font: .headline, nsFont: .headline, textColor: .white,
-                frameWidth: width)
+                frameWidth: width, isActive: musicManager.isPlaying)
             MarqueeText(
                 $musicManager.artistName,
                 font: .headline,
@@ -158,11 +158,16 @@ struct MusicControlsView: View {
                 textColor: playerColorTinting
                     ? Color(nsColor: musicManager.avgColor)
                         .ensureMinimumBrightness(factor: 0.6) : .gray,
-                frameWidth: width
+                frameWidth: width,
+                isActive: musicManager.isPlaying
             )
             .fontWeight(.medium)
             if enableLyrics {
-                TimelineView(.animation(minimumInterval: 0.25)) { timeline in
+                // Redrawn when a new line starts and at no other time: the dates are the
+                // upcoming line starts on the playback clock. (It ticked four times a
+                // second for as long as the notch was open.) Plain lyrics and a paused
+                // track draw once.
+                TimelineView(.explicit(lyricRedrawDates)) { timeline in
                     let currentElapsed: Double = {
                         guard musicManager.isPlaying else { return musicManager.elapsedTime }
                         let delta = timeline.date.timeIntervalSince(musicManager.timestampDate)
@@ -197,8 +202,23 @@ struct MusicControlsView: View {
         }
     }
 
+    private var lyricRedrawDates: [Date] {
+        let now = Date()
+        guard musicManager.isPlaying, !musicManager.syncedLyrics.isEmpty else { return [now] }
+        let elapsed = musicManager.elapsedTime + now.timeIntervalSince(musicManager.timestampDate) * musicManager.playbackRate
+        return [now] + Lyrics.upcomingLineDates(
+            after: elapsed, in: musicManager.syncedLyrics,
+            clockDate: musicManager.timestampDate, clockElapsed: musicManager.elapsedTime,
+            rate: musicManager.playbackRate)
+    }
+
     private var musicSlider: some View {
-        TimelineView(.animation(minimumInterval: musicManager.playbackRate > 0 ? 0.1 : nil)) { timeline in
+        // Ten times a second while playing, not at all while paused. This read
+        // `minimumInterval: rate > 0 ? 0.1 : nil`, and nil means every display frame: a
+        // paused track redrew a still slider at up to 120 fps for as long as the notch was
+        // open (about 20% CPU and 55 MB more, measured).
+        TimelineView(.animation(minimumInterval: 0.1,
+                                paused: !musicManager.isPlaying || musicManager.playbackRate <= 0)) { timeline in
             MusicSliderView(
                 sliderValue: $sliderValue,
                 duration: $musicManager.songDuration,
@@ -525,10 +545,16 @@ struct MusicSliderView: View {
             )
             .font(.caption)
         }
-        .onChange(of: currentDate) {
-           guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }
-            sliderValue = MusicManager.shared.estimatedPlaybackPosition(at: currentDate)
-        }
+        .onChange(of: currentDate) { syncSlider(at: currentDate) }
+        // The timeline is paused while nothing plays, so a seek made while paused, and the
+        // first appearance, have to move the slider themselves.
+        .onChange(of: elapsedTime) { syncSlider(at: Date()) }
+        .onAppear { syncSlider(at: Date()) }
+    }
+
+    private func syncSlider(at date: Date) {
+        guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }
+        sliderValue = MusicManager.shared.estimatedPlaybackPosition(at: date)
     }
 
     func timeString(from seconds: Double) -> String {

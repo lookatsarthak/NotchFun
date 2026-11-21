@@ -200,7 +200,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         isScreenLocked = true
         ClipboardStateViewModel.shared.suspendMonitoring()
         if !Defaults[.showOnLockScreen] {
-            cleanupWindows()
+            hideWindowsForLock()
         } else {
             enableSkyLightOnAllWindows()
         }
@@ -211,6 +211,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         isScreenLocked = false
         ClipboardStateViewModel.shared.resumeMonitoring()
         if !Defaults[.showOnLockScreen] {
+            showWindowsAfterLock()
             adjustWindowPosition(changeAlpha: true)
         } else {
             disableSkyLightOnAllWindows()
@@ -250,6 +251,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+        }
+    }
+
+    /// The notch windows that exist now, one per display or the single one.
+    private var notchWindows: [NSWindow] {
+        Defaults[.showOnAllDisplays] ? Array(windows.values) : (window.map { [$0] } ?? [])
+    }
+
+    /// Takes the notch off screen while the screen is locked, keeping its window.
+    ///
+    /// Locking used to close every notch window and unlocking built new ones. AppKit never
+    /// released a closed notch window (an internal observer in its HUD frame holds it), so
+    /// each lock left one behind: 21 windows after 20 locks. Hiding and showing the same
+    /// window leaves nothing behind.
+    @MainActor
+    private func hideWindowsForLock() {
+        vm.close(force: true)
+        viewModels.values.forEach { $0.close(force: true) }
+        for window in notchWindows {
+            NotchSpaceManager.shared.notchSpace.windows.remove(window)
+            window.orderOut(nil)
+        }
+    }
+
+    /// Puts the windows hidden by `hideWindowsForLock()` back; the caller then positions them.
+    @MainActor
+    private func showWindowsAfterLock() {
+        for window in notchWindows {
+            window.orderFrontRegardless()
+            NotchSpaceManager.shared.notchSpace.windows.insert(window)
         }
     }
 
@@ -442,6 +473,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Self.shared = self
+        #if NOTCHFUN_SOAK
+        SoakHooks.install()
+        #endif
         handleTerminationSignal()
 
         NotificationCenter.default.addObserver(

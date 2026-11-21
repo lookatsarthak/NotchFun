@@ -43,6 +43,20 @@ echo "==> Releasing NotchFun $VERSION (build $BUILD) to $REPO"
 NOTES="$ROOT/release-notes/$VERSION.md"
 [ -s "$NOTES" ] || { echo "error: write $NOTES first (see release-notes/README.md)"; exit 1; }
 
+# A release must have passed the soak test (scripts/soak.sh) on this exact commit: idle
+# CPU, memory over repeated screen locks, and one notch window. 1.6.x shipped a leak that
+# only showed after days of locks; a fresh launch looks fine. NOTCHFUN_SKIP_SOAK=1 skips
+# it, for a release that changes nothing in the app.
+if [ "${NOTCHFUN_SKIP_SOAK:-}" != 1 ]; then
+  HEAD_SHORT=$(git -C "$ROOT" rev-parse --short HEAD)
+  SOAK_DIR="${TMPDIR:-/tmp}"; SOAK_DIR="${SOAK_DIR%/}/notchfun-soak"
+  if ! grep -l "($HEAD_SHORT)" "$SOAK_DIR"/soak-*.txt 2>/dev/null | xargs grep -lx "PASS" >/dev/null 2>&1; then
+    echo "error: no passing soak for $HEAD_SHORT. Run scripts/soak.sh (about 6 minutes) first."
+    exit 1
+  fi
+  echo "==> Soak passed for $HEAD_SHORT"
+fi
+
 "$ROOT/scripts/make-dmg.sh" "$ROOT/dist"
 DMG="$ROOT/dist/NotchFun-$VERSION.dmg"
 [ -f "$DMG" ] || { echo "error: $DMG not found"; exit 1; }

@@ -15,6 +15,8 @@ class BatteryStatusViewModel {
 
     private(set) var levelBattery: Float = 0.0
     private(set) var maxCapacity: Float = 0.0
+    /// See `BatteryActivityManager.readHealth()`. Nil without a battery.
+    private(set) var health: Float?
     private(set) var isPluggedIn: Bool = false
     private(set) var isCharging: Bool = false
     private(set) var isInLowPowerMode: Bool = false
@@ -38,6 +40,7 @@ class BatteryStatusViewModel {
     private func setupPowerStatus() {
         let batteryInfo = managerBattery.initializeBatteryInfo()
         updateBatteryInfo(batteryInfo)
+        health = BatteryActivityManager.readHealth()
     }
 
     /// Sets up the monitor to observe battery events
@@ -57,6 +60,7 @@ class BatteryStatusViewModel {
             withAnimation(NotchMotion.content) {
                 self.isPluggedIn = isPluggedIn
                 self.statusText = isPluggedIn ? "Plugged In" : "Unplugged"
+                self.health = BatteryActivityManager.readHealth()
                 self.notifyImportanChangeStatus()
             }
 
