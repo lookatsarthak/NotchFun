@@ -11,7 +11,7 @@ import os.path
 application = defines["app"]  # noqa: F821 - injected by dmgbuild
 appname = os.path.basename(application)
 
-format = "UDZO"  # make-dmg.sh converts to ULFO afterwards and checks for slack
+format = "ULFO"  # lzfse; make-dmg.sh checks the result for slack
 filesystem = "HFS+"
 
 files = [application]

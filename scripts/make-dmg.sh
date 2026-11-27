@@ -110,11 +110,26 @@ trap 'rm -rf "$STAGING"' EXIT
 # .DS_Store. dmgbuild writes that file directly rather than scripting Finder, so this
 # works headless and gives the same window every time. It is a build-time tool only,
 # kept in a virtualenv under .build; nothing about it ends up in the app.
-DMGBUILD_VENV="$ROOT/.build/dmgvenv"
+#
+# 2.0 builds with diskutil instead of hdiutil, which macOS 27 deprecates, and fails the
+# build if a file can't be copied in rather than producing an incomplete image. It needs
+# Python 3.11 or later; macOS's own python3 is 3.9, so take the newest one on the PATH
+# or from Homebrew. The venv is named for the version, so a pin change installs afresh.
+DMGBUILD_VERSION="2.0.0"
+DMGBUILD_VENV="$ROOT/.build/dmgvenv-$DMGBUILD_VERSION"
 if [ ! -x "$DMGBUILD_VENV/bin/dmgbuild" ]; then
-  echo "    installing dmgbuild into $DMGBUILD_VENV"
-  python3 -m venv "$DMGBUILD_VENV"
-  "$DMGBUILD_VENV/bin/pip" install -q --disable-pip-version-check "dmgbuild==1.6.5"
+  PY=""
+  for candidate in python3.14 python3.13 python3.12 python3.11 /opt/homebrew/bin/python3.13 \
+                   /opt/homebrew/bin/python3.12 /opt/homebrew/bin/python3.11 python3; do
+    if command -v "$candidate" >/dev/null 2>&1 \
+       && "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null; then
+      PY="$candidate"; break
+    fi
+  done
+  [ -n "$PY" ] || { echo "error: dmgbuild $DMGBUILD_VERSION needs Python 3.11+ (brew install python)"; exit 1; }
+  echo "    installing dmgbuild $DMGBUILD_VERSION into $DMGBUILD_VENV ($("$PY" --version))"
+  "$PY" -m venv "$DMGBUILD_VENV"
+  "$DMGBUILD_VENV/bin/pip" install -q --disable-pip-version-check "dmgbuild==$DMGBUILD_VERSION"
 fi
 
 # One TIFF holding the 1x and 2x images; see scripts/dmg/render-background.swift. It is
@@ -128,29 +143,26 @@ mkdir -p "$OUT_DIR"
 DMG="$OUT_DIR/$APP_NAME-$VERSION.dmg"
 rm -f "$DMG"
 
-# Built in two steps, deliberately.
+# The slack check below stays, whatever builds the image.
 #
-# `hdiutil create` (which dmgbuild runs underneath) can leave large unreferenced
-# regions inside the image: the 1.4.1
+# `hdiutil create` (which dmgbuild ran underneath before 2.0) left large unreferenced
+# regions inside the image once: the 1.4.1
 # release shipped 1,088,360 bytes of slack - 98.8% zeroes - between two compressed
 # chunks, making the download 23% bigger than 1.4.0 despite the app itself having
 # shrunk. It mounted and ran fine, which is exactly why nobody noticed. It was not
 # reproducible either; it happened once, on the first build after a macOS update.
 #
-# `hdiutil convert` always rewrites the chunk table compactly, so a create-then-convert
-# pass cannot carry slack through. The assertion below is the part that matters: it
-# means a bloated image fails the build instead of reaching a release.
+# Until 2.0 the image was made UDZO and then passed through `hdiutil convert`, which
+# rewrites the chunk table compactly. dmgbuild 2.0 always finishes with that same
+# conversion pass itself (diskutil's), straight to ULFO. The assertion below is the part
+# that matters: a bloated image fails the build instead of reaching a release.
 #
 # ULFO (lzfse) rather than UDZO (zlib): ~12% smaller and faster to mount. Needs macOS
 # 10.11 to open, far below this app's own floor.
-RAW_DMG="$STAGING.raw.dmg"
 echo "==> Creating $DMG"
 "$DMGBUILD_VENV/bin/dmgbuild" -s "$ROOT/scripts/dmg/settings.py" \
   -D app="$APP_PATH" -D background="$BACKGROUND" \
-  "$APP_NAME" "$RAW_DMG" >/dev/null
-
-hdiutil convert "$RAW_DMG" -format ULFO -o "$DMG" -quiet
-rm -f "$RAW_DMG"
+  "$APP_NAME" "$DMG" >/dev/null
 
 # Fail loudly on a bloated image rather than shipping it.
 python3 - "$DMG" <<'PYEOF'
