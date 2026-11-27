@@ -7,6 +7,25 @@
     <language>en</language>
 
     <item>
+      <title>2.0.2</title>
+      <pubDate>Fri, 27 Nov 2026 16:04:32 +0530</pubDate>
+      <sparkle:version>32</sparkle:version>
+      <sparkle:shortVersionString>2.0.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 2px}h3{font-size:13px;margin:10px 0 4px}ul{margin:0;padding-left:18px}li{margin:3px 0}</style><h3>Improved</h3>
+<ul>
+<li><strong>More reliable Now Playing.</strong> The component that reads what's playing is updated to its latest version, which fixes cases where the playing app wasn't recognised.</li>
+<li><strong>A smaller, sturdier download.</strong> The installer disk image is now built with macOS's current disk tools.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/lookatsarthak/NotchFun/releases</sparkle:fullReleaseNotesLink>
+      <enclosure
+        url="https://github.com/lookatsarthak/NotchFun/releases/download/v2.0.2/NotchFun-2.0.2.dmg"
+        sparkle:edSignature="naV2zp2GiOqkqa8e46gLdYVLxuZlFxGzHrNfCQMs2ej1OPQl3ccl/GZw34I8YMP6u7bH4//HlSiGpFmm3q1tAw=="
+        length="7584256"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>2.0.1</title>
       <pubDate>Sat, 21 Nov 2026 15:05:47 +0530</pubDate>
       <sparkle:version>31</sparkle:version>
